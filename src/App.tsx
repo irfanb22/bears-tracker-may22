@@ -34,10 +34,18 @@ const predictions = [
   }
 ];
 
+const categories = [
+  { id: 'all', label: 'All Questions', color: 'bg-gray-100 hover:bg-gray-200 text-gray-800' },
+  { id: 'player_stats', label: 'Player Stats', color: 'bg-blue-100 hover:bg-blue-200 text-blue-800' },
+  { id: 'team_stats', label: 'Team Stats', color: 'bg-green-100 hover:bg-green-200 text-green-800' },
+  { id: 'draft_predictions', label: 'Draft Predictions', color: 'bg-purple-100 hover:bg-purple-200 text-purple-800' }
+];
+
 function HomePage() {
   const { user } = useAuth();
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('all');
   
   return (
     <div className="min-h-screen bg-white">
@@ -79,10 +87,29 @@ function HomePage() {
       {/* Bears Season Predictions Section */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-bears-navy mb-8">
-            2025 Season Predictions
-          </h2>
-          <PredictionInterface />
+          <div className="flex flex-col space-y-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-3xl font-bold text-bears-navy">
+                2025 Season Predictions
+              </h2>
+              <div className="flex items-center gap-3">
+                {categories.map((category) => (
+                  <motion.button
+                    key={category.id}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`px-4 py-2 rounded-full transition-colors ${category.color} ${
+                      selectedCategory === category.id ? 'ring-2 ring-offset-2 ring-bears-orange' : ''
+                    }`}
+                  >
+                    {category.label}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+            <PredictionInterface selectedCategory={selectedCategory} />
+          </div>
           
           {/* Add Debug Panel in Development */}
           {import.meta.env.DEV && <DebugPredictionAccess />}

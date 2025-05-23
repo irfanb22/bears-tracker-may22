@@ -9,7 +9,11 @@ import { LoginModal } from './LoginModal';
 import { RegisterModal } from './RegisterModal';
 import type { Question, Choice } from '../lib/PredictionContext';
 
-export function PredictionInterface() {
+interface PredictionInterfaceProps {
+  selectedCategory?: string;
+}
+
+export function PredictionInterface({ selectedCategory = 'all' }: PredictionInterfaceProps) {
   const { user } = useAuth();
   const { 
     questions,
@@ -31,6 +35,11 @@ export function PredictionInterface() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
 
+  // Filter questions based on selected category
+  const filteredQuestions = selectedCategory === 'all'
+    ? questions
+    : questions.filter(q => q.category === selectedCategory);
+
   if (predictionsLoading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
@@ -48,10 +57,10 @@ export function PredictionInterface() {
     );
   }
 
-  if (!questions || questions.length === 0) {
+  if (!filteredQuestions || filteredQuestions.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-600">No questions available at this time.</p>
+        <p className="text-gray-600">No questions available for this category.</p>
       </div>
     );
   }
@@ -327,7 +336,7 @@ export function PredictionInterface() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-        {questions.map((question) => {
+        {filteredQuestions.map((question) => {
           const hasPredicted = userPredictions[question.id];
           const totalVotes = aggregatedPredictions[question.id]?.total || 0;
           const asset = questionAssets[question.id];
