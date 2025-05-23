@@ -35,10 +35,10 @@ const predictions = [
 ];
 
 const categories = [
-  { id: 'all', label: 'All Questions', color: 'bg-gray-100 hover:bg-gray-200 text-gray-800' },
-  { id: 'player_stats', label: 'Player Stats', color: 'bg-blue-100 hover:bg-blue-200 text-blue-800' },
-  { id: 'team_stats', label: 'Team Stats', color: 'bg-green-100 hover:bg-green-200 text-green-800' },
-  { id: 'draft_predictions', label: 'Draft Predictions', color: 'bg-purple-100 hover:bg-purple-200 text-purple-800' }
+  { id: 'all', label: 'All', color: 'bg-gray-100 hover:bg-gray-200 text-gray-700' },
+  { id: 'player_stats', label: 'Players', color: 'bg-gray-100 hover:bg-gray-200 text-gray-700' },
+  { id: 'team_stats', label: 'Team', color: 'bg-gray-100 hover:bg-gray-200 text-gray-700' },
+  { id: 'draft_predictions', label: 'Draft', color: 'bg-gray-100 hover:bg-gray-200 text-gray-700' }
 ];
 
 function HomePage() {
@@ -87,19 +87,19 @@ function HomePage() {
       {/* Bears Season Predictions Section */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col space-y-8">
-            <div className="flex items-center justify-between">
+          <div className="flex flex-col space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <h2 className="text-3xl font-bold text-bears-navy">
                 2025 Season Predictions
               </h2>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
                 {categories.map((category) => (
                   <motion.button
                     key={category.id}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedCategory(category.id)}
-                    className={`px-4 py-2 rounded-full transition-colors ${category.color} ${
+                    className={`px-4 py-1.5 text-sm rounded-full whitespace-nowrap transition-colors ${category.color} ${
                       selectedCategory === category.id ? 'ring-2 ring-offset-2 ring-bears-orange' : ''
                     }`}
                   >
