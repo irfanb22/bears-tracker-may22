@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes underline {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.animated-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.animated-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2.5px;
+  background-color: #C83803;
+  transform-origin: left;
+  transform: scaleX(0);
+}
+
+.animated-underline.first::after {
+  animation: underline 1s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
+}
+
+.animated-underline.second::after {
+  animation: underline 1s cubic-bezier(0.645, 0.045, 0.355, 1) 1.5s forwards;
+}
+
+.animated-underline.third::after {
+  animation: underline 1s cubic-bezier(0.645, 0.045, 0.355, 1) 2s forwards;
+}
