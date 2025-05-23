@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Loader2, Save, AlertCircle, Plus, X, Edit2, 
-  CheckCircle, PlusCircle, MinusCircle, Star, StarOff
+  CheckCircle, PlusCircle, MinusCircle, Star, StarOff, AlertTriangle
 } from 'lucide-react';
 import { Navbar } from './Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -53,6 +53,7 @@ export function AdminDashboard() {
   const [showNewQuestionForm, setShowNewQuestionForm] = useState(false);
   const [newQuestion, setNewQuestion] = useState<NewQuestion>(INITIAL_NEW_QUESTION);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [showCorrectAnswerPrompt, setShowCorrectAnswerPrompt] = useState<string | null>(null);
 
   useEffect(() => {
     fetchQuestions();
@@ -88,6 +89,17 @@ export function AdminDashboard() {
     setError(null);
 
     try {
+      // If status is being changed to completed and no correct answer is set,
+      // show the prompt instead of updating
+      if (updates.status === 'completed' && !updates.correct_answer) {
+        const question = questions.find(q => q.id === questionId);
+        if (!question?.correct_answer) {
+          setShowCorrectAnswerPrompt(questionId);
+          setSaving(prev => ({ ...prev, [questionId]: false }));
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from('questions')
         .update(updates)
@@ -104,6 +116,7 @@ export function AdminDashboard() {
       setSuccess('Question updated successfully');
       setTimeout(() => setSuccess(null), 3000);
       setEditingQuestionId(null);
+      setShowCorrectAnswerPrompt(null);
     } catch (err) {
       console.error('Error updating question:', err);
       setError(err instanceof Error ? err.message : 'Failed to update question');
@@ -491,22 +504,49 @@ export function AdminDashboard() {
                       />
                     </div>
 
-                    {question.status === 'completed' && question.question_type === 'yes_no' && (
+                    {question.status === 'completed' && (
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Correct Answer
                         </label>
-                        <select
-                          value={question.correct_answer || ''}
-                          onChange={(e) => updateQuestion(question.id, { 
-                            correct_answer: e.target.value
-                          })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-bears-orange focus:border-bears-orange"
-                        >
-                          <option value="">Select Answer</option>
-                          <option value="yes">Yes</option>
-                          <option value="no">No</option>
-                        </select>
+                        <div className={`p-4 rounded-lg ${
+                          question.correct_answer ? 'bg-green-50' : 'bg-yellow-50'
+                        }`}>
+                          {question.question_type === 'yes_no' ? (
+                            <select
+                              value={question.correct_answer || ''}
+                              onChange={(e) => updateQuestion(question.id, { 
+                                correct_answer: e.target.value
+                              })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-bears-orange focus:border-bears-orange"
+                            >
+                              <option value="">Select Answer</option>
+                              <option value="yes">Yes</option>
+                              <option value="no">No</option>
+                            </select>
+                          ) : (
+                            <select
+                              value={question.correct_answer || ''}
+                              onChange={(e) => updateQuestion(question.id, { 
+                                correct_answer: e.target.value
+                              })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-bears-orange focus:border-bears-orange"
+                            >
+                              <option value="">Select Answer</option>
+                              {question.choices?.map((choice) => (
+                                <option key={choice.id} value={choice.text}>
+                                  {choice.text}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                          {!question.correct_answer && (
+                            <div className="flex items-center gap-2 mt-2 text-sm text-yellow-700">
+                              <AlertTriangle className="w-4 h-4" />
+                              <span>Please select the correct answer</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -516,8 +556,17 @@ export function AdminDashboard() {
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Choices</h4>
                       <div className="space-y-2">
                         {question.choices.map((choice) => (
-                          <div key={choice.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                            <span>{choice.text}</span>
+                          <div key={choice.id} className={`flex items-center justify-between p-2 rounded-lg ${
+                            question.status === 'completed' && question.correct_answer === choice.text
+                              ? 'bg-green-50 border border-green-200'
+                              : 'bg-gray-50'
+                          }`}>
+                            <div className="flex items-center gap-2">
+                              {question.status === 'completed' && question.correct_answer === choice.text && (
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                              )}
+                              <span>{choice.text}</span>
+                            </div>
                             <span className="text-sm text-gray-500">
                               {choice.prediction_count || 0} predictions
                             </span>
@@ -539,6 +588,93 @@ export function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Correct Answer Prompt */}
+      <AnimatePresence>
+        {showCorrectAnswerPrompt && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              onClick={() => setShowCorrectAnswerPrompt(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+                <h3 className="text-xl font-semibold text-bears-navy mb-4">
+                  Set Correct Answer
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Please select the correct answer before marking this question as completed.
+                </p>
+                {(() => {
+                  const question = questions.find(q => q.id === showCorrectAnswerPrompt);
+                  if (!question) return null;
+
+                  return (
+                    <div className="space-y-4">
+                      {question.question_type === 'yes_no' ? (
+                        <div className="grid grid-cols-2 gap-4">
+                          <button
+                            onClick={() => updateQuestion(question.id, {
+                              status: 'completed',
+                              correct_answer: 'yes'
+                            })}
+                            className="flex items-center justify-center gap-2 p-4 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors"
+                          >
+                            <CheckCircle className="w-5 h-5" />
+                            Yes
+                          </button>
+                          <button
+                            onClick={() => updateQuestion(question.id, {
+                              status: 'completed',
+                              correct_answer: 'no'
+                            })}
+                            className="flex items-center justify-center gap-2 p-4 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-colors"
+                          >
+                            <X className="w-5 h-5" />
+                            No
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {question.choices?.map((choice) => (
+                            <button
+                              key={choice.id}
+                              onClick={() => updateQuestion(question.id, {
+                                status: 'completed',
+                                correct_answer: choice.text
+                              })}
+                              className="w-full flex items-center justify-between p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                            >
+                              <span>{choice.text}</span>
+                              <span className="text-sm text-gray-500">
+                                {choice.prediction_count || 0} predictions
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => setShowCorrectAnswerPrompt(null)}
+                        className="w-full mt-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  );
+                })()}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
