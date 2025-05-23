@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navbar } from './Navbar';
-import { Trophy, Target, Calendar, Check, X, AlertCircle, Loader2, ArrowRight, User, Settings, Clock } from 'lucide-react';
+import { Trophy, Target, Star, Check, X, AlertCircle, Loader2, ArrowRight, User, Settings, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,6 +31,7 @@ interface PredictionWithQuestion {
   confidence: 'low' | 'medium' | 'high';
   created_at: string;
   question_id: string;
+  points_earned: number;
   questions: Question | null;
 }
 
@@ -38,6 +39,7 @@ interface Stats {
   totalPredictions: number;
   correctPredictions: number;
   upcomingPredictions: number;
+  totalPoints: number;
 }
 
 export function Dashboard() {
@@ -46,6 +48,7 @@ export function Dashboard() {
     totalPredictions: 0,
     correctPredictions: 0,
     upcomingPredictions: 0,
+    totalPoints: 0
   });
   const [predictions, setPredictions] = useState<PredictionWithQuestion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,10 +93,14 @@ export function Dashboard() {
           return acc;
         }, []);
         
+        // Calculate total points
+        const totalPoints = latestPredictions.reduce((sum, pred) => sum + (pred.points_earned || 0), 0);
+        
         setStats({
           totalPredictions: latestPredictions.length,
           correctPredictions: 0,
           upcomingPredictions: latestPredictions.length,
+          totalPoints: totalPoints
         });
         
         setPredictions(latestPredictions);
@@ -129,7 +136,7 @@ export function Dashboard() {
             </span>
             {!isExpired && (
               <span className="flex items-center gap-1.5 text-sm text-gray-500">
-                <Calendar className="w-4 h-4" />
+                <Clock className="w-4 h-4" />
                 {timeLeft}
               </span>
             )}
@@ -164,11 +171,6 @@ export function Dashboard() {
       </div>
     );
   }
-
-  // Find the most recent prediction's timestamp
-  const latestUpdate = predictions.length > 0 
-    ? new Date(predictions[0].created_at)
-    : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -228,17 +230,12 @@ export function Dashboard() {
             className="bg-white rounded-xl shadow-sm p-6 transition-shadow hover:shadow-md"
           >
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <Calendar className="w-6 h-6 text-blue-600" />
+              <div className="p-3 bg-yellow-50 rounded-lg">
+                <Star className="w-6 h-6 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Latest Update</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {latestUpdate ? new Date(latestUpdate).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric'
-                  }) : '--'}
-                </p>
+                <p className="text-sm font-medium text-gray-500">2025 Season Score</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.totalPoints}</p>
               </div>
             </div>
           </motion.div>
@@ -330,13 +327,13 @@ export function Dashboard() {
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                      <span className="text-gray-600">Last updated:</span>
-                      <span className="text-sm text-gray-500">
-                        {new Date(prediction.created_at).toLocaleDateString('en-US', {
-                          month: 'long',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })}
+                      <span className="text-gray-600">Points earned:</span>
+                      <span className={`font-medium ${
+                        prediction.points_earned > 0 ? 'text-green-600' : 
+                        prediction.points_earned < 0 ? 'text-red-600' : 
+                        'text-gray-600'
+                      }`}>
+                        {prediction.points_earned || 0}
                       </span>
                     </div>
 
@@ -365,7 +362,7 @@ export function Dashboard() {
 
           {predictions.length === 0 && (
             <div className="col-span-full text-center py-12">
-              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <Trophy className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No predictions yet</h3>
               <p className="text-gray-500 mb-6">Start making predictions to track your performance</p>
               <motion.button
