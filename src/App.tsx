@@ -35,10 +35,10 @@ const predictions = [
 ];
 
 const categories = [
-  { id: 'all', label: 'All', color: 'bg-gray-100 hover:bg-gray-200 text-gray-800' },
-  { id: 'player_stats', label: 'Players', color: 'bg-blue-100 hover:bg-blue-200 text-blue-800' },
-  { id: 'team_stats', label: 'Team', color: 'bg-green-100 hover:bg-green-200 text-green-800' },
-  { id: 'draft_predictions', label: 'Draft', color: 'bg-purple-100 hover:bg-purple-200 text-purple-800' }
+  { id: 'all', label: 'All Predictions' },
+  { id: 'player_stats', label: 'Player Stats' },
+  { id: 'team_stats', label: 'Team Stats' },
+  { id: 'draft_predictions', label: 'Draft Picks' }
 ];
 
 function HomePage() {
@@ -88,26 +88,26 @@ function HomePage() {
       <section className="py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col space-y-6">
-            <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col space-y-4">
               <h2 className="text-3xl font-bold text-bears-navy">
                 2025 Season Predictions
               </h2>
-              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-                <div className="flex items-center gap-2 min-w-max">
-                  {categories.map((category) => (
-                    <motion.button
-                      key={category.id}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setSelectedCategory(category.id)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${category.color} ${
-                        selectedCategory === category.id ? 'ring-2 ring-offset-2 ring-bears-orange' : ''
-                      }`}
-                    >
-                      {category.label}
-                    </motion.button>
-                  ))}
-                </div>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                {categories.map((category) => (
+                  <motion.button
+                    key={category.id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`min-h-[44px] px-4 py-2 rounded-lg text-sm font-medium transition-all border-2 w-full sm:w-auto ${
+                      selectedCategory === category.id
+                        ? 'bg-bears-orange border-bears-orange text-white'
+                        : 'bg-gray-100 border-bears-orange text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {category.label}
+                  </motion.button>
+                ))}
               </div>
             </div>
             <PredictionInterface selectedCategory={selectedCategory} />
