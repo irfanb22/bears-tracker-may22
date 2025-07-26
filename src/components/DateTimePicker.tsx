@@ -14,6 +14,14 @@ interface DateTimePickerProps {
 export function DateTimePicker({ value, onChange, className }: DateTimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   
+  // Separate state for the displayed month to allow navigation
+  const [displayMonth, setDisplayMonth] = useState<Date>(() => {
+    if (value && isValid(new Date(value))) {
+      return new Date(value);
+    }
+    return new Date();
+  });
+  
   // Initialize with a valid date, defaulting to current date if value is invalid
   const initializeDate = () => {
     if (value && isValid(new Date(value))) {
@@ -42,12 +50,14 @@ export function DateTimePicker({ value, onChange, className }: DateTimePickerPro
     if (value && isValid(new Date(value))) {
       const date = new Date(value);
       setSelectedDate(date);
+      setDisplayMonth(date);
       setHours(date.getHours());
       setMinutes(date.getMinutes());
     } else if (!selectedDate) {
       // If no valid value and no selectedDate, set to current date
       const now = new Date();
       setSelectedDate(now);
+      setDisplayMonth(now);
       setHours(now.getHours());
       setMinutes(now.getMinutes());
     }
@@ -59,6 +69,7 @@ export function DateTimePicker({ value, onChange, className }: DateTimePickerPro
       newDate.setHours(hours);
       newDate.setMinutes(minutes);
       setSelectedDate(newDate);
+      setDisplayMonth(newDate);
       onChange(newDate.toISOString());
     }
   };
@@ -123,9 +134,9 @@ export function DateTimePicker({ value, onChange, className }: DateTimePickerPro
             <DayPicker
               mode="single"
               selected={selectedDate}
-              month={selectedDate || new Date()}
+              month={displayMonth}
               onSelect={handleDaySelect}
-              defaultMonth={selectedDate || new Date()}
+              onMonthChange={setDisplayMonth}
               modifiersClassNames={{
                 selected: 'bg-bears-orange text-white',
                 today: 'text-bears-navy font-bold',
