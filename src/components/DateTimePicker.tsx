@@ -13,11 +13,18 @@ interface DateTimePickerProps {
 
 export function DateTimePicker({ value, onChange, className }: DateTimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    isValid(new Date(value)) ? new Date(value) : undefined
-  );
-  const [hours, setHours] = useState(selectedDate ? selectedDate.getHours() : 12);
-  const [minutes, setMinutes] = useState(selectedDate ? selectedDate.getMinutes() : 0);
+  
+  // Initialize with a valid date, defaulting to current date if value is invalid
+  const initializeDate = () => {
+    if (value && isValid(new Date(value))) {
+      return new Date(value);
+    }
+    return new Date(); // Default to current date
+  };
+  
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(initializeDate());
+  const [hours, setHours] = useState(selectedDate ? selectedDate.getHours() : new Date().getHours());
+  const [minutes, setMinutes] = useState(selectedDate ? selectedDate.getMinutes() : new Date().getMinutes());
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,11 +39,17 @@ export function DateTimePicker({ value, onChange, className }: DateTimePickerPro
   }, []);
 
   useEffect(() => {
-    if (isValid(new Date(value))) {
+    if (value && isValid(new Date(value))) {
       const date = new Date(value);
       setSelectedDate(date);
       setHours(date.getHours());
       setMinutes(date.getMinutes());
+    } else if (!selectedDate) {
+      // If no valid value and no selectedDate, set to current date
+      const now = new Date();
+      setSelectedDate(now);
+      setHours(now.getHours());
+      setMinutes(now.getMinutes());
     }
   }, [value]);
 
@@ -110,7 +123,9 @@ export function DateTimePicker({ value, onChange, className }: DateTimePickerPro
             <DayPicker
               mode="single"
               selected={selectedDate}
+              month={selectedDate || new Date()}
               onSelect={handleDaySelect}
+              defaultMonth={selectedDate || new Date()}
               modifiersClassNames={{
                 selected: 'bg-bears-orange text-white',
                 today: 'text-bears-navy font-bold',
