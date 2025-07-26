@@ -402,7 +402,7 @@ export function AdminDashboard() {
           )}
         </AnimatePresence>
 
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-xl font-semibold text-bears-navy">Manage Questions</h2>
           </div>
