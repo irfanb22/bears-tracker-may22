@@ -6,9 +6,10 @@ interface PredictionCardProps {
   description: string;
   imageUrl: string;
   buttonText: string;
+  onButtonClick?: () => void;
 }
 
-export function PredictionCard({ title, description, imageUrl, buttonText }: PredictionCardProps) {
+export function PredictionCard({ title, description, imageUrl, buttonText, onButtonClick }: PredictionCardProps) {
   return (
     <motion.div
       whileHover={{ scale: 1.02 }}
@@ -29,7 +30,10 @@ export function PredictionCard({ title, description, imageUrl, buttonText }: Pre
       <div className="relative z-10 p-8">
         <h2 className="text-3xl font-bold mb-4">{title}</h2>
         <p className="text-lg text-gray-200 mb-8">{description}</p>
-        <button className="flex items-center gap-2 px-6 py-3 bg-bears-orange text-white rounded-lg hover:bg-bears-orange/90 transition-colors">
+        <button 
+          onClick={onButtonClick}
+          className="flex items-center gap-2 px-6 py-3 bg-bears-orange text-white rounded-lg hover:bg-bears-orange/90 transition-colors"
+        >
           {buttonText}
           <ArrowRight className="w-5 h-5" />
         </button>

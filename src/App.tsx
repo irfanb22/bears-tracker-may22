@@ -15,6 +15,7 @@ import { useAuth } from './lib/auth';
 import { AuthCallback } from './components/AuthCallback';
 import { RegisterModal } from './components/RegisterModal';
 import { LoginModal } from './components/LoginModal';
+import { GameForecastModal } from './components/GameForecastModal';
 import { DebugPanel } from './components/DebugPanel';
 import { AuthDebugPanel } from './components/AuthDebugPanel';
 import { DebugPredictionAccess } from './components/DebugPredictionAccess';
@@ -45,6 +46,7 @@ function HomePage() {
   const { user } = useAuth();
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isGameForecastModalOpen, setIsGameForecastModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   
   return (
@@ -123,7 +125,14 @@ function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {predictions.map((prediction) => (
-              <PredictionCard key={prediction.title} {...prediction} />
+              <PredictionCard 
+                key={prediction.title} 
+                {...prediction}
+                onButtonClick={prediction.title === "2025 Game-by-Game Forecast" 
+                  ? () => setIsGameForecastModalOpen(true) 
+                  : undefined
+                }
+              />
             ))}
           </div>
         </div>
@@ -176,6 +185,11 @@ function HomePage() {
           setIsLoginModalOpen(false);
           setIsRegisterModalOpen(true);
         }}
+      />
+
+      <GameForecastModal
+        isOpen={isGameForecastModalOpen}
+        onClose={() => setIsGameForecastModalOpen(false)}
       />
 
       <DebugPanel />
