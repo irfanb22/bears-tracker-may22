@@ -1,4 +1,5 @@
 import React from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, Calendar } from 'lucide-react';
 
@@ -14,6 +15,10 @@ interface Game {
   date: string;
 }
 
+interface Predictions {
+  [week: number]: 'win' | 'loss' | null;
+}
+
 const dummyGames: Game[] = [
   { week: 1, opponent: 'Minnesota Vikings', location: 'Away', date: 'Mon 9/9' },
   { week: 2, opponent: 'Detroit Lions', location: 'Away', date: 'Sun 9/14' },
@@ -22,6 +27,19 @@ const dummyGames: Game[] = [
 ];
 
 export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
+  const [predictions, setPredictions] = useState<Predictions>({});
+
+  const handlePrediction = (week: number, prediction: 'win' | 'loss') => {
+    setPredictions(prev => ({
+      ...prev,
+      [week]: prev[week] === prediction ? null : prediction
+    }));
+  };
+
+  const predictedGames = Object.values(predictions).filter(p => p !== null).length;
+  const totalGames = dummyGames.length;
+  const allGamesPredicted = predictedGames === totalGames;
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -63,6 +81,26 @@ export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
                   Make your win/loss predictions for each Bears game this season.
                 </p>
 
+                {/* Progress Indicator */}
+                <div className="mb-6 p-4 bg-bears-navy/5 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-bears-navy">
+                      Progress: {predictedGames} of {totalGames} games predicted
+                    </span>
+                    <span className="text-sm text-gray-500">
+                      {Math.round((predictedGames / totalGames) * 100)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(predictedGames / totalGames) * 100}%` }}
+                      transition={{ duration: 0.3 }}
+                      className="bg-bears-orange h-2 rounded-full"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-4">
                   {dummyGames.map((game) => (
                     <motion.div
@@ -74,8 +112,10 @@ export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
                     >
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-bears-navy text-white rounded-full flex items-center justify-center text-sm font-bold">
-                            {game.week}
+                          <div className="flex items-center justify-center">
+                            <span className="text-sm font-bold text-bears-navy bg-bears-navy/10 px-2 py-1 rounded">
+                              WK {game.week}
+                            </span>
                           </div>
                           <div>
                             <h3 className="font-semibold text-bears-navy">
@@ -97,13 +137,25 @@ export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
 
                       {/* Prediction buttons */}
                       <div className="grid grid-cols-2 gap-3">
-                        <button className="flex items-center justify-center gap-2 p-3 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors font-medium">
-                          <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-                          Win
+                        <button
+                          onClick={() => handlePrediction(game.week, 'win')}
+                          className={`flex items-center justify-center gap-2 p-3 rounded-lg transition-all duration-200 font-medium border-2 ${
+                            predictions[game.week] === 'win'
+                              ? 'bg-bears-navy text-white border-bears-navy'
+                              : 'bg-white text-bears-navy border-bears-navy hover:bg-bears-navy hover:text-white'
+                          }`}
+                        >
+                          🐻 Win
                         </button>
-                        <button className="flex items-center justify-center gap-2 p-3 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-colors font-medium">
-                          <span className="w-2 h-2 bg-red-600 rounded-full"></span>
-                          Loss
+                        <button
+                          onClick={() => handlePrediction(game.week, 'loss')}
+                          className={`flex items-center justify-center gap-2 p-3 rounded-lg transition-all duration-200 font-medium border-2 ${
+                            predictions[game.week] === 'loss'
+                              ? 'bg-red-500 text-white border-red-500'
+                              : 'bg-white text-red-500 border-red-500 hover:bg-red-500 hover:text-white'
+                          }`}
+                        >
+                          ❌ Loss
                         </button>
                       </div>
                     </motion.div>
@@ -120,7 +172,14 @@ export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
                   >
                     Cancel
                   </button>
-                  <button className="flex-1 px-4 py-3 bg-bears-orange text-white rounded-lg hover:bg-bears-orange/90 transition-colors font-medium">
+                  <button
+                    disabled={!allGamesPredicted}
+                    className={`flex-1 px-4 py-3 rounded-lg transition-colors font-medium ${
+                      allGamesPredicted
+                        ? 'bg-bears-orange text-white hover:bg-bears-orange/90'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
                     Save Predictions
                   </button>
                 </div>
