@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, Calendar, Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -42,7 +42,7 @@ export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
     }
   }, [isOpen]);
 
-  const fetchGames = async () => {
+  const fetchGames = useCallback(async () => {
     setLoadingGames(true);
     setErrorGames(null);
 
@@ -69,7 +69,7 @@ export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
     } finally {
       setLoadingGames(false);
     }
-  };
+  }, []);
 
   const handlePrediction = (gameId: string, prediction: 'win' | 'loss') => {
     setPredictions(prev => ({

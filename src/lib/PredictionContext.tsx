@@ -151,7 +151,7 @@ export function PredictionProvider({ children }: { children: React.ReactNode }) 
   const [aggregatedPredictions, setAggregatedPredictions] = useState<AggregatedPredictions>({});
   const [userPredictions, setUserPredictions] = useState<UserPredictions>({});
 
-  const fetchQuestions = async () => {
+  const fetchQuestions = useCallback(async () => {
     try {
       const { data, error: fetchError } = await supabase
         .from('questions')
@@ -173,9 +173,9 @@ export function PredictionProvider({ children }: { children: React.ReactNode }) 
       console.error('Error fetching questions:', err);
       throw err;
     }
-  };
+  }, []);
 
-  const fetchAggregatedPredictions = async (currentQuestions: Question[]) => {
+  const fetchAggregatedPredictions = useCallback(async (currentQuestions: Question[]) => {
     try {
       // Set loading state for all questions
       setAggregatedPredictions(prev => {
@@ -203,9 +203,9 @@ export function PredictionProvider({ children }: { children: React.ReactNode }) 
       console.error('Error fetching aggregated predictions:', err);
       throw err;
     }
-  };
+  }, []);
 
-  const fetchUserPredictions = async () => {
+  const fetchUserPredictions = useCallback(async () => {
     if (!user) {
       setUserPredictions({});
       setPredictions([]);
@@ -253,14 +253,14 @@ export function PredictionProvider({ children }: { children: React.ReactNode }) 
       console.error('Error fetching user predictions:', err);
       throw err;
     }
-  };
+  }, [user]);
 
-  const calculateStats = (predictions: Prediction[]) => ({
+  const calculateStats = useCallback((predictions: Prediction[]) => ({
     totalPredictions: predictions.length,
     upcomingPredictions: predictions.length,
-  });
+  }), []);
 
-  const fetchPredictions = async () => {
+  const fetchPredictions = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -279,9 +279,9 @@ export function PredictionProvider({ children }: { children: React.ReactNode }) 
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchQuestions, fetchAggregatedPredictions, fetchUserPredictions]);
 
-  const setupRealtimeSubscription = () => {
+  const setupRealtimeSubscription = useCallback(() => {
     const channel = supabase
       .channel('predictions_changes')
       .on(
@@ -309,9 +309,9 @@ export function PredictionProvider({ children }: { children: React.ReactNode }) 
     return () => {
       channel.unsubscribe();
     };
-  };
+  }, [fetchQuestions, fetchAggregatedPredictions, fetchUserPredictions, user]);
 
-  const makePrediction = async (questionId: string, prediction: string, confidence: 'low' | 'medium' | 'high') => {
+  const makePrediction = useCallback(async (questionId: string, prediction: string, confidence: 'low' | 'medium' | 'high') => {
     if (!user) throw new Error('User not authenticated');
 
     try {
@@ -369,13 +369,13 @@ export function PredictionProvider({ children }: { children: React.ReactNode }) 
       console.error('Error making prediction:', err);
       throw err;
     }
-  };
+  }, [user, questions, fetchPredictions]);
 
   useEffect(() => {
     fetchPredictions();
     const cleanup = setupRealtimeSubscription();
     return cleanup;
-  }, [user]);
+  }, [user, fetchPredictions, setupRealtimeSubscription]);
 
   const clearError = () => setError(null);
 
