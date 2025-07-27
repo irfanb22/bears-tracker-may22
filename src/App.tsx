@@ -27,12 +27,6 @@ const predictions = [
     imageUrl: "https://images.unsplash.com/photo-1566577739112-5180d4bf9390?auto=format&fit=crop&q=80&w=1000",
     buttonText: "Make Your Predictions",
   },
-  {
-    title: "2025 Game-by-Game Forecast",
-    description: "Simple win or loss predictions for all 17 games.",
-    imageUrl: "https://images.unsplash.com/photo-1566577739112-5180d4bf9390?auto=format&fit=crop&q=80&w=1000",
-    buttonText: "Predict the Season",
-  }
 ];
 
 const categories = [
@@ -86,6 +80,28 @@ function HomePage() {
         </div>
       </section>
 
+      {/* Season Predictions Section */}
+      <section className="py-16 px-4 bg-gray-50">
+        <div className="max-w-6xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-bears-navy mb-6">
+            Predict Every Game
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
+            Make your win/loss predictions for all 17 Bears games this season. 
+            Lock in your forecasts before the season starts and see how your 
+            predictions stack up against reality.
+          </p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setIsGameForecastModalOpen(true)}
+            className="px-8 py-4 bg-bears-orange text-white text-lg font-semibold rounded-lg hover:bg-bears-orange/90 transition-colors"
+          >
+            Predict the Season
+          </motion.button>
+        </div>
+      </section>
+
       {/* Bears Season Predictions Section */}
       <section className="py-16 px-4 bg-white">
         <div className="max-w-6xl mx-auto">
@@ -123,15 +139,11 @@ function HomePage() {
       {/* Prediction Cards Section */}
       <section className="py-16 px-4 bg-gray-50">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 gap-8">
             {predictions.map((prediction) => (
               <PredictionCard 
                 key={prediction.title} 
                 {...prediction}
-                onButtonClick={prediction.title === "2025 Game-by-Game Forecast" 
-                  ? () => setIsGameForecastModalOpen(true) 
-                  : undefined
-                }
               />
             ))}
           </div>
