@@ -20,15 +20,6 @@ import { DebugPanel } from './components/DebugPanel';
 import { AuthDebugPanel } from './components/AuthDebugPanel';
 import { DebugPredictionAccess } from './components/DebugPredictionAccess';
 
-const predictions = [
-  {
-    title: "Caleb's Sophomore Season",
-    description: "Will the second-year QB break records? Predict Williams' passing yards, touchdowns, and completion percentage in year two.",
-    imageUrl: "https://images.unsplash.com/photo-1566577739112-5180d4bf9390?auto=format&fit=crop&q=80&w=1000",
-    buttonText: "Make Your Predictions",
-  },
-];
-
 const categories = [
   { id: 'all', label: 'All Predictions' },
   { id: 'player_stats', label: 'Player Stats' },
@@ -136,19 +127,6 @@ function HomePage() {
         </div>
       </section>
 
-      {/* Prediction Cards Section */}
-      <section className="py-16 px-4 bg-gray-50">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 gap-8">
-            {predictions.map((prediction) => (
-              <PredictionCard 
-                key={prediction.title} 
-                {...prediction}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Sign-up CTA Section - Only show for non-authenticated users */}
       {!user && (
