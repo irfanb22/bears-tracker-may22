@@ -81,26 +81,6 @@ export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
                   Make your win/loss predictions for each Bears game this season.
                 </p>
 
-                {/* Progress Indicator */}
-                <div className="mb-6 p-4 bg-bears-navy/5 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-bears-navy">
-                      Progress: {predictedGames} of {totalGames} games predicted
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {Math.round((predictedGames / totalGames) * 100)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(predictedGames / totalGames) * 100}%` }}
-                      transition={{ duration: 0.3 }}
-                      className="bg-bears-orange h-2 rounded-full"
-                    />
-                  </div>
-                </div>
-
                 <div className="space-y-4">
                   {dummyGames.map((game) => (
                     <motion.div
@@ -155,7 +135,7 @@ export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
                               : 'bg-white text-red-500 border-red-500 hover:bg-red-500 hover:text-white'
                           }`}
                         >
-                          ❌ Loss
+                          <span className="drop-shadow-sm">❌</span> Loss
                         </button>
                       </div>
                     </motion.div>
