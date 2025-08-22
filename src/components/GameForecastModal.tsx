@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, Calendar, Loader2, AlertCircle } from 'lucide-react';
+import { X, MapPin, Calendar, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 
@@ -28,6 +28,7 @@ export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
   const [errorGames, setErrorGames] = useState<string | null>(null);
   const [savingPredictions, setSavingPredictions] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Fetch games when modal opens
   useEffect(() => {
@@ -84,8 +85,12 @@ export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
       return;
     }
 
+    // Debug: Log user object to verify user.id exists
+    console.log('User object:', user);
+
     setSavingPredictions(true);
     setSaveError(null);
+    setSaveSuccess(false);
 
     try {
       // Prepare predictions for database insertion
@@ -94,10 +99,14 @@ export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
         .map(([gameId, prediction]) => ({
           user_id: user.id,
           game_id: gameId,
+          question_id: null, // Explicitly set for game predictions
           prediction: prediction as string,
           confidence: 'medium' as const,
           prediction_type_id: 'd290f1ee-6c54-4b01-90e6-d701748f0852' // Game prediction type
         }));
+
+      // Debug: Log predictions being prepared for insertion
+      console.log('Predictions to insert:', predictionInserts);
 
       if (predictionInserts.length === 0) {
         setSaveError('Please make at least one prediction before saving');
@@ -108,18 +117,31 @@ export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
       const { error } = await supabase
         .from('predictions')
         .upsert(predictionInserts, {
-          onConflict: 'user_id,game_id',
+          onConflict: 'user_id, game_id',
           ignoreDuplicates: false
         });
 
       if (error) throw error;
 
+      // Show success message
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+
       // Close modal on success
-      onClose();
+      setTimeout(() => onClose(), 1500);
 
     } catch (err) {
+      // Debug: Log full error object for detailed debugging
+      console.error('Full error object:', err);
       console.error('Error saving predictions:', err);
-      setSaveError(err instanceof Error ? err.message : 'Failed to save predictions');
+      
+      if (err instanceof Error) {
+        // Check if error has additional details
+        const errorMessage = (err as any).details || err.message || 'Failed to save predictions';
+        setSaveError(errorMessage);
+      } else {
+        setSaveError('Failed to save predictions');
+      }
     } finally {
       setSavingPredictions(false);
     }
@@ -258,6 +280,13 @@ export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
                   <div className="flex items-center gap-2 p-4 bg-red-50 text-red-600 rounded-lg mt-4">
                     <AlertCircle className="w-5 h-5 flex-shrink-0" />
                     <span>{saveError}</span>
+                  </div>
+                )}
+
+                {saveSuccess && (
+                  <div className="flex items-center gap-2 p-4 bg-green-50 text-green-600 rounded-lg mt-4">
+                    <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                    <span>Predictions saved successfully!</span>
                   </div>
                 )}
               </div>
