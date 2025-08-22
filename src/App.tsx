@@ -15,7 +15,6 @@ import { useAuth } from './lib/auth';
 import { AuthCallback } from './components/AuthCallback';
 import { RegisterModal } from './components/RegisterModal';
 import { LoginModal } from './components/LoginModal';
-import { GameForecastModal } from './components/GameForecastModal';
 import { DebugPanel } from './components/DebugPanel';
 import { AuthDebugPanel } from './components/AuthDebugPanel';
 import { DebugPredictionAccess } from './components/DebugPredictionAccess';
@@ -31,7 +30,6 @@ function HomePage() {
   const { user } = useAuth();
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isGameForecastModalOpen, setIsGameForecastModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   
   return (
@@ -68,28 +66,6 @@ function HomePage() {
               </motion.button>
             )}
           </div>
-        </div>
-      </section>
-
-      {/* Season Predictions Section */}
-      <section className="py-16 px-4 bg-gray-50">
-        <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-bears-navy mb-6">
-            Predict Every Game
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed">
-            Make your win/loss predictions for all 17 Bears games this season. 
-            Lock in your forecasts before the season starts and see how your 
-            predictions stack up against reality.
-          </p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setIsGameForecastModalOpen(true)}
-            className="px-8 py-4 bg-bears-orange text-white text-lg font-semibold rounded-lg hover:bg-bears-orange/90 transition-colors"
-          >
-            Predict the Season
-          </motion.button>
         </div>
       </section>
 
@@ -175,11 +151,6 @@ function HomePage() {
           setIsLoginModalOpen(false);
           setIsRegisterModalOpen(true);
         }}
-      />
-
-      <GameForecastModal
-        isOpen={isGameForecastModalOpen}
-        onClose={() => setIsGameForecastModalOpen(false)}
       />
 
       <DebugPanel />
