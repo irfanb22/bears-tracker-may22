@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { usePredictions } from '../lib/PredictionContext';
 import { 
   Loader2, Save, AlertCircle, Plus, X, Edit2, 
   CheckCircle, PlusCircle, MinusCircle, Star, StarOff, AlertTriangle
@@ -46,7 +45,6 @@ const INITIAL_NEW_QUESTION: NewQuestion = {
 };
 
 export function AdminDashboard() {
-  const { fetchPredictions } = usePredictions();
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<Record<string, boolean>>({});
@@ -132,35 +130,6 @@ export function AdminDashboard() {
     setSaving(prev => ({ ...prev, new: true }));
     setError(null);
 
-    // Client-side validation
-    if (!newQuestion.text.trim()) {
-      setError('Question text is required');
-      setSaving(prev => ({ ...prev, new: false }));
-      return;
-    }
-
-    if (newQuestion.question_type === 'multiple_choice') {
-      if (newQuestion.choices.length < 2) {
-        setError('Multiple choice questions must have at least 2 choices');
-        setSaving(prev => ({ ...prev, new: false }));
-        return;
-      }
-
-      const hasEmptyChoices = newQuestion.choices.some(choice => !choice.text.trim());
-      if (hasEmptyChoices) {
-        setError('All choice options must have text');
-        setSaving(prev => ({ ...prev, new: false }));
-        return;
-      }
-
-      const uniqueChoices = new Set(newQuestion.choices.map(choice => choice.text.trim().toLowerCase()));
-      if (uniqueChoices.size !== newQuestion.choices.length) {
-        setError('All choice options must be unique');
-        setSaving(prev => ({ ...prev, new: false }));
-        return;
-      }
-    }
-
     try {
       const { data, error: questionError } = await supabase
         .from('questions')
@@ -182,23 +151,16 @@ export function AdminDashboard() {
         const { error: choicesError } = await supabase
           .from('choices')
           .insert(
-            newQuestion.choices
-              .filter(choice => choice.text.trim()) // Extra safety filter
-              .map(choice => ({
+            newQuestion.choices.map(choice => ({
               question_id: data.id,
-              text: choice.text.trim()
+              text: choice.text
             }))
           );
 
         if (choicesError) throw choicesError;
       }
 
-      // Refresh the questions list in admin
       await fetchQuestions();
-      
-      // Refresh the PredictionContext so the question appears immediately on the main page
-      await fetchPredictions();
-      
       setShowNewQuestionForm(false);
       setNewQuestion(INITIAL_NEW_QUESTION);
       setSuccess('Question created successfully');
@@ -375,7 +337,7 @@ export function AdminDashboard() {
                 {newQuestion.question_type === 'multiple_choice' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Choices * (minimum 2 required)
+                      Choices
                     </label>
                     <div className="space-y-3">
                       {newQuestion.choices.map((choice, index) => (
@@ -388,9 +350,7 @@ export function AdminDashboard() {
                               newChoices[index].text = e.target.value;
                               setNewQuestion(prev => ({ ...prev, choices: newChoices }));
                             }}
-                            className={`flex-1 px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-bears-orange focus:border-bears-orange ${
-                              !choice.text.trim() && error ? 'border-red-300' : 'border-gray-300'
-                            }`}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-bears-orange focus:border-bears-orange"
                             placeholder={`Choice ${index + 1}`}
                             required
                           />
@@ -400,7 +360,6 @@ export function AdminDashboard() {
                               const newChoices = newQuestion.choices.filter((_, i) => i !== index);
                               setNewQuestion(prev => ({ ...prev, choices: newChoices }));
                             }}
-                            disabled={newQuestion.choices.length <= 2}
                             className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                           >
                             <MinusCircle className="w-5 h-5" />
@@ -418,12 +377,6 @@ export function AdminDashboard() {
                         <PlusCircle className="w-5 h-5" />
                         Add Choice
                       </button>
-                      {newQuestion.choices.length < 2 && (
-                        <p className="text-sm text-amber-600 flex items-center gap-1">
-                          <AlertTriangle className="w-4 h-4" />
-                          Add at least 2 choices for multiple choice questions
-                        </p>
-                      )}
                     </div>
                   </div>
                 )}
@@ -431,13 +384,7 @@ export function AdminDashboard() {
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    disabled={
-                      saving.new || 
-                      !newQuestion.text.trim() ||
-                      (newQuestion.question_type === 'multiple_choice' && 
-                        (newQuestion.choices.length < 2 || newQuestion.choices.some(choice => !choice.text.trim()))
-                      )
-                    }
+                    disabled={saving.new || !newQuestion.text}
                     className="flex items-center gap-2 px-6 py-2 bg-bears-orange text-white rounded-lg hover:bg-bears-orange/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {saving.new ? (
@@ -464,7 +411,7 @@ export function AdminDashboard() {
             {questions.map(question => (
               <div key={question.id} className="p-6">
                 <div className="flex flex-col gap-4">
-                        Question Text *
+                  <div className="flex items-start justify-between">
                     {editingQuestionId === question.id ? (
                       <input
                         type="text"
@@ -538,9 +485,7 @@ export function AdminDashboard() {
                         onChange={(e) => updateQuestion(question.id, { 
                           status: e.target.value as Question['status']
                         })}
-                        className={`w-full px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-bears-orange focus:border-bears-orange ${
-                          !newQuestion.text.trim() && error ? 'border-red-300' : 'border-gray-300'
-                        }`}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-bears-orange focus:border-bears-orange"
                       >
                         <option value="live">Live</option>
                         <option value="pending">Pending</option>
