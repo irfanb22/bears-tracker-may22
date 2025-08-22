@@ -116,10 +116,7 @@ export function GameForecastModal({ isOpen, onClose }: GameForecastModalProps) {
       // Save predictions to database
       const { error } = await supabase
         .from('predictions')
-        .upsert(predictionInserts, {
-          onConflict: 'user_id, game_id',
-          ignoreDuplicates: false
-        });
+        .insert(predictionInserts);
 
       if (error) throw error;
 
