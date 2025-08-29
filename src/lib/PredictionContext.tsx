@@ -11,6 +11,7 @@ import thuneyImage from '../assets/joe.jpg';
 import benJohnsonImage from '../assets/ben_johnson.jpg';
 import bearsLogo from '../assets/bears logo.png';
 import draftLogo from '../assets/NFL_Draft_logo.jpg';
+import briskerImage from '../assets/brisker.png';
 import { FolderRoot as Football } from 'lucide-react';
 
 export interface Question {
@@ -93,6 +94,7 @@ export const questionAssets: Record<string, { image?: string; icon?: React.Eleme
   '7ba7b814-9dad-11d1-80b4-00c04fd430c8': { image: draftLogo }, // Draft question
   'da0b27ee-0b65-401a-a473-092631a19efb': { image: bearsLogo }, // Bears top-10 offense
   'ace92d81-b9d4-48ed-b2ab-ef3390ed0840': { image: bearsLogo }, // Bears top-10 defense
+  '2ca00c0b-147f-4fd0-bc95-6d989ed11ac4': { image: briskerImage }, // Brisker question
 };
 
 const calculateAggregates = (data: any[] | null, questions: Question[]): AggregatedPredictions => {
