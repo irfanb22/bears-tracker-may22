@@ -95,6 +95,8 @@ export const questionAssets: Record<string, { image?: string; icon?: React.Eleme
   'da0b27ee-0b65-401a-a473-092631a19efb': { image: bearsLogo }, // Bears top-10 offense
   'ace92d81-b9d4-48ed-b2ab-ef3390ed0840': { image: bearsLogo }, // Bears top-10 defense
   '2ca00c0b-147f-4fd0-bc95-6d989ed11ac4': { image: briskerImage }, // Brisker question
+  '1966ba03-faed-4aaa-94e4-c03c5552ba6b': { image: calebImage }, // Caleb Williams question
+  '817c1398-53c5-49eb-aa93-6bc88bbe562b': { image: calebImage }, // Caleb Williams question
 };
 
 const calculateAggregates = (data: any[] | null, questions: Question[]): AggregatedPredictions => {
