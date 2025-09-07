@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Navbar } from './Navbar';
-import { Trophy, Target, Star, Check, X, AlertCircle, Loader2, ArrowRight, User, Settings, Clock, Pencil } from 'lucide-react';
+import { Trophy, Target, Star, Check, X, AlertCircle, Loader2, ArrowRight, User, Settings, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -54,12 +54,6 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPrediction, setSelectedPrediction] = useState<PredictionWithQuestion | null>(null);
-  const [displayName, setDisplayName] = useState<string>('');
-  const [isEditingDisplayName, setIsEditingDisplayName] = useState(false);
-  const [editDisplayNameError, setEditDisplayNameError] = useState<string | null>(null);
-  const [editDisplayNameSuccess, setEditDisplayNameSuccess] = useState<string | null>(null);
-  const [originalDisplayName, setOriginalDisplayName] = useState<string>('');
-  const [savingDisplayName, setSavingDisplayName] = useState(false);
 
   const fetchDashboardData = async () => {
     if (!user) return;
@@ -119,76 +113,8 @@ export function Dashboard() {
     }
   };
 
-  const fetchUserDisplayName = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('display_name')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-
-      const name = data?.display_name || '';
-      setDisplayName(name);
-      setOriginalDisplayName(name);
-    } catch (err) {
-      console.error('Error fetching user display name:', err);
-    }
-  };
-
-  const handleSaveDisplayName = async () => {
-    if (!user) return;
-
-    const trimmedName = displayName.trim();
-    
-    // Client-side validation
-    if (trimmedName.length < 2 || trimmedName.length > 50) {
-      setEditDisplayNameError('Display name must be between 2 and 50 characters');
-      return;
-    }
-
-    setSavingDisplayName(true);
-    setEditDisplayNameError(null);
-
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ display_name: trimmedName })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      setOriginalDisplayName(trimmedName);
-      setDisplayName(trimmedName);
-      setIsEditingDisplayName(false);
-      setEditDisplayNameSuccess('Display name updated successfully!');
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setEditDisplayNameSuccess(null), 3000);
-    } catch (err) {
-      console.error('Error updating display name:', err);
-      setEditDisplayNameError(err instanceof Error ? err.message : 'Failed to update display name');
-    } finally {
-      setSavingDisplayName(false);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setDisplayName(originalDisplayName);
-    setEditDisplayNameError(null);
-    setEditDisplayNameSuccess(null);
-    setIsEditingDisplayName(false);
-  };
-
   useEffect(() => {
     fetchDashboardData();
-  }, [user]);
-
-  useEffect(() => {
-    fetchUserDisplayName();
   }, [user]);
 
   const handlePredictionUpdate = async () => {
@@ -253,96 +179,13 @@ export function Dashboard() {
         <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h1 className="text-3xl font-bold text-bears-navy">Your Prediction Dashboard</h1>
-            <div className="flex flex-col items-end gap-2">
-              <div className="flex items-center gap-2 text-gray-600 bg-white px-4 py-2 rounded-lg shadow-sm">
-                <User className="w-5 h-5" />
-                <span>{user?.email}</span>
-              </div>
-              
-              {/* Display Name Section */}
-              <div className="bg-white px-4 py-2 rounded-lg shadow-sm min-w-[200px]">
-                {!isEditingDisplayName ? (
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex flex-col">
-                      <span className="text-xs text-gray-500">Display Name</span>
-                      <span className="text-sm font-medium text-gray-700">
-                        {displayName || 'Set your display name'}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setIsEditingDisplayName(true)}
-                      className="p-1 text-gray-400 hover:text-bears-navy transition-colors"
-                      title="Edit display name"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <label className="text-xs text-gray-500">Display Name</label>
-                    <input
-                      type="text"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-bears-orange focus:border-bears-orange"
-                      placeholder="Enter display name"
-                      maxLength={50}
-                      autoFocus
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleSaveDisplayName}
-                        disabled={savingDisplayName}
-                        className="flex items-center gap-1 px-2 py-1 bg-bears-orange text-white text-xs rounded hover:bg-bears-orange/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {savingDisplayName ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          'Save'
-                        )}
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        disabled={savingDisplayName}
-                        className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300 transition-colors disabled:opacity-50"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+            <div className="flex items-center gap-2 text-gray-600 bg-white px-4 py-2 rounded-lg shadow-sm">
+              <User className="w-5 h-5" />
+              <span>{user?.email}</span>
             </div>
           </div>
           <p className="mt-2 text-gray-600">Track your predictions and performance</p>
         </div>
-
-        {/* Success/Error Messages for Display Name */}
-        <AnimatePresence>
-          {editDisplayNameSuccess && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3"
-            >
-              <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-              <p className="text-green-700">{editDisplayNameSuccess}</p>
-            </motion.div>
-          )}
-
-          {editDisplayNameError && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3"
-            >
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-              <p className="text-red-700">{editDisplayNameError}</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {error && (
           <div className="mb-8 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">

@@ -31,30 +31,6 @@ export function useAuth() {
   return context;
 }
 
-// Ensure user profile exists in public.users table
-const ensureUserProfile = async (user: User) => {
-  try {
-    authDebugger.log('Ensuring user profile exists', { userId: user.id, email: user.email });
-    
-    const { error } = await supabase
-      .from('users')
-      .upsert({
-        id: user.id,
-        email: user.email,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'id'
-      });
-
-    if (error) {
-      authDebugger.logError('Error ensuring user profile', error);
-    } else {
-      authDebugger.log('User profile ensured successfully');
-    }
-  } catch (error) {
-    authDebugger.logError('Unexpected error ensuring user profile', error);
-  }
-};
 // Auth provider component
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -65,17 +41,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     authDebugger.log('Initializing auth state');
     
     // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
         authDebugger.logError('Error getting initial session', error);
       } else {
         authDebugger.log('Initial session retrieved', { session });
         setUser(session?.user ?? null);
-        
-        // Ensure user profile exists if we have a session
-        if (session?.user) {
-          await ensureUserProfile(session.user);
-        }
       }
       setLoading(false);
     });
@@ -83,15 +54,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       authDebugger.log('Auth state changed', { event: _event, session });
       setUser(session?.user ?? null);
       authDebugger.logAuthState(session?.user ?? null);
-      
-      // Ensure user profile exists when user signs in
-      if (_event === 'SIGNED_IN' && session?.user) {
-        await ensureUserProfile(session.user);
-      }
     });
 
     return () => {
