@@ -15,6 +15,8 @@ interface Question {
   status: 'live' | 'pending' | 'completed';
   deadline: string;
   featured: boolean;
+  season: number;
+  correct_answer: string | null;
   question_type: 'yes_no' | 'multiple_choice';
   choices?: Choice[];
 }
@@ -37,17 +39,24 @@ interface PredictionWithQuestion {
 
 interface Stats {
   totalPredictions: number;
+  resolvedPredictions: number;
+  pendingPredictions: number;
   correctPredictions: number;
-  upcomingPredictions: number;
+  accuracy: number;
   totalPoints: number;
 }
+
+const normalizePrediction = (value: string | null | undefined) =>
+  (value || '').trim().toLowerCase();
 
 export function Dashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState<Stats>({
     totalPredictions: 0,
+    resolvedPredictions: 0,
+    pendingPredictions: 0,
     correctPredictions: 0,
-    upcomingPredictions: 0,
+    accuracy: 0,
     totalPoints: 0
   });
   const [predictions, setPredictions] = useState<PredictionWithQuestion[]>([]);
@@ -70,6 +79,8 @@ export function Dashboard() {
             status,
             deadline,
             featured,
+            season,
+            correct_answer,
             question_type,
             choices (
               id,
@@ -92,15 +103,35 @@ export function Dashboard() {
           }
           return acc;
         }, []);
-        
-        // Calculate total points
-        const totalPoints = latestPredictions.reduce((sum, pred) => sum + (pred.points_earned || 0), 0);
-        
+
+        // Score dashboard metrics only for the 2025 season.
+        const seasonPredictions = latestPredictions.filter(
+          (pred) => pred.questions?.season === 2025
+        );
+
+        const resolvedPredictions = seasonPredictions.filter((pred) => {
+          const correctAnswer = pred.questions?.correct_answer;
+          return !!correctAnswer && correctAnswer.trim().length > 0;
+        });
+
+        const correctPredictions = resolvedPredictions.filter((pred) => {
+          const correctAnswer = pred.questions?.correct_answer;
+          return normalizePrediction(pred.prediction) === normalizePrediction(correctAnswer);
+        }).length;
+
+        const totalPredictions = seasonPredictions.length;
+        const resolvedCount = resolvedPredictions.length;
+        const pendingPredictions = totalPredictions - resolvedCount;
+        const accuracy = resolvedCount > 0 ? (correctPredictions / resolvedCount) * 100 : 0;
+        const totalPoints = correctPredictions;
+
         setStats({
-          totalPredictions: latestPredictions.length,
-          correctPredictions: 0,
-          upcomingPredictions: latestPredictions.length,
-          totalPoints: totalPoints
+          totalPredictions,
+          resolvedPredictions: resolvedCount,
+          pendingPredictions,
+          correctPredictions,
+          accuracy,
+          totalPoints
         });
         
         setPredictions(latestPredictions);
@@ -194,7 +225,7 @@ export function Dashboard() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-12">
           <motion.div
             whileHover={{ y: -4 }}
             className="bg-white rounded-xl shadow-sm p-6 transition-shadow hover:shadow-md"
@@ -219,8 +250,23 @@ export function Dashboard() {
                 <Target className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-500">Active Predictions</p>
-                <p className="text-2xl font-bold text-green-600">{stats.upcomingPredictions}</p>
+                <p className="text-sm font-medium text-gray-500">Resolved Predictions</p>
+                <p className="text-2xl font-bold text-green-600">{stats.resolvedPredictions}</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="bg-white rounded-xl shadow-sm p-6 transition-shadow hover:shadow-md"
+          >
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <Check className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Accuracy (Resolved)</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.accuracy.toFixed(1)}%</p>
               </div>
             </div>
           </motion.div>
@@ -236,6 +282,7 @@ export function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-500">2025 Season Score</p>
                 <p className="text-2xl font-bold text-yellow-600">{stats.totalPoints}</p>
+                <p className="text-xs text-gray-500 mt-1">{stats.pendingPredictions} pending</p>
               </div>
             </div>
           </motion.div>
@@ -249,6 +296,11 @@ export function Dashboard() {
             const asset = questionAssets[prediction.question_id];
             const isMultipleChoice = question.question_type === 'multiple_choice';
             const isExpired = isPast(new Date(question.deadline));
+            const isResolved = !!question.correct_answer && question.correct_answer.trim().length > 0;
+            const isCorrect = isResolved && (
+              normalizePrediction(prediction.prediction) === normalizePrediction(question.correct_answer)
+            );
+            const pointsEarned = isResolved && isCorrect ? 1 : 0;
             
             return (
               <motion.div
@@ -329,11 +381,9 @@ export function Dashboard() {
                     <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                       <span className="text-gray-600">Points earned:</span>
                       <span className={`font-medium ${
-                        prediction.points_earned > 0 ? 'text-green-600' : 
-                        prediction.points_earned < 0 ? 'text-red-600' : 
-                        'text-gray-600'
+                        pointsEarned > 0 ? 'text-green-600' : 'text-gray-600'
                       }`}>
-                        {prediction.points_earned || 0}
+                        {pointsEarned}
                       </span>
                     </div>
 
