@@ -13,7 +13,5 @@ export default defineConfig({
     strictPort: true, // Ensure exact port is used
     cors: true, // Enable CORS for development
   },
-  base: process.env.NODE_ENV === 'production' 
-    ? 'https://bearsprediction.com/'
-    : '/',
+  base: '/',
 });
