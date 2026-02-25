@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart as ChartBar, LogOut, Menu, X, HelpCircle, User, Settings, Trophy } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoginModal } from './LoginModal';
 import BearClawLogo from '../assets/bears_claw_logo.png';
+import { supabase } from '../lib/supabase';
 
 interface NavbarProps {
   onRegisterClick?: () => void;
@@ -15,14 +16,37 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
   const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAdminState = async () => {
+      if (!user) {
+        if (isMounted) {
+          setIsAdmin(false);
+        }
+        return;
+      }
+
+      const { data, error } = await supabase.rpc('current_user_is_admin');
+      if (isMounted) {
+        setIsAdmin(!error && Boolean(data));
+      }
+    };
+
+    loadAdminState();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
     // Redirect to home page instead of login
     navigate('/');
   };
-
-  const isAdmin = user?.email === 'irfanbhanji@gmail.com';
 
   return (
     <nav className="sticky top-0 bg-bears-navy border-b border-white/20 z-50">
