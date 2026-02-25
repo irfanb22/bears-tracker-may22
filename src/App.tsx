@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthForm } from './components/AuthForm';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminProtectedRoute } from './components/AdminProtectedRoute';
 import { Navbar } from './components/Navbar';
 import { motion } from 'framer-motion';
 import { Calendar } from 'lucide-react';
-import { PredictionCard } from './components/PredictionCard';
 import { PredictionInterface } from './components/PredictionInterface';
 import { Dashboard } from './components/Dashboard';
 import { Leaderboard } from './components/Leaderboard';

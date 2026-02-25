@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Navbar } from './Navbar';
 import { Trophy, Target, Star, Check, X, AlertCircle, Loader2, ArrowRight, User, Settings, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { PredictionModal } from './PredictionModal';
 import { questionAssets } from '../lib/PredictionContext';
 import { formatDistanceToNow, isPast } from 'date-fns';
@@ -64,7 +64,7 @@ export function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [selectedPrediction, setSelectedPrediction] = useState<PredictionWithQuestion | null>(null);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -142,11 +142,11 @@ export function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchDashboardData();
-  }, [user]);
+  }, [fetchDashboardData]);
 
   const handlePredictionUpdate = async () => {
     await fetchDashboardData();

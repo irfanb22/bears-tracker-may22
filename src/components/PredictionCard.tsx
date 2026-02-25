@@ -22,7 +22,7 @@ export function PredictionCard({ title, description, imageUrl, buttonText, onBut
 
       <div className="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1566577739112-5180d4bf9390?auto=format&fit=crop&q=80&w=1000"
+          src={imageUrl}
           alt={title}
           className="w-full h-full object-cover opacity-20"
         />

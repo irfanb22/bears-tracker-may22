@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, X, Loader2, ArrowRight, AlertCircle, LogIn, XCircle, FolderRoot as Football, Clock } from 'lucide-react';
+import { Check, X, Loader2, ArrowRight, AlertCircle, LogIn, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
@@ -7,7 +7,7 @@ import { usePredictions } from '../lib/PredictionContext';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { LoginModal } from './LoginModal';
 import { RegisterModal } from './RegisterModal';
-import type { Question, Choice } from '../lib/PredictionContext';
+import type { Question } from '../lib/PredictionContext';
 
 interface PredictionInterfaceProps {
   selectedCategory?: string;

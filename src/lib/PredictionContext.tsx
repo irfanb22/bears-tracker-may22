@@ -1,5 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { useAuth } from './auth';
 
@@ -12,7 +12,6 @@ import benJohnsonImage from '../assets/ben_johnson.jpg';
 import bearsLogo from '../assets/bears logo.png';
 import draftLogo from '../assets/NFL_Draft_logo.jpg';
 import briskerImage from '../assets/brisker.png';
-import { FolderRoot as Football } from 'lucide-react';
 
 export interface Question {
   id: string;
@@ -42,6 +41,11 @@ export interface Prediction {
     text: string;
     category: string;
   };
+}
+
+interface RawPredictionRow {
+  question_id: string;
+  prediction: string;
 }
 
 interface PredictionStats {
@@ -99,7 +103,7 @@ export const questionAssets: Record<string, { image?: string; icon?: React.Eleme
   '817c1398-53c5-49eb-aa93-6bc88bbe562b': { image: calebImage }, // Caleb Williams question
 };
 
-const calculateAggregates = (data: any[] | null, questions: Question[]): AggregatedPredictions => {
+const calculateAggregates = (data: RawPredictionRow[] | null, questions: Question[]): AggregatedPredictions => {
   const aggregates: AggregatedPredictions = {};
 
   // Initialize aggregates for all questions
@@ -153,9 +157,13 @@ export function PredictionProvider({ children }: { children: React.ReactNode }) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recentlyAdded, setRecentlyAdded] = useState<Set<string>>(new Set());
-  const [realtimeChannel, setRealtimeChannel] = useState<RealtimeChannel | null>(null);
   const [aggregatedPredictions, setAggregatedPredictions] = useState<AggregatedPredictions>({});
   const [userPredictions, setUserPredictions] = useState<UserPredictions>({});
+
+  const calculateStats = useCallback((predictionRows: Prediction[]) => ({
+    totalPredictions: predictionRows.length,
+    upcomingPredictions: predictionRows.length,
+  }), []);
 
   const fetchQuestions = useCallback(async () => {
     try {
@@ -259,12 +267,7 @@ export function PredictionProvider({ children }: { children: React.ReactNode }) 
       console.error('Error fetching user predictions:', err);
       throw err;
     }
-  }, [user]);
-
-  const calculateStats = useCallback((predictions: Prediction[]) => ({
-    totalPredictions: predictions.length,
-    upcomingPredictions: predictions.length,
-  }), []);
+  }, [user, calculateStats]);
 
   const fetchPredictions = useCallback(async () => {
     try {
@@ -309,8 +312,6 @@ export function PredictionProvider({ children }: { children: React.ReactNode }) 
         }
       )
       .subscribe();
-
-    setRealtimeChannel(channel);
 
     return () => {
       channel.unsubscribe();
