@@ -11,9 +11,6 @@ export default defineConfig({
     host: true, // Needed for proper WebContainer support
     port: 5173,
     strictPort: true, // Ensure exact port is used
-    hmr: {
-      clientPort: 443 // Fix HMR in WebContainer environment
-    },
     cors: true, // Enable CORS for development
   },
   base: process.env.NODE_ENV === 'production' 

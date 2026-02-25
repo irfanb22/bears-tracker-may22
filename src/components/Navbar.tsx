@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart as ChartBar, LogOut, Menu, X, HelpCircle, User, Settings } from 'lucide-react';
+import { BarChart as ChartBar, LogOut, Menu, X, HelpCircle, User, Settings, Trophy } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoginModal } from './LoginModal';
@@ -60,6 +60,13 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
                 >
                   <ChartBar className="w-5 h-5" />
                   <span>Your Predictions</span>
+                </button>
+                <button
+                  onClick={() => navigate('/leaderboard')}
+                  className="flex items-center gap-2 px-3 lg:px-4 py-2 text-gray-300 hover:text-white transition-colors rounded-md"
+                >
+                  <Trophy className="w-5 h-5" />
+                  <span>Leaderboard</span>
                 </button>
                 {isAdmin && (
                   <button
@@ -163,6 +170,16 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
                     >
                       <ChartBar className="w-5 h-5" />
                       <span>Your Predictions</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate('/leaderboard');
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors rounded-md"
+                    >
+                      <Trophy className="w-5 h-5" />
+                      <span>Leaderboard</span>
                     </button>
                     {isAdmin && (
                       <button

@@ -9,6 +9,7 @@ import { Calendar } from 'lucide-react';
 import { PredictionCard } from './components/PredictionCard';
 import { PredictionInterface } from './components/PredictionInterface';
 import { Dashboard } from './components/Dashboard';
+import { Leaderboard } from './components/Leaderboard';
 import { AdminDashboard } from './components/AdminDashboard';
 import { HowItWorks } from './components/HowItWorks';
 import { useAuth } from './lib/auth';
@@ -178,6 +179,14 @@ export function AppComponent() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/leaderboard"
+        element={
+          <ProtectedRoute>
+            <Leaderboard />
           </ProtectedRoute>
         }
       />

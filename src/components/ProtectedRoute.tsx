@@ -19,8 +19,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!user) {
-    // Redirect to login but save the attempted URL
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    // Redirect to home and save the attempted URL
+    return <Navigate to="/" state={{ from: location.pathname }} replace />;
   }
 
   return <>{children}</>;
