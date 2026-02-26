@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, X, Loader2, ArrowRight, AlertCircle, LogIn, Clock } from 'lucide-react';
+import { Check, X, Loader2, ArrowRight, AlertCircle, LogIn, XCircle, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
