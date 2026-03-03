@@ -175,7 +175,7 @@ export function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-white">
         <Navbar />
         <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
           <Loader2 className="w-8 h-8 animate-spin text-bears-orange" />
@@ -185,18 +185,25 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Navbar />
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-bears-navy">Admin Dashboard</h1>
-          <button
-            onClick={() => setShowNewQuestionForm(!showNewQuestionForm)}
-            className="flex items-center gap-2 px-4 py-2 bg-bears-orange text-white rounded-lg hover:bg-bears-orange/90 transition-colors"
-          >
-            {showNewQuestionForm ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-            {showNewQuestionForm ? 'Cancel' : 'New Question'}
-          </button>
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:py-10">
+        <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight text-bears-navy sm:text-4xl">Admin Dashboard</h1>
+              <p className="mt-2 text-sm font-medium text-slate-600">
+                Manage question setup and review season content.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowNewQuestionForm(!showNewQuestionForm)}
+              className="inline-flex items-center gap-2 rounded-lg bg-bears-orange px-4 py-2 text-sm font-bold text-white hover:bg-bears-orange/90 transition-colors"
+            >
+              {showNewQuestionForm ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+              {showNewQuestionForm ? 'Cancel' : 'New Question'}
+            </button>
+          </div>
         </div>
 
         <AnimatePresence>

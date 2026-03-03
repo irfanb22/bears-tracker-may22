@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loader2, Trophy, AlertCircle } from 'lucide-react';
 import { Navbar } from './Navbar';
-import type { Prediction, Game, Question } from '../lib/types';
+import type { Prediction, Game } from '../lib/types';
 
 interface PredictionWithDetails extends Prediction {
   game?: Game;

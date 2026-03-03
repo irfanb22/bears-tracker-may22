@@ -5,7 +5,7 @@ import { usePredictions } from '../lib/PredictionContext';
 
 interface DebugSection {
   title: string;
-  data: any;
+  data: unknown;
 }
 
 export function DebugPanel() {
@@ -63,7 +63,7 @@ export function DebugPanel() {
     });
   };
 
-  const renderValue = (value: any): React.ReactNode => {
+  const renderValue = (value: unknown): React.ReactNode => {
     if (value === null) return <span className="text-gray-400">null</span>;
     if (value === undefined) return <span className="text-gray-400">undefined</span>;
     if (typeof value === 'boolean') return value ? 'true' : 'false';

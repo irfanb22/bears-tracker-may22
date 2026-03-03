@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, X, Loader2, ArrowRight, AlertCircle, LogIn, XCircle, FolderRoot as Football, Clock } from 'lucide-react';
+import { Check, X, Loader2, ArrowRight, AlertCircle, LogIn, XCircle, Clock, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
@@ -7,7 +7,7 @@ import { usePredictions } from '../lib/PredictionContext';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { LoginModal } from './LoginModal';
 import { RegisterModal } from './RegisterModal';
-import type { Question, Choice } from '../lib/PredictionContext';
+import type { Question } from '../lib/PredictionContext';
 
 interface PredictionInterfaceProps {
   selectedCategory?: string;
@@ -104,7 +104,7 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
     }
   };
 
-  const calculatePercentages = (questionId: string, question: Question) => {
+  const calculatePercentages = (questionId: string, question: Question): Record<string, number> => {
     const data = aggregatedPredictions[questionId];
     if (!data || data.total === 0) {
       if (question.question_type === 'yes_no') {
@@ -118,14 +118,14 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
 
     if (question.question_type === 'yes_no') {
       return {
-        yes: Math.round((data.yes / data.total) * 100),
-        no: Math.round((data.no / data.total) * 100)
+        yes: Math.round((Number(data.yes || 0) / data.total) * 100),
+        no: Math.round((Number(data.no || 0) / data.total) * 100)
       };
     }
 
     return question.choices?.reduce((acc, choice) => ({
       ...acc,
-      [choice.text]: Math.round((data[choice.text] / data.total) * 100)
+      [choice.text]: Math.round((Number(data[choice.text] || 0) / data.total) * 100)
     }), {}) || {};
   };
 
@@ -186,6 +186,14 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
     setShowAuthPrompt(false);
     setSelectedValue(null);
     setSelectedConfidence(null);
+  };
+
+  const openPredictionWithValue = (questionId: string, value: string) => {
+    setSelectedPrediction(questionId);
+    setSelectedValue(value);
+    setSelectedConfidence(null);
+    setShowAuthPrompt(false);
+    setError(null);
   };
 
   const renderPredictionOptions = (question: Question) => {
@@ -335,128 +343,242 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
         {filteredQuestions.map((question) => {
           const hasPredicted = userPredictions[question.id];
           const totalVotes = aggregatedPredictions[question.id]?.total || 0;
           const asset = questionAssets[question.id];
           const isExpired = isPast(new Date(question.deadline));
-          
+          const percentages = calculatePercentages(question.id, question);
+          const statusTone = question.status === 'live'
+            ? 'bg-emerald-50 text-emerald-700'
+            : question.status === 'pending'
+            ? 'bg-amber-50 text-amber-700'
+            : 'bg-slate-100 text-slate-700';
+          const statusText = question.status === 'live'
+            ? 'LIVE'
+            : question.status === 'pending'
+            ? 'PENDING'
+            : 'CLOSED';
+          const deadlineLabel = new Date(question.deadline).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+          });
+          const topChoices = question.question_type === 'multiple_choice'
+            ? (question.choices || [])
+                .map((choice) => ({
+                  text: choice.text,
+                  percentage: percentages[choice.text] || 0
+                }))
+                .sort((a, b) => b.percentage - a.percentage)
+                .slice(0, 3)
+            : [];
+
           return (
             <motion.div
               key={question.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`bg-white rounded-xl shadow-sm overflow-hidden border ${
+              className={`rounded-xl border bg-white p-4 sm:p-5 ${
                 question.featured
-                  ? 'border-bears-orange/20 shadow-bears-orange/10'
-                  : 'border-gray-100/50'
-              } backdrop-blur-xl`}
-              style={{
-                background: question.featured
-                  ? 'linear-gradient(to bottom right, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9))'
-                  : 'rgba(255, 255, 255, 0.9)',
-                boxShadow: question.featured
-                  ? '0 4px 24px -1px rgba(200, 56, 3, 0.1)'
-                  : '0 4px 24px -1px rgba(0, 0, 0, 0.05)',
-              }}
+                  ? 'border-bears-orange/45 shadow-[0_0_0_1px_rgba(200,56,3,0.12)_inset]'
+                  : 'border-slate-200'
+              }`}
             >
-              <div className="p-4 lg:p-5">
-                <div className="flex items-start gap-3 lg:gap-4 mb-4 lg:mb-5">
-                  <div className="w-14 h-14 lg:w-16 lg:h-16 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0">
-                    {asset?.image ? (
-                      <img
-                        src={asset.image}
-                        alt={question.text}
-                        className="w-full h-full object-cover rounded-xl border-2 border-bears-navy/10"
-                      />
-                    ) : asset?.icon && (
-                      <div className="w-full h-full bg-bears-navy/5 flex items-center justify-center">
-                        <asset.icon className="w-8 h-8 lg:w-10 lg:h-10 text-bears-navy" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg lg:text-xl font-semibold text-bears-navy">{question.text}</h3>
-                    <div className="mt-2 flex flex-col gap-2">
-                      {getStatusBadge(question.status, question.deadline)}
-                      <div className="text-sm text-gray-500 flex items-center gap-2">
-                        <span>{totalVotes.toLocaleString()} Total Predictions</span>
-                      </div>
-                    </div>
-                  </div>
+              {question.featured && (
+                <div className="mb-3 inline-flex items-center gap-1 rounded-full bg-bears-orange/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-[#7a2604]">
+                  <Star className="h-3.5 w-3.5" />
+                  Featured
                 </div>
+              )}
 
-                <div className="space-y-4">
-                  {/* Always show prediction stats */}
-                  {renderPredictionStats(question)}
-
-                  <button
-                    onClick={() => !isExpired && setSelectedPrediction(question.id)}
-                    disabled={isExpired}
-                    className={`w-full flex items-center justify-center gap-2 p-3 rounded-lg transition-colors ${
-                      isExpired
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : hasPredicted
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : 'bg-bears-navy text-white hover:bg-bears-navy/90'
-                    }`}
-                  >
-                    {isExpired ? (
-                      <>
-                        <Clock className="w-5 h-5" />
-                        Prediction Closed
-                      </>
-                    ) : hasPredicted ? (
-                      <>
-                        <Check className="w-5 h-5" />
-                        Update Prediction
-                      </>
-                    ) : (
-                      <>
-                        Make Prediction
-                        <ArrowRight className="w-5 h-5" />
-                      </>
-                    )}
-                  </button>
-
-                  {hasPredicted && (
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Your prediction:</span>
-                        <span className="font-medium text-bears-navy capitalize">
-                          {hasPredicted.prediction}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-gray-600">Confidence:</span>
-                        <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                          hasPredicted.confidence === 'high'
-                            ? 'bg-green-100 text-green-800'
-                            : hasPredicted.confidence === 'medium'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {hasPredicted.confidence.charAt(0).toUpperCase() + hasPredicted.confidence.slice(1)}
-                        </span>
-                      </div>
+              <div className="flex items-start gap-3">
+                <div className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-lg">
+                  {asset?.image ? (
+                    <img
+                      src={asset.image}
+                      alt={question.text}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : asset?.icon && (
+                    <div className="flex h-full w-full items-center justify-center bg-bears-navy/5">
+                      <asset.icon className="h-7 w-7 text-bears-navy" />
                     </div>
                   )}
-
-                  <AnimatePresence>
-                    {successMessages[question.id] && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="text-center text-green-600 text-sm"
-                      >
-                        Prediction saved successfully!
-                      </motion.div>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-bold leading-snug text-bears-navy sm:text-[17px]">
+                    {question.text}
+                  </h3>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${statusTone}`}>
+                      {statusText}
+                    </span>
+                    {!isExpired && question.status === 'live' && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+                        <Clock className="h-3 w-3" />
+                        {formatDistanceToNow(new Date(question.deadline), { addSuffix: true })}
+                      </span>
                     )}
-                  </AnimatePresence>
+                  </div>
+                  <p className="mt-1 text-[11px] font-medium text-slate-500">
+                    Deadline {deadlineLabel}
+                  </p>
                 </div>
               </div>
+
+              <div className="mt-4 border-t border-slate-100 pt-4">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">
+                  Fan Volume ({totalVotes.toLocaleString()} picks)
+                </p>
+
+                {question.question_type === 'yes_no' ? (
+                  <div className="mt-2 space-y-3">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <button
+                          type="button"
+                          onClick={() => !isExpired && openPredictionWithValue(question.id, 'yes')}
+                          disabled={isExpired}
+                          className={`rounded-full border px-2.5 py-1 font-bold transition ${
+                            isExpired
+                              ? 'cursor-not-allowed border-slate-200 text-slate-400'
+                              : 'border-bears-navy/30 text-bears-navy hover:bg-bears-navy/5'
+                          }`}
+                        >
+                          Yes
+                        </button>
+                        <span className="font-bold text-slate-700">{percentages.yes}%</span>
+                      </div>
+                      <div className="h-2 rounded-full overflow-hidden bg-slate-100">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${percentages.yes}%` }}
+                          transition={{ duration: 0.45 }}
+                          className="h-full bg-bears-navy"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <button
+                          type="button"
+                          onClick={() => !isExpired && openPredictionWithValue(question.id, 'no')}
+                          disabled={isExpired}
+                          className={`rounded-full border px-2.5 py-1 font-bold transition ${
+                            isExpired
+                              ? 'cursor-not-allowed border-slate-200 text-slate-400'
+                              : 'border-bears-orange/35 text-[#7a2604] hover:bg-bears-orange/5'
+                          }`}
+                        >
+                          No
+                        </button>
+                        <span className="font-bold text-slate-700">{percentages.no}%</span>
+                      </div>
+                      <div className="h-2 rounded-full overflow-hidden bg-slate-100">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${percentages.no}%` }}
+                          transition={{ duration: 0.45 }}
+                          className="h-full bg-bears-orange"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2 space-y-3">
+                    {topChoices.map((choice) => (
+                      <div key={choice.text} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <button
+                            type="button"
+                            onClick={() => !isExpired && openPredictionWithValue(question.id, choice.text)}
+                            disabled={isExpired}
+                            className={`rounded-full border px-2.5 py-1 font-bold transition ${
+                              isExpired
+                                ? 'cursor-not-allowed border-slate-200 text-slate-400'
+                                : 'border-slate-300 text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            {choice.text}
+                          </button>
+                          <span className="font-bold text-slate-700">{choice.percentage}%</span>
+                        </div>
+                        <div className="h-2 rounded-full overflow-hidden bg-slate-100">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${choice.percentage}%` }}
+                            transition={{ duration: 0.45 }}
+                            className="h-full bg-bears-navy"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    {topChoices.length === 0 && renderPredictionStats(question)}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={() => !isExpired && setSelectedPrediction(question.id)}
+                  disabled={isExpired}
+                  className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition ${
+                    isExpired
+                      ? 'cursor-not-allowed bg-slate-200 text-slate-500'
+                      : hasPredicted
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                      : 'bg-bears-navy text-white hover:bg-bears-navy/90'
+                  }`}
+                >
+                  {isExpired ? 'Prediction Closed' : hasPredicted ? 'Update Prediction' : 'Make Prediction'}
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600"
+                >
+                  Details
+                </button>
+              </div>
+
+              {hasPredicted && (
+                <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-slate-600">Your call:</span>
+                    <span className="font-bold capitalize text-bears-navy">
+                      {hasPredicted.prediction}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between text-xs">
+                    <span className="font-medium text-slate-600">Fan confidence:</span>
+                    <span className={`rounded-full px-2 py-0.5 font-bold ${
+                      hasPredicted.confidence === 'high'
+                        ? 'bg-green-100 text-green-800'
+                        : hasPredicted.confidence === 'medium'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {hasPredicted.confidence.charAt(0).toUpperCase() + hasPredicted.confidence.slice(1)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <AnimatePresence>
+                {successMessages[question.id] && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="mt-2 text-center text-xs font-semibold text-emerald-700"
+                  >
+                    Prediction saved successfully.
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           );
         })}

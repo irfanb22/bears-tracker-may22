@@ -39,15 +39,6 @@ export function HowItWorks() {
     }
   };
 
-  // Highlight animation for key phrases
-  const highlightVariants = {
-    initial: { backgroundSize: "0% 100%" },
-    animate: { 
-      backgroundSize: "100% 100%",
-      transition: { duration: 1, ease: "easeOut" }
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar onRegisterClick={() => setIsRegisterModalOpen(true)} />
