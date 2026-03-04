@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XCircle } from 'lucide-react';
 import { AuthForm } from './AuthForm';
@@ -6,7 +5,7 @@ import { AuthForm } from './AuthForm';
 interface RegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSwitchToLogin: () => void;
+  onSwitchToLogin?: () => void;
 }
 
 export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModalProps) {

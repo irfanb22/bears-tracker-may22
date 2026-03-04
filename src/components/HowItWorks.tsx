@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Navbar } from './Navbar';
 import { Trophy, Brain, Users, Target, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -170,6 +170,7 @@ export function HowItWorks() {
       <RegisterModal 
         isOpen={isRegisterModalOpen}
         onClose={() => setIsRegisterModalOpen(false)}
+        onSwitchToLogin={() => setIsRegisterModalOpen(false)}
       />
     </div>
   );

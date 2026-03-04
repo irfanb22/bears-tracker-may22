@@ -1,6 +1,6 @@
 # Bears Prediction Tracker - Project Context
 
-Last updated: 2026-02-25
+Last updated: 2026-03-03
 Repository path: `/Users/irfan/Projects/bears-tracker-may22-main`
 
 ## 1. What This Site Is
@@ -32,9 +32,12 @@ Current primary business goal:
 - Home page with 2025 season prediction questions.
 - Category filters:
   - `all`
+  - `qb` (UI mockup tag)
   - `player_stats`
   - `team_stats`
+  - `pro_bowlers` (UI mockup tag)
   - `draft_predictions`
+  - `playoffs` (UI mockup tag)
 - Community percentages shown per question.
 - "How It Works" page explaining product intent.
 
@@ -267,18 +270,80 @@ Local machine status (as of 2026-02-22):
 Pending repo wiring:
 - Push initial commit from this local git repo only when approved.
 
-## 10. Open Questions / Backlog Notes
+## 10. Current Priority Order (As Decided 2026-03-02)
 
-- Confirm canonical route behavior for unauthenticated redirects (`/login` route does not appear in `App.tsx`).
-- Decide if admin auth check should move from hardcoded email to role/claim-based authorization.
-- Clarify whether legacy components (`PredictionsPage`, `GameCard`) are still active or archival.
-- Define and implement final scoring rules for 2025 predictions (points logic and when scoring is run).
-- UI inconsistency (auth modal): "Check Your Email" success modal shows duplicate close icons on the right side.
-- UI inconsistency (modal layering): registration/login modal state can reveal underlying "Don't have an account? Sign up" strip behind the success modal, creating stacked/overlapping surfaces.
-- UI inconsistency (navbar desktop): nav items and icons are misaligned when a long email is present; "Log Out" wraps to two lines and spacing looks uneven.
-- UI bug (admin date picker): in Admin > Create New Question, deadline date picker month navigation appears stuck on February 2026 (next/prev controls do not move month as expected).
-- Product-state note: with 2025 wrapped and no 2026 questions seeded yet, new users can authenticate and navigate but cannot submit predictions (expected behavior for now).
-- UX note: Dashboard "Make Your First Prediction" CTA currently routes back to home; this is acceptable in current state because active prediction questions are not yet available.
+Current phase status (as of 2026-03-04):
+- Active roadmap phase: **Phase 1 (2025 Season Closeout + User Communication)**.
+- Phase 1 completion state: **partially complete**.
+- Major done items already verified:
+  - role-based admin access is working
+  - scoring policy is defined (`1`/`0`, confidence excluded from points)
+  - basic scoring/dashboard updates shipped
+  - UI redesign pass is now **visually locked** for Home/Navbar/My Predictions/Leaderboard (UI-only)
+
+### Priority 1: Visual Refresh + Mobile Quality
+- This priority is explicitly the same as **Phase 3: Full UX/UI Redesign**.
+- Redesign the full site for a cleaner, easier experience:
+  - better layout and spacing
+  - clearer navigation and status states
+  - more polished mobile and desktop behavior
+- Goal: make the app feel easier to use and more modern.
+
+### Priority 2: User Email List + Announcement Send
+- Build/export list of active/registered users.
+- Draft announcement email (2025 finalized, leaderboard live, 2026 questions coming later).
+- Send to current participants/users.
+
+### Priority 3: Build Out 2026 Questions
+- After visual refresh + email send, create and publish 2026 question set.
+- Include a dedicated 2026 game-by-game pick flow:
+  - users open a game picker experience
+  - users submit per-game Bears win/loss picks
+  - game picks are included in 2026 prediction tracking/scoring views
+
+### Question Management Operating Decision (Current)
+- Do question creation/deadline updates through **Codex/terminal** for now.
+- Admin date picker bug is **deferred** and not a current priority.
+- Admin UI remains available for occasional spot checks/edits.
+
+### UX/UI Redesign Decisions Locked (Session Notes)
+- Selected visual direction: **Halas Desk** style.
+- Typography decision: keep current family (`Option A` direction), but use **heavier key text hierarchy** for headers/titles/labels.
+- Background decision: keep primary page background **white**.
+- Terminology decision: use **fan** language (`Fan Volume`, `Fan Confidence`) instead of "community".
+- Interaction decision (cards): keep hybrid actions:
+  - quick choice entry points on option labels (`Yes` / `No` and top multiple-choice options)
+  - keep primary `Make Prediction` action button on cards.
+- Navigation decision:
+  - primary nav: `Home`, `Leaderboard`, `My Predictions` (plus `Admin` for admins)
+  - de-emphasize `How It Works` (move to footer/secondary location).
+- IA decision: do **not** create standalone Account Settings yet.
+  - keep display-name edit inline within `My Predictions`.
+- Homepage decision: include top banner for season recap discovery:
+  - `2025 Fan Results Are Live` + `View Fan Recap` CTA.
+- 2026 scope placeholder decision:
+  - include **game-by-game pick flow** (users choose Bears win/loss for each game)
+  - include these picks in 2026 prediction tracking/scoring views.
+
+### Resume Here (Next Session Starting Point)
+1. Redesign UI pass is locked (visual-only) across:
+   - Home
+   - Navbar
+   - My Predictions
+   - Leaderboard
+2. Keep this phase UI-only:
+   - no backend wiring added for recap CTA, tooltip content, or fan confidence aggregation
+   - no production scoring behavior rewrites
+3. Next build phase:
+   - begin data wiring and QA for the finalized UI
+   - wire fan-confidence sentiment from real confidence aggregates
+   - wire recap/secondary actions as needed
+   - validate username display-name flow end-to-end with leaderboard output
+
+Reference mockup artifacts created in this session:
+- `mockups-halas-locked-foundation.html` (final typography/foundation baseline)
+- `mockups-halas-home-and-my-predictions.html` (approved IA/layout direction)
+- `mockups-halas-desk-v2.html` (rich card spec reference)
 
 ## 12. Upcoming Roadmap (Phased)
 
@@ -319,6 +384,73 @@ Pending repo wiring:
 ---
 
 ## Change Log
+
+### 2026-03-04 (Redesign Phase Lock - UI Only)
+- Completed redesign lock pass and removed temporary preview artifact:
+  - removed dev-only fake active question from `src/lib/PredictionContext.tsx`
+- Home finalized updates:
+  - hero copy updated to `2026 Bears season`
+  - recap banner CTA text shortened to `View Recap`
+  - recap banner made sticky under navbar
+  - topics presentation locked to straight-line style (no bubble toggle)
+  - added `Rookies` topic tag
+  - card paging controls added (left/right arrows + page count) to reduce long scrolling
+- Card/modal interaction finalized:
+  - `Details` button removed from home cards
+  - removed inline card footer details (`Your call`, `Fan confidence`) from card body
+  - unified single primary card action (`Make Prediction` / `View / Edit Prediction` / `View Details`)
+  - modal is click-away close (no explicit `X` close icon)
+  - compact modal sizing/spacing/typography aligned with card design language
+  - removed check/X icon language from answer selections and submit arrow icon
+  - added visual-only fan confidence meter preview on cards (dummy data, no backend wiring)
+- Navbar finalized updates:
+  - removed `How It Works` from primary nav
+  - removed redundant `Home` nav button (brand remains home link)
+  - simplified icon usage to text-first nav language
+  - improved desktop/mobile nav consistency and active states
+- My Predictions redesign finalized:
+  - shifted to eBay-style left-rail + main-content layout
+  - topic filters + status filters (`all`, `active`, `pending`, `resolved`)
+  - season switch (`2026` default, `2025` alternate)
+  - rows-only presentation (cards view removed)
+  - added top metrics (`Total Picks`, `Accuracy`)
+  - added username inline edit module backed by `public.users.display_name` (with helper text)
+  - added resolved outcome pills (`Correct` / `Incorrect`) in rows
+- Leaderboard redesign finalized:
+  - restyled leaderboard to match My Predictions visual language
+  - removed always-visible tie-rank explainer from subtitle
+  - replaced with hover helper: `How we rank`
+
+### 2026-03-03 (Home Mockup Saved + Commit)
+- Completed and committed current redesign mockup state on local `main`:
+  - commit: `e4ef49b` (`ui: save home and dashboard redesign mockup state`)
+- Home updates in current mockup:
+  - restored original hero styling/copy with animated underlines
+  - moved recap callout to yellow flash banner under navbar
+  - updated flash text to `2025 Season Prediction Results Are In`
+  - added topic tags for `QB`, `Pro Bowlers`, `Playoffs`, and renamed `Draft Picks` to `Draft`
+  - added live comparison toggles for topic filter presentation:
+    - `Topics` vs `Bubbles`
+    - `Under Nav` vs `Under Hero`
+- Prediction cards received a stronger visual refresh (featured treatment, hierarchy, quick-pick entry points) while keeping behavior stable.
+
+### 2026-03-02 (Priority Order Updated)
+- Replaced `Now/Next/Later` with explicit ordered priorities:
+  - `1) visual refresh + mobile quality`
+  - `2) user email list + send`
+  - `3) build out 2026 questions`
+- Marked admin date picker issue as deferred for now.
+- Confirmed question management approach:
+  - Codex/terminal-first for question creation and deadline updates.
+
+### 2026-03-02 (Priority Clarification)
+- Clarified that "visual refresh" is the same as **Phase 3 Full UX/UI Redesign**.
+- Set full UX/UI redesign as the immediate next build focus.
+
+### 2026-03-02 (Design Decisions + Resume Point Captured)
+- Logged locked UX/UI decisions from redesign working session (Halas Desk, terminology, nav, interaction model).
+- Added explicit "Resume Here" checklist for next chat continuation.
+- Added references to approved mockup files for implementation handoff.
 
 ### 2026-02-25 (Roadmap Added)
 - Added phased upcoming roadmap:

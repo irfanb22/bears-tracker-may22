@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Halas Locked Foundation Mockup</title>
+    <style>
+      :root {
+        --navy: #0b162a;
+        --orange: #c83803;
+        --line: #dce3ed;
+        --text: #0f172a;
+        --muted: #64748b;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
+        color: var(--text);
+        background: #fff;
+      }
+      .nav {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(11, 22, 42, 0.97);
+        border-bottom: 1px solid rgba(255,255,255,.12);
+      }
+      .nav-inner {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #fff;
+      }
+      .brand { font-weight: 800; letter-spacing: .2px; }
+      .links { font-size: 13px; color: #d6deea; font-weight: 650; }
+
+      .wrap { max-width: 1100px; margin: 16px auto 28px; padding: 0 16px; }
+      .hero {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 18px;
+        background: #fff;
+      }
+      .hero h1 {
+        margin: 0 0 8px;
+        color: var(--navy);
+        font-size: 31px;
+        font-weight: 800;
+      }
+      .hero p {
+        margin: 0;
+        color: #475569;
+        font-weight: 520;
+      }
+
+      .card {
+        margin-top: 12px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        padding: 11px;
+        background: #fff;
+      }
+      .row { display: flex; gap: 10px; align-items: flex-start; }
+      .row img { width: 42px; height: 42px; object-fit: cover; border-radius: 9px; }
+      .title {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.35;
+        font-weight: 730;
+      }
+      .meta {
+        margin-top: 4px;
+        font-size: 11px;
+        color: var(--muted);
+        font-weight: 520;
+      }
+
+      .split {
+        margin-top: 8px;
+        border-top: 1px solid #edf2f6;
+        padding-top: 8px;
+      }
+      .label {
+        margin: 0 0 6px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .35px;
+        color: #475569;
+        font-weight: 760;
+      }
+      .line {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+        font-size: 12px;
+      }
+      .opt {
+        border: 1px solid #d4deea;
+        border-radius: 999px;
+        background: #fff;
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 760;
+      }
+      .opt.yes { border-color: rgba(11,22,42,.35); color: var(--navy); }
+      .opt.no { border-color: rgba(200,56,3,.35); color: #7a2604; }
+      .bar {
+        height: 6px;
+        background: #edf2f7;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .fill.yes { height: 100%; width: 62%; background: var(--navy); }
+      .fill.no { height: 100%; width: 38%; background: var(--orange); }
+
+      .confidence {
+        margin-top: 8px;
+        border: 1px solid #dbe4ee;
+        border-radius: 9px;
+        background: #f8fafc;
+        padding: 8px;
+      }
+      .conf-top {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        font-weight: 720;
+      }
+      .meter {
+        margin-top: 6px;
+        height: 8px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #9ca3af 0%, #f59e0b 50%, #16a34a 100%);
+        position: relative;
+      }
+      .needle {
+        position: absolute;
+        left: 77%;
+        top: -3px;
+        width: 2px;
+        height: 14px;
+        background: #111827;
+      }
+
+      .actions {
+        margin-top: 9px;
+        display: flex;
+        gap: 7px;
+      }
+      .actions button {
+        border: 0;
+        border-radius: 9px;
+        padding: 8px 10px;
+        font-size: 11px;
+        font-weight: 760;
+      }
+      .actions .primary { flex: 1; background: var(--navy); color: #fff; }
+      .actions .secondary { background: #edf2f7; color: #334155; }
+
+      @media (max-width: 700px) {
+        .links { display: none; }
+        .hero h1 { font-size: 25px; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="nav">
+      <div class="nav-inner">
+        <div class="brand">Halas Desk Locked Foundation</div>
+        <div class="links">White background • Current type family • Heavier key text</div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="hero">
+        <h1>Premium fan forecasting, streamlined.</h1>
+        <p>Final baseline mockup: same typography direction, but stronger text weight for titles and key labels.</p>
+      </section>
+
+      <article class="card">
+        <div class="row">
+          <img src="src/assets/WillCa03_2024.jpg" alt="" />
+          <div>
+            <p class="title">Will Caleb throw 25+ passing TDs in 2026?</p>
+            <p class="meta">LIVE • 1d 9h left • Deadline Aug 12, 11:59 PM CT</p>
+          </div>
+        </div>
+
+        <div class="split">
+          <p class="label">Fan Volume (2,186 picks)</p>
+          <div class="line"><button class="opt yes">Yes</button><strong>62%</strong></div>
+          <div class="bar"><div class="fill yes"></div></div>
+          <div class="line" style="margin-top:6px;"><button class="opt no">No</button><strong>38%</strong></div>
+          <div class="bar"><div class="fill no"></div></div>
+        </div>
+
+        <div class="confidence">
+          <div class="conf-top"><span>Fan Confidence</span><strong>High</strong></div>
+          <div class="meter"><span class="needle"></span></div>
+        </div>
+
+        <div class="actions">
+          <button class="primary">Make Prediction</button>
+          <button class="secondary">Details</button>
+        </div>
+      </article>
+    </main>
+  </body>
+</html>

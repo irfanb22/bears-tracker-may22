@@ -55,7 +55,7 @@ interface PredictionStats {
 
 interface AggregatedPredictions {
   [questionId: string]: {
-    [choice: string]: number;
+    [choice: string]: number | boolean;
     total: number;
     loading: boolean;
   };
@@ -129,13 +129,13 @@ const calculateAggregates = (data: RawPredictionRow[] | null, questions: Questio
         if (question.question_type === 'yes_no') {
           const normalizedVote = vote.toLowerCase();
           if (aggregates[question_id][normalizedVote] !== undefined) {
-            aggregates[question_id][normalizedVote]++;
+            aggregates[question_id][normalizedVote] = Number(aggregates[question_id][normalizedVote]) + 1;
             aggregates[question_id].total++;
           }
         } else if (question.choices) {
           // For multiple choice, use the exact prediction text
           if (aggregates[question_id][vote] !== undefined) {
-            aggregates[question_id][vote]++;
+            aggregates[question_id][vote] = Number(aggregates[question_id][vote]) + 1;
             aggregates[question_id].total++;
           }
         }
@@ -181,8 +181,9 @@ export function PredictionProvider({ children }: { children: React.ReactNode }) 
         .order('deadline', { ascending: true });
 
       if (fetchError) throw fetchError;
-      setQuestions(data || []);
-      return data || [];
+      const questionRows = data || [];
+      setQuestions(questionRows);
+      return questionRows;
     } catch (err) {
       console.error('Error fetching questions:', err);
       throw err;

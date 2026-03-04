@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bears Redesign Mockups</title>
+    <style>
+      :root {
+        --navy: #0b162a;
+        --orange: #c83803;
+        --cream: #f6f2ea;
+        --steel: #d4dbe5;
+        --charcoal: #1f2937;
+        --white: #ffffff;
+        --muted: #6b7280;
+        --radius: 12px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
+        color: var(--charcoal);
+        background: linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%);
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: rgba(11, 22, 42, 0.96);
+        color: #fff;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 12px 20px;
+      }
+
+      .topbar-inner {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+      }
+
+      .brand img {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+      }
+
+      .switcher {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .switcher button {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .switcher button.active {
+        background: var(--orange);
+        border-color: var(--orange);
+      }
+
+      .frame {
+        max-width: 1100px;
+        margin: 18px auto 30px;
+        padding: 0 16px;
+      }
+
+      .mockup {
+        display: none;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(15, 23, 42, 0.08);
+      }
+
+      .mockup.active {
+        display: block;
+      }
+
+      .mockup-nav {
+        background: var(--navy);
+        color: #fff;
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .mockup-links {
+        display: flex;
+        gap: 14px;
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      .mockup-links span:last-child {
+        color: #ffb69d;
+        font-weight: 700;
+      }
+
+      .hero {
+        padding: 28px 24px 20px;
+        border-bottom: 1px solid #eceff3;
+      }
+
+      .hero h1 {
+        margin: 0 0 8px;
+        font-size: 32px;
+        line-height: 1.1;
+        color: var(--navy);
+      }
+
+      .hero p {
+        margin: 0;
+        color: var(--muted);
+        max-width: 680px;
+      }
+
+      .cta-row {
+        margin-top: 16px;
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn {
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: default;
+      }
+
+      .btn.primary {
+        background: var(--orange);
+        color: #fff;
+      }
+
+      .btn.secondary {
+        background: #f1f5f9;
+        color: var(--navy);
+      }
+
+      .content {
+        padding: 18px 24px 24px;
+      }
+
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
+      .pill {
+        border: 1px solid #dbe2ea;
+        background: #fff;
+        color: #334155;
+        font-size: 13px;
+        padding: 6px 10px;
+        border-radius: 999px;
+      }
+
+      .pill.active {
+        background: rgba(200, 56, 3, 0.1);
+        border-color: rgba(200, 56, 3, 0.5);
+        color: #7a2604;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .row-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .q-card {
+        border: 1px solid #e5e7eb;
+        border-radius: var(--radius);
+        padding: 12px;
+        background: #fff;
+      }
+
+      .q-card.glass {
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(246, 248, 251, 0.95));
+        border-color: #dde4ed;
+      }
+
+      .q-top {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .q-top img {
+        width: 44px;
+        height: 44px;
+        object-fit: cover;
+        border-radius: 9px;
+      }
+
+      .q-title {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.35;
+        color: #0f172a;
+      }
+
+      .meta {
+        margin-top: 4px;
+        font-size: 12px;
+        color: #64748b;
+      }
+
+      .status {
+        display: inline-block;
+        margin-top: 7px;
+        padding: 3px 8px;
+        font-size: 11px;
+        border-radius: 999px;
+        background: #e8f7ee;
+        color: #166534;
+        font-weight: 700;
+      }
+
+      .bar {
+        margin-top: 8px;
+        height: 7px;
+        border-radius: 999px;
+        background: #edf2f7;
+        overflow: hidden;
+      }
+
+      .bar-fill {
+        height: 100%;
+      }
+
+      .bar-fill.navy {
+        width: 62%;
+        background: var(--navy);
+      }
+
+      .bar-fill.orange {
+        width: 38%;
+        background: var(--orange);
+      }
+
+      .predict-btn {
+        margin-top: 10px;
+        width: 100%;
+        border: 0;
+        background: var(--navy);
+        color: #fff;
+        font-weight: 700;
+        font-size: 13px;
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+
+      .season-panel {
+        border: 1px solid #e2e8f0;
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 12px;
+        width: 260px;
+      }
+
+      .split {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .featured {
+        background: linear-gradient(90deg, rgba(11, 22, 42, 0.94), rgba(20, 36, 65, 0.94));
+        color: #fff;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 12px;
+      }
+
+      .featured p {
+        margin: 0;
+        opacity: 0.88;
+        font-size: 13px;
+      }
+
+      .featured h3 {
+        margin: 6px 0 0;
+        font-size: 17px;
+      }
+
+      .row-item {
+        border: 1px solid #e4e8ef;
+        border-radius: 10px;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .row-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .row-left img {
+        width: 36px;
+        height: 36px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+
+      .row-copy h4 {
+        margin: 0;
+        font-size: 13px;
+      }
+
+      .row-copy p {
+        margin: 2px 0 0;
+        font-size: 12px;
+        color: #64748b;
+      }
+
+      .small-btn {
+        border: 1px solid rgba(11, 22, 42, 0.2);
+        border-radius: 9px;
+        background: #fff;
+        color: var(--navy);
+        font-size: 12px;
+        font-weight: 700;
+        padding: 8px 10px;
+      }
+
+      @media (max-width: 940px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .split {
+          flex-direction: column;
+        }
+        .season-panel {
+          width: 100%;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .mockup-links {
+          display: none;
+        }
+        .hero h1 {
+          font-size: 26px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <img src="src/assets/bears_claw_logo.png" alt="Bears" />
+          <span>Bears Redesign Mockups</span>
+        </div>
+        <div class="switcher">
+          <button class="active" data-target="m1">Halas Desk</button>
+          <button data-target="m2">Lakefront Terminal</button>
+          <button data-target="m3">Navy Glass Grid</button>
+        </div>
+      </div>
+    </div>
+
+    <main class="frame">
+      <section class="mockup active" id="m1">
+        <div class="mockup-nav">
+          <strong>Bears Prediction Tracker</strong>
+          <div class="mockup-links"><span>Home</span><span>Dashboard</span><span>Leaderboard</span><span>Sign In</span></div>
+        </div>
+        <div class="hero">
+          <h1>Premium fan forecasting, streamlined.</h1>
+          <p>Clean, brand-forward UI with compact decision cards and quick read percentages.</p>
+          <div class="cta-row">
+            <div class="btn primary">View 2025 Leaderboard</div>
+            <div class="btn secondary">Browse Questions</div>
+          </div>
+        </div>
+        <div class="content">
+          <div class="filters">
+            <span class="pill active">All</span>
+            <span class="pill">Player Stats</span>
+            <span class="pill">Team Stats</span>
+            <span class="pill">Draft</span>
+          </div>
+          <div class="grid">
+            <article class="q-card">
+              <div class="q-top">
+                <img src="src/assets/WillCa03_2024.jpg" alt="" />
+                <div>
+                  <p class="q-title">Will Caleb throw 25+ passing TDs in 2026?</p>
+                  <span class="status">LIVE</span>
+                  <p class="meta">1d 9h left</p>
+                </div>
+              </div>
+              <div class="meta">Yes 62%</div>
+              <div class="bar"><div class="bar-fill navy"></div></div>
+              <div class="meta">No 38%</div>
+              <div class="bar"><div class="bar-fill orange"></div></div>
+              <button class="predict-btn">Make Prediction</button>
+            </article>
+            <article class="q-card">
+              <div class="q-top">
+                <img src="src/assets/SweaMo00_2024.jpg" alt="" />
+                <div>
+                  <p class="q-title">Will Montez Sweat record 10+ sacks?</p>
+                  <span class="status">LIVE</span>
+                  <p class="meta">2d 4h left</p>
+                </div>
+              </div>
+              <div class="meta">Yes 54%</div>
+              <div class="bar"><div class="bar-fill navy" style="width:54%"></div></div>
+              <div class="meta">No 46%</div>
+              <div class="bar"><div class="bar-fill orange" style="width:46%"></div></div>
+              <button class="predict-btn">Make Prediction</button>
+            </article>
+            <article class="q-card">
+              <div class="q-top">
+                <img src="src/assets/OdunRo00_2024.jpg" alt="" />
+                <div>
+                  <p class="q-title">Most receiving yards on team in 2026?</p>
+                  <span class="status">LIVE</span>
+                  <p class="meta">3d left</p>
+                </div>
+              </div>
+              <div class="meta">Odunze 43%</div>
+              <div class="bar"><div class="bar-fill navy" style="width:43%"></div></div>
+              <div class="meta">Moore 39%</div>
+              <div class="bar"><div class="bar-fill orange" style="width:39%"></div></div>
+              <button class="predict-btn">Make Prediction</button>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="mockup" id="m2">
+        <div class="mockup-nav">
+          <strong>Bears Prediction Tracker</strong>
+          <div class="mockup-links"><span>Home</span><span>Dashboard</span><span>Leaderboard</span><span>Sign In</span></div>
+        </div>
+        <div class="hero">
+          <div class="split">
+            <div>
+              <h1>Market-style view, lighter and cleaner.</h1>
+              <p>A dense list layout with quick scanning and compact action points.</p>
+              <div class="cta-row">
+                <div class="btn primary">Open Questions</div>
+                <div class="btn secondary">How It Works</div>
+              </div>
+            </div>
+            <aside class="season-panel">
+              <strong style="color: var(--navy)">Season Status</strong>
+              <p class="meta" style="margin-top: 8px">2025 finalized</p>
+              <p class="meta">Leaderboard live</p>
+              <p class="meta">2026 question rollout next</p>
+            </aside>
+          </div>
+        </div>
+        <div class="content">
+          <div class="row-list">
+            <div class="row-item">
+              <div class="row-left">
+                <img src="src/assets/WillCa03_2024.jpg" alt="" />
+                <div class="row-copy">
+                  <h4>Will Caleb throw 25+ passing TDs in 2026?</h4>
+                  <p>YES 62% | NO 38% | LIVE | 1d 9h left</p>
+                </div>
+              </div>
+              <button class="small-btn">Predict</button>
+            </div>
+            <div class="row-item">
+              <div class="row-left">
+                <img src="src/assets/SweaMo00_2024.jpg" alt="" />
+                <div class="row-copy">
+                  <h4>Will Montez Sweat record 10+ sacks?</h4>
+                  <p>YES 54% | NO 46% | LIVE | 2d 4h left</p>
+                </div>
+              </div>
+              <button class="small-btn">Predict</button>
+            </div>
+            <div class="row-item">
+              <div class="row-left">
+                <img src="src/assets/OdunRo00_2024.jpg" alt="" />
+                <div class="row-copy">
+                  <h4>Most receiving yards on team in 2026?</h4>
+                  <p>ODUNZE 43% | MOORE 39% | LIVE | 3d left</p>
+                </div>
+              </div>
+              <button class="small-btn">Predict</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mockup" id="m3">
+        <div class="mockup-nav">
+          <strong>Bears Prediction Tracker</strong>
+          <div class="mockup-links"><span>Home</span><span>Dashboard</span><span>Leaderboard</span><span>Sign In</span></div>
+        </div>
+        <div class="hero" style="background: linear-gradient(140deg, #f8fbff 0%, #edf3fa 100%)">
+          <h1>Navy glass aesthetic with stronger hierarchy.</h1>
+          <p>Still compact, but with a featured market strip and polished surfaces.</p>
+          <div class="cta-row">
+            <div class="btn primary">Make Picks</div>
+            <div class="btn secondary">View Leaderboard</div>
+          </div>
+        </div>
+        <div class="content">
+          <div class="featured">
+            <p>Featured Market</p>
+            <h3>Will the Bears finish with 10+ wins in 2026?</h3>
+          </div>
+          <div class="grid">
+            <article class="q-card glass">
+              <div class="q-top">
+                <img src="src/assets/WillCa03_2024.jpg" alt="" />
+                <div>
+                  <p class="q-title">Will Caleb throw 25+ passing TDs in 2026?</p>
+                  <span class="status">LIVE</span>
+                </div>
+              </div>
+              <div class="meta">Yes 62%</div>
+              <div class="bar"><div class="bar-fill navy"></div></div>
+              <button class="predict-btn">Make Prediction</button>
+            </article>
+            <article class="q-card glass">
+              <div class="q-top">
+                <img src="src/assets/ben_johnson.jpg" alt="" />
+                <div>
+                  <p class="q-title">Top-10 offensive rank by season end?</p>
+                  <span class="status">LIVE</span>
+                </div>
+              </div>
+              <div class="meta">Yes 58%</div>
+              <div class="bar"><div class="bar-fill navy" style="width:58%"></div></div>
+              <button class="predict-btn">Make Prediction</button>
+            </article>
+            <article class="q-card glass">
+              <div class="q-top">
+                <img src="src/assets/brisker.png" alt="" />
+                <div>
+                  <p class="q-title">Will Brisker have 4+ interceptions?</p>
+                  <span class="status">LIVE</span>
+                </div>
+              </div>
+              <div class="meta">Yes 49%</div>
+              <div class="bar"><div class="bar-fill navy" style="width:49%"></div></div>
+              <button class="predict-btn">Make Prediction</button>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const buttons = document.querySelectorAll("[data-target]");
+      const mockups = document.querySelectorAll(".mockup");
+
+      buttons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          buttons.forEach((b) => b.classList.remove("active"));
+          mockups.forEach((m) => m.classList.remove("active"));
+          btn.classList.add("active");
+          document.getElementById(btn.dataset.target).classList.add("active");
+        });
+      });
+    </script>
+  </body>
+</html>

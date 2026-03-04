@@ -21,6 +21,7 @@ import { DebugPredictionAccess } from './components/DebugPredictionAccess';
 const categories = [
   { id: 'all', label: 'All Predictions' },
   { id: 'qb', label: 'QB' },
+  { id: 'rookies', label: 'Rookies' },
   { id: 'player_stats', label: 'Player Stats' },
   { id: 'team_stats', label: 'Team Stats' },
   { id: 'pro_bowlers', label: 'Pro Bowlers' },
@@ -33,40 +34,15 @@ function HomePage() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [filterStyle, setFilterStyle] = useState<'topics' | 'bubbles'>('topics');
   const [topicsPlacement, setTopicsPlacement] = useState<'under_nav' | 'under_hero'>('under_hero');
 
   const renderTopicsControls = () => (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-xs font-bold uppercase tracking-wide text-slate-500">
-          2025 Topics
+          2026 Season
         </div>
         <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-full border border-slate-300 bg-white p-1">
-            <button
-              type="button"
-              onClick={() => setFilterStyle('topics')}
-              className={`rounded-full px-3 py-1 text-xs font-bold ${
-                filterStyle === 'topics'
-                  ? 'bg-bears-navy text-white'
-                  : 'text-slate-600'
-              }`}
-            >
-              Topics
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterStyle('bubbles')}
-              className={`rounded-full px-3 py-1 text-xs font-bold ${
-                filterStyle === 'bubbles'
-                  ? 'bg-bears-navy text-white'
-                  : 'text-slate-600'
-              }`}
-            >
-              Bubbles
-            </button>
-          </div>
           <div className="inline-flex rounded-full border border-slate-300 bg-white p-1">
             <button
               type="button"
@@ -94,52 +70,26 @@ function HomePage() {
         </div>
       </div>
 
-      {filterStyle === 'topics' ? (
-        <div className="overflow-x-auto border-b border-slate-200">
-          <div className="flex min-w-max items-center gap-8 pr-4">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`pb-3 text-base font-bold whitespace-nowrap transition-colors ${
-                  selectedCategory === category.id
-                    ? 'border-b-2 border-bears-navy text-bears-navy'
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                {category.label}
-              </button>
-            ))}
-            <span className="pb-3 text-base font-bold whitespace-nowrap text-slate-400">
-              2026 Game-by-Game Picks
-            </span>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-bears-navy/30 bg-bears-navy/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-bears-navy">
-            2025
-          </span>
-          <span className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-700">
-            2026 Game-by-Game Picks
-          </span>
+      <div className="overflow-x-auto border-b border-slate-200">
+        <div className="flex min-w-max items-center gap-8 pr-4">
           {categories.map((category) => (
-            <motion.button
+            <button
               key={category.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
               onClick={() => setSelectedCategory(category.id)}
-              className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all sm:text-sm ${
+              className={`pb-3 text-base font-bold whitespace-nowrap transition-colors ${
                 selectedCategory === category.id
-                  ? 'border-bears-orange/45 bg-bears-orange/10 text-[#7a2604]'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                  ? 'border-b-2 border-bears-navy text-bears-navy'
+                  : 'text-slate-500 hover:text-slate-700'
               }`}
             >
               {category.label}
-            </motion.button>
+            </button>
           ))}
+          <span className="pb-3 text-base font-bold whitespace-nowrap text-slate-400">
+            2026 Game-by-Game Picks
+          </span>
         </div>
-      )}
+      </div>
     </div>
   );
   
@@ -149,7 +99,7 @@ function HomePage() {
         onRegisterClick={() => setIsRegisterModalOpen(true)}
       />
 
-      <section className="border-b border-yellow-300 bg-yellow-200/80 px-4 py-2.5">
+      <section className="sticky top-16 z-40 border-b border-yellow-300 bg-yellow-200/95 px-4 py-2.5 md:top-20">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
           <p className="text-sm font-bold text-yellow-900 sm:text-base">
             2025 Season Prediction Results Are In
@@ -158,7 +108,7 @@ function HomePage() {
             type="button"
             className="rounded-md border border-yellow-700/30 bg-yellow-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-yellow-900"
           >
-            View Fan Recap
+            View Recap
           </button>
         </div>
       </section>
@@ -179,7 +129,7 @@ function HomePage() {
           <div className="space-y-5">
             <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
               Make your calls on the biggest questions for the{' '}
-              <span className="animated-underline first">2025 Bears season</span>. 
+              <span className="animated-underline first">2026 Bears season</span>. 
               Back your predictions with{' '}
               <span className="animated-underline second">confidence</span> and 
               track your{' '}
@@ -205,10 +155,6 @@ function HomePage() {
           <div className="flex flex-col gap-6">
             {topicsPlacement === 'under_hero' && renderTopicsControls()}
             <PredictionInterface selectedCategory={selectedCategory} />
-
-            <div className="text-sm font-semibold text-slate-500">
-              How It Works
-            </div>
           </div>
           
           {import.meta.env.DEV && <DebugPredictionAccess />}
@@ -236,10 +182,26 @@ function HomePage() {
         </section>
       )}
 
-      <footer className="bg-bears-navy text-white py-8">
+      <footer className="bg-bears-navy py-10">
         <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center text-gray-300">
-            <p>&copy; 2025 Bears Prediction Tracker. All rights reserved.</p>
+          <div className="text-center text-slate-300">
+            <p className="text-2xl font-medium tracking-wide text-slate-300/90">
+              &copy; 2026 Bears Prediction Tracker. All rights reserved.
+            </p>
+            <div className="mx-auto mt-6 h-px w-full max-w-xl bg-white/10" />
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-2xl text-slate-300/90">
+              <button type="button" className="hover:text-white transition-colors">
+                Privacy Policy
+              </button>
+              <span className="text-slate-400/80">|</span>
+              <button type="button" className="hover:text-white transition-colors">
+                Terms of Service
+              </button>
+              <span className="text-slate-400/80">|</span>
+              <button type="button" className="hover:text-white transition-colors">
+                Contact Us
+              </button>
+            </div>
           </div>
         </div>
       </footer>

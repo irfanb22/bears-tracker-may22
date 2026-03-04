@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { BarChart as ChartBar, Home, LogOut, Menu, X, HelpCircle, User, Settings, Trophy } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoginModal } from './LoginModal';
@@ -13,6 +13,7 @@ interface NavbarProps {
 
 export function Navbar({ onRegisterClick }: NavbarProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -44,126 +45,114 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
 
   const handleSignOut = async () => {
     await signOut();
-    // Redirect to home page instead of login
     navigate('/');
   };
 
+  const navItems = [
+    { label: 'Leaderboard', path: '/leaderboard' },
+    { label: 'My Predictions', path: '/dashboard' },
+    ...(isAdmin ? [{ label: 'Admin', path: '/admin' }] : []),
+  ];
+
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+
+    if (path === '/dashboard') {
+      return location.pathname === '/dashboard' || location.pathname === '/predictions';
+    }
+
+    return location.pathname.startsWith(path);
+  };
+
   return (
-    <nav className="sticky top-0 bg-bears-navy border-b border-white/20 z-50">
-      <div className="max-w-[1920px] mx-auto px-5 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo and Brand */}
-          <div className="flex-shrink-0 mr-4">
-            <div 
-              className="flex items-center gap-4 cursor-pointer" 
-              onClick={() => navigate('/')}
-            >
-              <img 
-                src={BearClawLogo} 
-                alt="Bears Prediction Tracker" 
-                className="w-12 h-12 sm:w-14 sm:h-14 object-contain"
-              />
-              <span className="text-lg sm:text-xl font-bold text-white whitespace-nowrap">Bears Prediction Tracker</span>
-            </div>
-          </div>
+    <nav className="sticky top-0 z-50 border-b border-white/15 bg-bears-navy/95 backdrop-blur">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-3 md:h-20">
+          <button
+            type="button"
+            className="flex items-center gap-3 rounded-md pr-2 text-left"
+            onClick={() => navigate('/')}
+          >
+            <img
+              src={BearClawLogo}
+              alt="Bears Prediction Tracker"
+              className="h-10 w-10 object-contain mix-blend-screen contrast-125 saturate-125 sm:h-11 sm:w-11"
+            />
+            <span className="text-base font-extrabold tracking-wide text-white sm:text-lg">
+              Bears Prediction Tracker
+            </span>
+          </button>
 
           {user && (
             <>
-              {/* Desktop Navigation */}
-              <div className="hidden md:flex items-center space-x-1 lg:space-x-4">
-                <button
-                  onClick={() => navigate('/')}
-                  className="flex items-center gap-2 px-3 lg:px-4 py-2 text-gray-300 hover:text-white transition-colors rounded-md"
-                >
-                  <Home className="w-5 h-5" />
-                  <span>Home</span>
-                </button>
-                <button
-                  onClick={() => navigate('/leaderboard')}
-                  className="flex items-center gap-2 px-3 lg:px-4 py-2 text-gray-300 hover:text-white transition-colors rounded-md"
-                >
-                  <Trophy className="w-5 h-5" />
-                  <span>Leaderboard</span>
-                </button>
-                <button
-                  onClick={() => navigate('/predictions')}
-                  className="flex items-center gap-2 px-3 lg:px-4 py-2 text-gray-300 hover:text-white transition-colors rounded-md"
-                >
-                  <ChartBar className="w-5 h-5" />
-                  <span>My Predictions</span>
-                </button>
-                {isAdmin && (
-                  <button
-                    onClick={() => navigate('/admin')}
-                    className="flex items-center gap-2 px-3 lg:px-4 py-2 text-gray-300 hover:text-white transition-colors rounded-md"
-                  >
-                    <Settings className="w-5 h-5" />
-                    <span>Admin</span>
-                  </button>
-                )}
-                <button
-                  onClick={() => navigate('/how-it-works')}
-                  className="flex items-center gap-2 px-3 lg:px-4 py-2 text-gray-400 hover:text-gray-300 transition-colors rounded-md"
-                >
-                  <HelpCircle className="w-4 h-4" />
-                  <span className="text-sm">How It Works</span>
-                </button>
-                <div className="flex items-center gap-2 px-3 lg:px-4 py-2 text-gray-400 rounded-md max-w-[280px]">
-                  <User className="w-5 h-5" />
-                  <span className="text-sm truncate">{user.email}</span>
+              <div className="hidden items-center gap-1 xl:gap-2 md:flex">
+                {navItems.map((item) => {
+                  const active = isActive(item.path);
+
+                  return (
+                    <button
+                      key={item.path}
+                      onClick={() => navigate(item.path)}
+                      className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition-colors ${
+                        active
+                          ? 'bg-white/10 text-white'
+                          : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="hidden items-center gap-2 md:flex">
+                <div className="hidden max-w-[220px] items-center rounded-md border border-white/10 bg-white/5 px-3 py-2 text-gray-300 xl:flex">
+                  <span className="truncate text-xs font-medium">{user.email}</span>
                 </div>
                 <button
                   onClick={handleSignOut}
-                  className="flex items-center gap-2 px-3 lg:px-4 py-2 text-gray-300 hover:text-white transition-colors rounded-md"
+                  className="flex items-center rounded-md border border-white/20 px-3 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
                 >
-                  <LogOut className="w-5 h-5" />
                   <span>Log Out</span>
                 </button>
               </div>
 
-              {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="md:hidden text-white p-2 -mr-2 hover:bg-white/5 rounded-md transition-colors"
+                className="rounded-md p-2 text-white transition-colors hover:bg-white/10 md:hidden"
               >
-                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
             </>
           )}
 
           {!user && (
             <>
-              {/* Desktop Navigation */}
-              <div className="hidden sm:flex items-center">
-                <button
-                  onClick={() => navigate('/how-it-works')}
-                  className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
-                >
-                  How It Works
-                </button>
-                <div className="flex items-center space-x-4 ml-4">
+              <div className="hidden items-center gap-2 sm:flex">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => setIsLoginModalOpen(true)}
-                    className="px-4 py-2 text-gray-300 hover:text-white transition-colors whitespace-nowrap"
+                    className="rounded-md px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
                   >
                     Log In
                   </button>
                   <button
                     onClick={onRegisterClick}
-                    className="px-4 py-2 bg-bears-orange text-white rounded-lg hover:bg-bears-orange/90 transition-colors whitespace-nowrap"
+                    className="rounded-lg bg-bears-orange px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-bears-orange/90"
                   >
                     Sign Up
                   </button>
                 </div>
               </div>
 
-              {/* Mobile Navigation */}
-              <div className="sm:hidden flex items-center">
+              <div className="flex items-center sm:hidden">
                 <button
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="text-white p-2 -mr-2 hover:bg-white/5 rounded-md transition-colors"
+                  className="rounded-md p-2 text-white transition-colors hover:bg-white/10"
                 >
-                  {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                  {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                 </button>
               </div>
             </>
@@ -177,72 +166,40 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden border-t border-white/10"
+              className="border-t border-white/10 md:hidden"
             >
-              <div className="py-2">
-                <button
-                  onClick={() => {
-                    navigate('/');
-                    setIsMenuOpen(false);
-                  }}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors rounded-md"
-                >
-                  <Home className="w-5 h-5" />
-                  <span>Home</span>
-                </button>
+              <div className="space-y-1 py-3">
                 {user ? (
                   <>
-                    <button
-                      onClick={() => {
-                        navigate('/leaderboard');
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors rounded-md"
-                    >
-                      <Trophy className="w-5 h-5" />
-                      <span>Leaderboard</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        navigate('/predictions');
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors rounded-md"
-                    >
-                      <ChartBar className="w-5 h-5" />
-                      <span>My Predictions</span>
-                    </button>
-                    {isAdmin && (
-                      <button
-                        onClick={() => {
-                          navigate('/admin');
-                          setIsMenuOpen(false);
-                        }}
-                        className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors rounded-md"
-                      >
-                        <Settings className="w-5 h-5" />
-                        <span>Admin</span>
-                      </button>
-                    )}
-                    <button
-                      onClick={() => {
-                        navigate('/how-it-works');
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors rounded-md"
-                    >
-                      <HelpCircle className="w-5 h-5" />
-                      <span>How It Works</span>
-                    </button>
-                    <div className="flex items-center gap-3 w-full px-4 py-3 text-gray-400">
-                      <User className="w-5 h-5" />
+                    {navItems.map((item) => {
+                      const active = isActive(item.path);
+
+                      return (
+                        <button
+                          key={item.path}
+                          onClick={() => {
+                            navigate(item.path);
+                            setIsMenuOpen(false);
+                          }}
+                          className={`flex w-full items-center gap-3 rounded-md px-4 py-3 text-left text-sm font-semibold transition-colors ${
+                            active
+                              ? 'bg-white/10 text-white'
+                              : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                          }`}
+                        >
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    })}
+
+                    <div className="my-2 h-px w-full bg-white/10" />
+                    <div className="flex w-full items-center px-4 py-2 text-gray-300">
                       <span className="text-sm">{user.email}</span>
                     </div>
                     <button
                       onClick={handleSignOut}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors rounded-md"
+                      className="flex w-full items-center rounded-md px-4 py-3 text-left text-sm font-semibold text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
                     >
-                      <LogOut className="w-5 h-5" />
                       <span>Log Out</span>
                     </button>
                   </>
@@ -253,19 +210,21 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
                         setIsLoginModalOpen(true);
                         setIsMenuOpen(false);
                       }}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors rounded-md"
+                      className="flex w-full items-center gap-3 rounded-md px-4 py-3 text-left text-sm font-semibold text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
                     >
                       Log In
                     </button>
-                    <button
-                      onClick={() => {
-                        onRegisterClick?.();
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-white bg-bears-orange hover:bg-bears-orange/90 transition-colors rounded-md mx-4"
-                    >
-                      Sign Up
-                    </button>
+                    <div className="px-4 pt-1">
+                      <button
+                        onClick={() => {
+                          onRegisterClick?.();
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex w-full items-center justify-center rounded-md bg-bears-orange px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-bears-orange/90"
+                      >
+                        Sign Up
+                      </button>
+                    </div>
                   </>
                 )}
               </div>

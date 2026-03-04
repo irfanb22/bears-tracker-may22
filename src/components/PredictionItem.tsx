@@ -1,4 +1,3 @@
-import React from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Trophy } from 'lucide-react';
 import { questionAssets } from '../lib/PredictionContext';

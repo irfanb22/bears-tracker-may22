@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { format, isValid } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
 import { motion, AnimatePresence } from 'framer-motion';

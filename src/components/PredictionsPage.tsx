@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Loader2, Trophy, AlertCircle } from 'lucide-react';
 import { Navbar } from './Navbar';
 import type { Prediction, Game } from '../lib/types';
 
 interface PredictionWithDetails extends Prediction {
+  confidence?: 'low' | 'medium' | 'high';
+  points_earned?: number | null;
   game?: Game;
   question?: {
     text: string;
@@ -88,6 +90,11 @@ export function PredictionsPage() {
               className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
             >
               <div className="p-6">
+                {(() => {
+                  const confidence = prediction.confidence ?? 'low';
+
+                  return (
+                    <>
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-lg font-semibold text-bears-navy mb-2">
@@ -105,13 +112,13 @@ export function PredictionsPage() {
                     )}
                   </div>
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    prediction.confidence === 'high'
+                    confidence === 'high'
                       ? 'bg-green-100 text-green-800'
-                      : prediction.confidence === 'medium'
+                      : confidence === 'medium'
                       ? 'bg-yellow-100 text-yellow-800'
                       : 'bg-gray-100 text-gray-800'
                   }`}>
-                    {prediction.confidence.charAt(0).toUpperCase() + prediction.confidence.slice(1)} Confidence
+                    {confidence.charAt(0).toUpperCase() + confidence.slice(1)} Confidence
                   </span>
                 </div>
 
@@ -130,6 +137,9 @@ export function PredictionsPage() {
                     </div>
                   )}
                 </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           ))}
