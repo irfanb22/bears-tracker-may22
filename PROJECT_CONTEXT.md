@@ -1,6 +1,6 @@
 # Bears Prediction Tracker - Project Context
 
-Last updated: 2026-03-03
+Last updated: 2026-03-05
 Repository path: `/Users/irfan/Projects/bears-tracker-may22-main`
 
 ## 1. What This Site Is
@@ -247,6 +247,10 @@ Confirmed from additional screenshots:
 - Ongoing development now in Codex.
 - Current working style is vibe coding / iterative no-heavy-process development.
 - Keep this file updated after major feature, infra, or auth changes.
+- Review workflow preference (added 2026-03-05):
+  - When a session includes UI review, interaction testing, or click-through QA, explicitly start local dev server and provide localhost URL.
+  - At session start, confirm whether user wants live browser review mode enabled for that session.
+  - Default local review URL pattern: `http://127.0.0.1:5173/` unless port changes.
 
 ## 11. Git / GitHub Setup Status
 
@@ -331,14 +335,14 @@ Current phase status (as of 2026-03-04):
    - Navbar
    - My Predictions
    - Leaderboard
-2. Keep this phase UI-only:
-   - no backend wiring added for recap CTA, tooltip content, or fan confidence aggregation
-   - no production scoring behavior rewrites
-3. Next build phase:
-   - begin data wiring and QA for the finalized UI
-   - wire fan-confidence sentiment from real confidence aggregates
-   - wire recap/secondary actions as needed
-   - validate username display-name flow end-to-end with leaderboard output
+2. Mobile QA pass is now substantially complete for redesigned surfaces:
+   - homepage banner/nav/topics/cards/modal interactions validated and refined
+   - My Predictions mobile layout cleaned and made more readable
+   - global footer and route scroll-to-top behavior implemented
+3. Next build phase (before full wiring):
+   - implement real fan-confidence sentiment logic (replace dummy confidence meter preview)
+   - run taxonomy audit: review all current questions and align category tags/topics with redesigned topic model
+   - then wire recap/secondary actions and finalize end-to-end display-name + leaderboard validation
 
 Reference mockup artifacts created in this session:
 - `mockups-halas-locked-foundation.html` (final typography/foundation baseline)
@@ -384,6 +388,26 @@ Reference mockup artifacts created in this session:
 ---
 
 ## Change Log
+
+### 2026-03-05 (Mobile QA + Interaction Cleanup)
+- Completed iterative mobile QA pass and visual cleanup across redesigned routes:
+  - removed topic placement toggle (`Under Nav` / `Under Hero`); locked topics under hero
+  - improved recap banner responsiveness on mobile (stacked layout + centered headline on small screens)
+  - updated recap banner copy to `2025 Predictions Are Live`
+  - reduced oversized footer typography on mobile
+  - moved season toggle above topics in My Predictions for clearer hierarchy
+  - removed non-essential `Updated` timestamp column/row metadata from My Predictions
+  - added question avatar/icon treatment to My Predictions mobile rows
+- Modal consistency improvements:
+  - introduced shared `PredictionEditorModal` component and unified modal experience between Home and My Predictions
+  - removed residual check/X icon language in prediction editing flow
+- Navigation/layout consistency improvements:
+  - moved footer to global app layout so it appears on all routes
+  - added route-based scroll reset so top-level navigation lands at page top
+- Home paging UX update:
+  - added secondary bottom pager control on mobile for card-page navigation visibility
+- Cleanup:
+  - removed dev-only active preview row from My Predictions after QA
 
 ### 2026-03-04 (Redesign Phase Lock - UI Only)
 - Completed redesign lock pass and removed temporary preview artifact:
