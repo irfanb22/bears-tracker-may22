@@ -1,3 +1,4 @@
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XCircle } from 'lucide-react';
 import { AuthForm } from './AuthForm';

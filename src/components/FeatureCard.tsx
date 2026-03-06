@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { LucideIcon } from 'lucide-react';
+import { DivideIcon as LucideIcon } from 'lucide-react';
 
 interface FeatureCardProps {
   title: string;
