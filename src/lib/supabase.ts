@@ -12,7 +12,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce',
+    flowType: 'implicit',
   },
   global: {
     headers: {
@@ -28,3 +28,19 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     },
   },
 });
+
+// Add error event listener
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN') {
+    console.log('User signed in:', session?.user?.email);
+  } else if (event === 'SIGNED_OUT') {
+    console.log('User signed out');
+  } else if (event === 'TOKEN_REFRESHED') {
+    console.log('Token refreshed');
+  }
+});
+
+// Test the connection
+supabase.from('predictions').select('count').limit(1).single()
+  .then(() => console.log('Supabase connection successful'))
+  .catch(error => console.error('Supabase connection error:', error.message));

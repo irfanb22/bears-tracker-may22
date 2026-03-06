@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart as ChartBar, Home, LogOut, Menu, X, HelpCircle, User, Settings, Trophy } from 'lucide-react';
+import { BarChart as ChartBar, LogOut, Menu, X, HelpCircle, User, Settings, Trophy } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LoginModal } from './LoginModal';
 import BearClawLogo from '../assets/bears_claw_logo.png';
-import { supabase } from '../lib/supabase';
 
 interface NavbarProps {
   onRegisterClick?: () => void;
@@ -16,37 +15,14 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
   const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadAdminState = async () => {
-      if (!user) {
-        if (isMounted) {
-          setIsAdmin(false);
-        }
-        return;
-      }
-
-      const { data, error } = await supabase.rpc('current_user_is_admin');
-      if (isMounted) {
-        setIsAdmin(!error && Boolean(data));
-      }
-    };
-
-    loadAdminState();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
     // Redirect to home page instead of login
     navigate('/');
   };
+
+  const isAdmin = user?.email === 'irfanbhanji@gmail.com';
 
   return (
     <nav className="sticky top-0 bg-bears-navy border-b border-white/20 z-50">
@@ -72,11 +48,18 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
               {/* Desktop Navigation */}
               <div className="hidden md:flex items-center space-x-1 lg:space-x-4">
                 <button
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/how-it-works')}
                   className="flex items-center gap-2 px-3 lg:px-4 py-2 text-gray-300 hover:text-white transition-colors rounded-md"
                 >
-                  <Home className="w-5 h-5" />
-                  <span>Home</span>
+                  <HelpCircle className="w-5 h-5" />
+                  <span>How It Works</span>
+                </button>
+                <button
+                  onClick={() => navigate('/predictions')}
+                  className="flex items-center gap-2 px-3 lg:px-4 py-2 text-gray-300 hover:text-white transition-colors rounded-md"
+                >
+                  <ChartBar className="w-5 h-5" />
+                  <span>Your Predictions</span>
                 </button>
                 <button
                   onClick={() => navigate('/leaderboard')}
@@ -84,13 +67,6 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
                 >
                   <Trophy className="w-5 h-5" />
                   <span>Leaderboard</span>
-                </button>
-                <button
-                  onClick={() => navigate('/predictions')}
-                  className="flex items-center gap-2 px-3 lg:px-4 py-2 text-gray-300 hover:text-white transition-colors rounded-md"
-                >
-                  <ChartBar className="w-5 h-5" />
-                  <span>My Predictions</span>
                 </button>
                 {isAdmin && (
                   <button
@@ -101,16 +77,9 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
                     <span>Admin</span>
                   </button>
                 )}
-                <button
-                  onClick={() => navigate('/how-it-works')}
-                  className="flex items-center gap-2 px-3 lg:px-4 py-2 text-gray-400 hover:text-gray-300 transition-colors rounded-md"
-                >
-                  <HelpCircle className="w-4 h-4" />
-                  <span className="text-sm">How It Works</span>
-                </button>
-                <div className="flex items-center gap-2 px-3 lg:px-4 py-2 text-gray-400 rounded-md max-w-[280px]">
+                <div className="flex items-center gap-2 px-3 lg:px-4 py-2 text-gray-400 rounded-md">
                   <User className="w-5 h-5" />
-                  <span className="text-sm truncate">{user.email}</span>
+                  <span className="text-sm">{user.email}</span>
                 </div>
                 <button
                   onClick={handleSignOut}
@@ -182,16 +151,26 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
               <div className="py-2">
                 <button
                   onClick={() => {
-                    navigate('/');
+                    navigate('/how-it-works');
                     setIsMenuOpen(false);
                   }}
                   className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors rounded-md"
                 >
-                  <Home className="w-5 h-5" />
-                  <span>Home</span>
+                  <HelpCircle className="w-5 h-5" />
+                  <span>How It Works</span>
                 </button>
                 {user ? (
                   <>
+                    <button
+                      onClick={() => {
+                        navigate('/predictions');
+                        setIsMenuOpen(false);
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors rounded-md"
+                    >
+                      <ChartBar className="w-5 h-5" />
+                      <span>Your Predictions</span>
+                    </button>
                     <button
                       onClick={() => {
                         navigate('/leaderboard');
@@ -201,16 +180,6 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
                     >
                       <Trophy className="w-5 h-5" />
                       <span>Leaderboard</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        navigate('/predictions');
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 transition-colors rounded-md"
-                    >
-                      <ChartBar className="w-5 h-5" />
-                      <span>My Predictions</span>
                     </button>
                     {isAdmin && (
                       <button
@@ -224,16 +193,6 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
                         <span>Admin</span>
                       </button>
                     )}
-                    <button
-                      onClick={() => {
-                        navigate('/how-it-works');
-                        setIsMenuOpen(false);
-                      }}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-400 hover:text-white hover:bg-white/5 transition-colors rounded-md"
-                    >
-                      <HelpCircle className="w-5 h-5" />
-                      <span>How It Works</span>
-                    </button>
                     <div className="flex items-center gap-3 w-full px-4 py-3 text-gray-400">
                       <User className="w-5 h-5" />
                       <span className="text-sm">{user.email}</span>
@@ -277,7 +236,7 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
       <LoginModal 
         isOpen={isLoginModalOpen}
         onClose={() => setIsLoginModalOpen(false)}
-        onSwitchToRegister={onRegisterClick ?? (() => {})}
+        onSwitchToRegister={onRegisterClick}
       />
     </nav>
   );

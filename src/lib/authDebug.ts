@@ -3,8 +3,8 @@ import { User } from '@supabase/supabase-js';
 interface AuthLog {
   timestamp: number;
   event: string;
-  details?: unknown;
-  error?: unknown;
+  details?: any;
+  error?: any;
 }
 
 class AuthDebugger {
@@ -44,38 +44,14 @@ class AuthDebugger {
     }
   }
 
-  private sanitizePayload(payload: unknown): unknown {
-    if (Array.isArray(payload)) {
-      return payload.map((item) => this.sanitizePayload(item));
-    }
-
-    if (payload && typeof payload === 'object') {
-      const redacted = ['access_token', 'refresh_token', 'provider_token', 'provider_refresh_token'];
-      const record = payload as Record<string, unknown>;
-      const sanitized: Record<string, unknown> = {};
-
-      Object.entries(record).forEach(([key, value]) => {
-        if (redacted.includes(key.toLowerCase())) {
-          sanitized[key] = '[REDACTED]';
-        } else {
-          sanitized[key] = this.sanitizePayload(value);
-        }
-      });
-
-      return sanitized;
-    }
-
-    return payload;
-  }
-
-  public log(event: string, details?: unknown): void {
+  public log(event: string, details?: any): void {
     const log: AuthLog = {
       timestamp: Date.now(),
       event,
-      details: this.sanitizePayload(details)
+      details
     };
 
-    console.log(`[AUTH_DEBUG] ${event}`, log.details || '');
+    console.log(`[AUTH_DEBUG] ${event}`, details || '');
     
     this.logs.unshift(log);
     if (this.logs.length > this.MAX_LOGS) {
@@ -85,11 +61,11 @@ class AuthDebugger {
     this.saveLogs();
   }
 
-  public logError(event: string, error: unknown): void {
+  public logError(event: string, error: any): void {
     const log: AuthLog = {
       timestamp: Date.now(),
       event,
-      error: this.sanitizePayload(this.sanitizeError(error))
+      error: this.sanitizeError(error)
     };
 
     console.error(`[AUTH_DEBUG] Error - ${event}:`, error);
@@ -102,7 +78,7 @@ class AuthDebugger {
     this.saveLogs();
   }
 
-  private sanitizeError(error: unknown): unknown {
+  private sanitizeError(error: any): any {
     if (error instanceof Error) {
       return {
         name: error.name,

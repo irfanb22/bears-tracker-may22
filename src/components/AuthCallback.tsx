@@ -193,10 +193,10 @@ export function AuthCallback() {
             <p className="mt-2 text-sm text-gray-600">{error}</p>
             <div className="mt-6 space-y-3">
               <button
-                onClick={() => navigate('/', { replace: true })}
+                onClick={() => navigate('/login')}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-bears-navy hover:bg-bears-navy/90"
               >
-                Back to Home
+                Try Logging In
               </button>
               <button
                 onClick={() => window.location.reload()}

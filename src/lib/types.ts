@@ -28,7 +28,7 @@ export interface ActualResult {
   id: string;
   game_id: string;
   result: string;
-  stats: Record<string, unknown>;
+  stats: Record<string, any>;
   created_at: string;
 }
 

@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navbar } from './Navbar';
-import { Trophy, Target, Star, Check, X, AlertCircle, Loader2, Settings, Clock, Mail, Save } from 'lucide-react';
+import { Trophy, Target, Star, Check, X, AlertCircle, Loader2, ArrowRight, User, Settings, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { PredictionModal } from './PredictionModal';
+import { questionAssets } from '../lib/PredictionContext';
 import { formatDistanceToNow, isPast } from 'date-fns';
 
 interface Question {
@@ -62,10 +63,8 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPrediction, setSelectedPrediction] = useState<PredictionWithQuestion | null>(null);
-  const [displayNameDraft, setDisplayNameDraft] = useState('');
-  const [nameSavedNotice, setNameSavedNotice] = useState(false);
 
-  const fetchDashboardData = useCallback(async () => {
+  const fetchDashboardData = async () => {
     if (!user) return;
 
     try {
@@ -143,17 +142,11 @@ export function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  };
 
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData]);
-
-  useEffect(() => {
-    if (!user?.email) return;
-    const localPart = user.email.split('@')[0];
-    setDisplayNameDraft(localPart);
-  }, [user?.email]);
+  }, [user]);
 
   const handlePredictionUpdate = async () => {
     await fetchDashboardData();
@@ -211,209 +204,228 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="max-w-6xl mx-auto px-4 py-8 sm:py-10">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
-          <h1 className="text-3xl font-extrabold tracking-tight text-bears-navy sm:text-4xl">
-            My Predictions
-          </h1>
-          <p className="mt-2 text-base font-medium text-slate-600">
-            Track your picks and review your season performance.
-          </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h1 className="text-3xl font-bold text-bears-navy">Your Prediction Dashboard</h1>
+            <div className="flex items-center gap-2 text-gray-600 bg-white px-4 py-2 rounded-lg shadow-sm">
+              <User className="w-5 h-5" />
+              <span>{user?.email}</span>
+            </div>
+          </div>
+          <p className="mt-2 text-gray-600">Track your predictions and performance</p>
         </div>
 
         {error && (
-          <div className="mt-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+          <div className="mb-8 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
             <p className="text-red-700">{error}</p>
           </div>
         )}
 
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_1.9fr]">
-          <aside className="rounded-xl border border-slate-200 bg-white p-5">
-            <h2 className="text-xl font-extrabold text-bears-navy">Profile</h2>
-            <div className="mt-3 flex items-start gap-2 text-sm font-medium text-slate-600">
-              <Mail className="mt-0.5 h-4 w-4 flex-shrink-0" />
-              <span className="break-all">{user?.email}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-12">
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="bg-white rounded-xl shadow-sm p-6 transition-shadow hover:shadow-md"
+          >
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-bears-navy/5 rounded-lg">
+                <Trophy className="w-6 h-6 text-bears-navy" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Total Predictions</p>
+                <p className="text-2xl font-bold text-bears-navy">{stats.totalPredictions}</p>
+              </div>
             </div>
+          </motion.div>
 
-            <div className="mt-4">
-              <label className="block text-xs font-bold uppercase tracking-wide text-slate-600">
-                Display Name
-              </label>
-              <input
-                type="text"
-                value={displayNameDraft}
-                onChange={(e) => setDisplayNameDraft(e.target.value)}
-                className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-bears-orange focus:outline-none focus:ring-1 focus:ring-bears-orange"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setNameSavedNotice(true);
-                  setTimeout(() => setNameSavedNotice(false), 1800);
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="bg-white rounded-xl shadow-sm p-6 transition-shadow hover:shadow-md"
+          >
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-green-50 rounded-lg">
+                <Target className="w-6 h-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Resolved Predictions</p>
+                <p className="text-2xl font-bold text-green-600">{stats.resolvedPredictions}</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="bg-white rounded-xl shadow-sm p-6 transition-shadow hover:shadow-md"
+          >
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <Check className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">Accuracy (Resolved)</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.accuracy.toFixed(1)}%</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ y: -4 }}
+            className="bg-white rounded-xl shadow-sm p-6 transition-shadow hover:shadow-md"
+          >
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-yellow-50 rounded-lg">
+                <Star className="w-6 h-6 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-500">2025 Season Score</p>
+                <p className="text-2xl font-bold text-yellow-600">{stats.totalPoints}</p>
+                <p className="text-xs text-gray-500 mt-1">{stats.pendingPredictions} pending</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+          {predictions.map((prediction) => {
+            const question = prediction.questions;
+            if (!question) return null;
+            
+            const asset = questionAssets[prediction.question_id];
+            const isMultipleChoice = question.question_type === 'multiple_choice';
+            const isExpired = isPast(new Date(question.deadline));
+            const isResolved = !!question.correct_answer && question.correct_answer.trim().length > 0;
+            const isCorrect = isResolved && (
+              normalizePrediction(prediction.prediction) === normalizePrediction(question.correct_answer)
+            );
+            const pointsEarned = isResolved && isCorrect ? 1 : 0;
+            
+            return (
+              <motion.div
+                key={prediction.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`bg-white rounded-xl shadow-sm overflow-hidden border ${
+                  question.featured
+                    ? 'border-bears-orange/20 shadow-bears-orange/10'
+                    : 'border-gray-100/50'
+                } backdrop-blur-xl`}
+                style={{
+                  background: question.featured
+                    ? 'linear-gradient(to bottom right, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9))'
+                    : 'rgba(255, 255, 255, 0.9)',
+                  boxShadow: question.featured
+                    ? '0 4px 24px -1px rgba(200, 56, 3, 0.1)'
+                    : '0 4px 24px -1px rgba(0, 0, 0, 0.05)',
                 }}
-                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-bears-orange px-3 py-2 text-xs font-bold text-white hover:bg-bears-orange/90"
               >
-                <Save className="h-4 w-4" />
-                Save Name
-              </button>
-              {nameSavedNotice && (
-                <p className="mt-2 text-xs font-semibold text-emerald-700">
-                  Name section is in visual-review mode.
-                </p>
-              )}
-            </div>
-
-            <div className="mt-5 grid grid-cols-3 gap-2">
-              <div className="rounded-lg border border-slate-200 p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Resolved</p>
-                <p className="mt-1 text-2xl font-extrabold text-bears-navy">{stats.resolvedPredictions}</p>
-              </div>
-              <div className="rounded-lg border border-slate-200 p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Accuracy</p>
-                <p className="mt-1 text-2xl font-extrabold text-bears-navy">{stats.accuracy.toFixed(1)}%</p>
-              </div>
-              <div className="rounded-lg border border-slate-200 p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Points</p>
-                <p className="mt-1 text-2xl font-extrabold text-bears-navy">{stats.totalPoints}</p>
-              </div>
-            </div>
-          </aside>
-
-          <section className="rounded-xl border border-slate-200 bg-white p-5">
-            <h2 className="text-xl font-extrabold text-bears-navy">My Active Picks</h2>
-            <p className="mt-1 text-sm font-medium text-slate-600">Newest predictions first.</p>
-
-            <div className="mt-4 space-y-3">
-              {predictions.map((prediction) => {
-                const question = prediction.questions;
-                if (!question) return null;
-
-                const isExpired = isPast(new Date(question.deadline));
-                const isResolved = !!question.correct_answer && question.correct_answer.trim().length > 0;
-                const isCorrect = isResolved && (
-                  normalizePrediction(prediction.prediction) === normalizePrediction(question.correct_answer)
-                );
-                const pointsEarned = isResolved && isCorrect ? 1 : 0;
-
-                return (
-                  <article
-                    key={prediction.id}
-                    className="rounded-lg border border-slate-200 p-3"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-bold text-slate-900">
-                          {question.text}
-                        </p>
-                        <div className="mt-1 text-xs font-medium text-slate-500">
-                          Updated {formatDistanceToNow(new Date(prediction.created_at), { addSuffix: true })}
+                <div className="p-4 lg:p-5">
+                  <div className="flex items-start gap-3 lg:gap-4 mb-4 lg:mb-5">
+                    <div className="w-14 h-14 lg:w-16 lg:h-16 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0">
+                      {asset?.image ? (
+                        <img
+                          src={asset.image}
+                          alt={question.text}
+                          className="w-full h-full object-cover rounded-xl border-2 border-bears-navy/10"
+                        />
+                      ) : asset?.icon && (
+                        <div className="w-full h-full bg-bears-navy/5 flex items-center justify-center">
+                          <asset.icon className="w-8 h-8 lg:w-10 lg:h-10 text-bears-navy" />
                         </div>
-                        <div className="mt-2">{getStatusBadge(question.status, question.deadline)}</div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg lg:text-xl font-semibold text-bears-navy">{question.text}</h3>
+                      <div className="mt-2 flex flex-col gap-2">
+                        {getStatusBadge(question.status, question.deadline)}
                       </div>
-                      <span className="whitespace-nowrap rounded-full border border-slate-300 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-700">
-                        {prediction.prediction} • {prediction.confidence.charAt(0).toUpperCase() + prediction.confidence.slice(1)}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Your prediction:</span>
+                      {isMultipleChoice ? (
+                        <span className="font-medium text-bears-navy">
+                          {prediction.prediction}
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          {prediction.prediction.toLowerCase() === 'yes' ? (
+                            <Check className="w-4 h-4 text-green-500" />
+                          ) : (
+                            <X className="w-4 h-4 text-red-500" />
+                          )}
+                          <span className="font-medium text-gray-700">
+                            {prediction.prediction}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Confidence:</span>
+                      <span className={`px-2 py-1 rounded-full text-sm font-medium ${
+                        prediction.confidence === 'high'
+                          ? 'bg-green-100 text-green-800'
+                          : prediction.confidence === 'medium'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {prediction.confidence.charAt(0).toUpperCase() + prediction.confidence.slice(1)}
                       </span>
                     </div>
 
-                    <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-3">
-                      <div className="text-xs font-medium text-slate-600">
-                        Points: <span className={pointsEarned > 0 ? 'font-bold text-emerald-700' : 'font-bold text-slate-700'}>{pointsEarned}</span>
-                      </div>
-                      {isExpired ? (
-                        <span className="inline-flex items-center gap-1 rounded-lg bg-slate-200 px-2 py-1 text-xs font-semibold text-slate-600">
-                          <Clock className="h-3.5 w-3.5" />
-                          Closed
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setSelectedPrediction(prediction)}
-                          className="inline-flex items-center gap-1 rounded-lg bg-bears-navy px-2.5 py-1.5 text-xs font-bold text-white hover:bg-bears-navy/90"
-                        >
-                          <Settings className="h-3.5 w-3.5" />
-                          Update Pick
-                        </button>
-                      )}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <span className="text-gray-600">Points earned:</span>
+                      <span className={`font-medium ${
+                        pointsEarned > 0 ? 'text-green-600' : 'text-gray-600'
+                      }`}>
+                        {pointsEarned}
+                      </span>
                     </div>
-                  </article>
-                );
-              })}
-            </div>
 
-            {predictions.length === 0 && (
-              <div className="mt-5 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-                <Trophy className="mx-auto h-8 w-8 text-slate-400" />
-                <h3 className="mt-3 text-lg font-bold text-slate-800">No predictions yet</h3>
-                <p className="mt-1 text-sm text-slate-600">Make your first pick to start tracking your results.</p>
-              </div>
-            )}
-
-            <article className="mt-4 rounded-lg border border-slate-200 p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold text-slate-900">2026 Game-by-Game Picks</p>
-                  <p className="mt-1 text-xs font-medium text-slate-500">Not started • 17 games to pick</p>
+                    {isExpired ? (
+                      <button
+                        disabled
+                        className="w-full flex items-center justify-center gap-2 p-3 bg-gray-300 text-gray-500 rounded-lg cursor-not-allowed"
+                      >
+                        <Clock className="w-5 h-5" />
+                        Prediction Closed
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setSelectedPrediction(prediction)}
+                        className="w-full flex items-center justify-center gap-2 p-3 bg-bears-navy text-white rounded-lg hover:bg-bears-navy/90 transition-colors"
+                      >
+                        <Settings className="w-5 h-5" />
+                        Update Prediction
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <span className="whitespace-nowrap rounded-full border border-slate-300 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-700">
-                  Coming Soon
-                </span>
-              </div>
-            </article>
-          </section>
-        </div>
+              </motion.div>
+            );
+          })}
 
-        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <motion.div whileHover={{ y: -3 }} className="rounded-xl border border-slate-200 bg-white p-5">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-bears-navy/5 p-2.5">
-                <Trophy className="h-5 w-5 text-bears-navy" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Predictions</p>
-                <p className="text-2xl font-extrabold text-bears-navy">{stats.totalPredictions}</p>
-              </div>
+          {predictions.length === 0 && (
+            <div className="col-span-full text-center py-12">
+              <Trophy className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No predictions yet</h3>
+              <p className="text-gray-500 mb-6">Start making predictions to track your performance</p>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => window.location.href = '/'}
+                className="inline-flex items-center px-4 py-2 bg-bears-orange text-white rounded-lg hover:bg-bears-orange/90 transition-colors"
+              >
+                Make Your First Prediction
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </motion.button>
             </div>
-          </motion.div>
-
-          <motion.div whileHover={{ y: -3 }} className="rounded-xl border border-slate-200 bg-white p-5">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-emerald-50 p-2.5">
-                <Target className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Resolved</p>
-                <p className="text-2xl font-extrabold text-emerald-700">{stats.resolvedPredictions}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div whileHover={{ y: -3 }} className="rounded-xl border border-slate-200 bg-white p-5">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-blue-50 p-2.5">
-                <Check className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Accuracy</p>
-                <p className="text-2xl font-extrabold text-blue-700">{stats.accuracy.toFixed(1)}%</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div whileHover={{ y: -3 }} className="rounded-xl border border-slate-200 bg-white p-5">
-            <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-amber-50 p-2.5">
-                <Star className="h-5 w-5 text-amber-600" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">2025 Score</p>
-                <p className="text-2xl font-extrabold text-amber-700">{stats.totalPoints}</p>
-                <p className="text-xs font-semibold text-slate-500">{stats.pendingPredictions} pending</p>
-              </div>
-            </div>
-          </motion.div>
+          )}
         </div>
 
         <PredictionModal

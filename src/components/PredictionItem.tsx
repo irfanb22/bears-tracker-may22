@@ -4,6 +4,7 @@ import { CheckCircle, XCircle, Trophy } from 'lucide-react';
 import { questionAssets } from '../lib/PredictionContext';
 
 interface PredictionItemProps {
+  id: string;
   question: string;
   questionId: string;
   prediction: string;
@@ -14,6 +15,7 @@ interface PredictionItemProps {
 }
 
 export function PredictionItem({
+  id,
   question,
   questionId,
   prediction,
