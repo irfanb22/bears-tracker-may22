@@ -17,10 +17,13 @@ import { LoginModal } from './components/LoginModal';
 import { DebugPanel } from './components/DebugPanel';
 import { AuthDebugPanel } from './components/AuthDebugPanel';
 import { DebugPredictionAccess } from './components/DebugPredictionAccess';
+import { SiteFooter } from './components/SiteFooter';
+import { ScrollToTop } from './components/ScrollToTop';
 
 const categories = [
   { id: 'all', label: 'All Predictions' },
   { id: 'qb', label: 'QB' },
+  { id: 'rookies', label: 'Rookies' },
   { id: 'player_stats', label: 'Player Stats' },
   { id: 'team_stats', label: 'Team Stats' },
   { id: 'pro_bowlers', label: 'Pro Bowlers' },
@@ -33,70 +36,18 @@ function HomePage() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [filterStyle, setFilterStyle] = useState<'topics' | 'bubbles'>('topics');
-  const [topicsPlacement, setTopicsPlacement] = useState<'under_nav' | 'under_hero'>('under_hero');
 
   const renderTopicsControls = () => (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-xs font-bold uppercase tracking-wide text-slate-500">
-          2025 Topics
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-full border border-slate-300 bg-white p-1">
-            <button
-              type="button"
-              onClick={() => setFilterStyle('topics')}
-              className={`rounded-full px-3 py-1 text-xs font-bold ${
-                filterStyle === 'topics'
-                  ? 'bg-bears-navy text-white'
-                  : 'text-slate-600'
-              }`}
-            >
-              Topics
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterStyle('bubbles')}
-              className={`rounded-full px-3 py-1 text-xs font-bold ${
-                filterStyle === 'bubbles'
-                  ? 'bg-bears-navy text-white'
-                  : 'text-slate-600'
-              }`}
-            >
-              Bubbles
-            </button>
-          </div>
-          <div className="inline-flex rounded-full border border-slate-300 bg-white p-1">
-            <button
-              type="button"
-              onClick={() => setTopicsPlacement('under_nav')}
-              className={`rounded-full px-3 py-1 text-xs font-bold ${
-                topicsPlacement === 'under_nav'
-                  ? 'bg-bears-orange text-white'
-                  : 'text-slate-600'
-              }`}
-            >
-              Under Nav
-            </button>
-            <button
-              type="button"
-              onClick={() => setTopicsPlacement('under_hero')}
-              className={`rounded-full px-3 py-1 text-xs font-bold ${
-                topicsPlacement === 'under_hero'
-                  ? 'bg-bears-orange text-white'
-                  : 'text-slate-600'
-              }`}
-            >
-              Under Hero
-            </button>
-          </div>
+          2026 Season
         </div>
       </div>
 
-      {filterStyle === 'topics' ? (
-        <div className="overflow-x-auto border-b border-slate-200">
-          <div className="flex min-w-max items-center gap-8 pr-4">
+      <div className="relative border-b border-slate-200">
+        <div className="overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-max items-center gap-8 px-1 pr-14 sm:pr-4">
             {categories.map((category) => (
               <button
                 key={category.id}
@@ -115,31 +66,9 @@ function HomePage() {
             </span>
           </div>
         </div>
-      ) : (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-bears-navy/30 bg-bears-navy/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-bears-navy">
-            2025
-          </span>
-          <span className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-700">
-            2026 Game-by-Game Picks
-          </span>
-          {categories.map((category) => (
-            <motion.button
-              key={category.id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setSelectedCategory(category.id)}
-              className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide transition-all sm:text-sm ${
-                selectedCategory === category.id
-                  ? 'border-bears-orange/45 bg-bears-orange/10 text-[#7a2604]'
-                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              {category.label}
-            </motion.button>
-          ))}
-        </div>
-      )}
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-white to-transparent sm:hidden" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-white to-transparent sm:hidden" />
+      </div>
     </div>
   );
   
@@ -149,28 +78,20 @@ function HomePage() {
         onRegisterClick={() => setIsRegisterModalOpen(true)}
       />
 
-      <section className="border-b border-yellow-300 bg-yellow-200/80 px-4 py-2.5">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
-          <p className="text-sm font-bold text-yellow-900 sm:text-base">
-            2025 Season Prediction Results Are In
+      <section className="sticky top-16 z-40 border-b border-yellow-300 bg-yellow-200/95 px-4 py-2.5 md:top-20">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 text-center sm:flex-row sm:justify-center sm:gap-3">
+          <p className="text-center text-sm font-bold leading-tight text-yellow-900 sm:text-base">
+            2025 Predictions Are Live
           </p>
           <button
             type="button"
-            className="rounded-md border border-yellow-700/30 bg-yellow-100 px-3 py-1 text-xs font-bold uppercase tracking-wide text-yellow-900"
+            className="w-full rounded-md border border-yellow-700/30 bg-yellow-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-yellow-900 sm:w-auto"
           >
-            View Fan Recap
+            View Recap
           </button>
         </div>
       </section>
 
-      {topicsPlacement === 'under_nav' && (
-        <section className="px-4 pt-4 sm:pt-5">
-          <div className="max-w-6xl mx-auto">
-            {renderTopicsControls()}
-          </div>
-        </section>
-      )}
-      
       <section className="py-12 px-4 md:py-14 bg-bears-navy text-white">
         <div className="max-w-6xl mx-auto text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-8">
@@ -179,7 +100,7 @@ function HomePage() {
           <div className="space-y-5">
             <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
               Make your calls on the biggest questions for the{' '}
-              <span className="animated-underline first">2025 Bears season</span>. 
+              <span className="animated-underline first">2026 Bears season</span>. 
               Back your predictions with{' '}
               <span className="animated-underline second">confidence</span> and 
               track your{' '}
@@ -203,12 +124,8 @@ function HomePage() {
       <section className="px-4 pb-10 pt-7 sm:pt-9">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col gap-6">
-            {topicsPlacement === 'under_hero' && renderTopicsControls()}
+            {renderTopicsControls()}
             <PredictionInterface selectedCategory={selectedCategory} />
-
-            <div className="text-sm font-semibold text-slate-500">
-              How It Works
-            </div>
           </div>
           
           {import.meta.env.DEV && <DebugPredictionAccess />}
@@ -236,14 +153,6 @@ function HomePage() {
         </section>
       )}
 
-      <footer className="bg-bears-navy text-white py-8">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center text-gray-300">
-            <p>&copy; 2025 Bears Prediction Tracker. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-
       <RegisterModal 
         isOpen={isRegisterModalOpen} 
         onClose={() => setIsRegisterModalOpen(false)}
@@ -270,44 +179,48 @@ function HomePage() {
 
 export function AppComponent() {
   return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route path="/how-it-works" element={<HowItWorks />} />
-      <Route
-        path="/predictions"
-        element={
-          <ProtectedRoute>
-            <Navigate to="/dashboard" replace />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/leaderboard"
-        element={
-          <ProtectedRoute>
-            <Leaderboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin"
-        element={
-          <AdminProtectedRoute>
-            <AdminDashboard />
-          </AdminProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route
+          path="/predictions"
+          element={
+            <ProtectedRoute>
+              <Navigate to="/dashboard" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/leaderboard"
+          element={
+            <ProtectedRoute>
+              <Leaderboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <AdminProtectedRoute>
+              <AdminDashboard />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <SiteFooter />
+    </>
   );
 }
 

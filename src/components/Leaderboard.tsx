@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Trophy, AlertCircle, Medal, Target } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { Navbar } from './Navbar';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
@@ -56,30 +56,38 @@ export function Leaderboard() {
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      <div className="max-w-6xl mx-auto px-4 py-8 sm:py-10">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
-          <div className="flex items-center gap-3">
-            <Trophy className="h-7 w-7 text-bears-orange" />
-            <h1 className="text-3xl font-extrabold tracking-tight text-bears-navy sm:text-4xl">
-              2025 Leaderboard
-            </h1>
-          </div>
-          <p className="mt-2 text-base font-medium text-slate-600">
-            Ranked by total correct picks. Ties share rank (1, 1, 3).
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-5 sm:px-6">
+          <h1 className="text-3xl font-extrabold tracking-tight text-bears-navy sm:text-4xl">
+            {TARGET_SEASON} Leaderboard
+          </h1>
+          <p className="mt-2 text-sm font-medium text-slate-600">
+            Ranked by total correct picks.
           </p>
+          <div className="group relative mt-2 inline-block">
+            <span
+              tabIndex={0}
+              className="text-[11px] font-semibold text-slate-500 underline decoration-dotted underline-offset-2 hover:text-slate-700 focus:outline-none"
+            >
+              How we rank
+            </span>
+            <div className="pointer-events-none invisible absolute left-0 top-full z-10 mt-1 w-72 rounded-lg border border-slate-200 bg-white p-2 text-[11px] text-slate-600 opacity-0 shadow-lg transition-opacity duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+              Ranking uses total correct picks. When tied, fans share the same rank.
+            </div>
+          </div>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Fans Ranked</p>
+        <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Fans Ranked</p>
             <p className="mt-1 text-2xl font-extrabold text-bears-navy">{rows.length}</p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Top Score</p>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Top Score</p>
             <p className="mt-1 text-2xl font-extrabold text-bears-navy">{rows[0]?.total_correct ?? 0}</p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Season</p>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Season</p>
             <p className="mt-1 text-2xl font-extrabold text-bears-navy">{TARGET_SEASON}</p>
           </div>
         </div>
@@ -95,16 +103,16 @@ export function Leaderboard() {
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-6 bg-white border border-slate-200 rounded-xl overflow-hidden"
+            className="mt-6 rounded-xl border border-slate-200 bg-white p-3 sm:p-4"
           >
             <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-slate-50 border-b border-slate-200">
+              <table className="min-w-full border-separate [border-spacing:0_8px]">
+                <thead>
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-600">Rank</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-600">Fan</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-600">Correct Picks</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wide text-slate-600">Accuracy</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-slate-500">Rank</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-slate-500">Fan</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-slate-500">Correct Picks</th>
+                    <th className="px-3 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-slate-500">Accuracy</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -112,16 +120,18 @@ export function Leaderboard() {
                     const accuracy = Number(row.accuracy) || 0;
                     const isTop = row.rank_position === 1;
                     return (
-                      <tr key={`${row.display_name}-${index}`} className="border-b border-slate-100 last:border-b-0">
-                        <td className="px-6 py-4 text-sm font-bold text-bears-navy">
-                          <span className="inline-flex items-center gap-1">
-                            {isTop ? <Medal className="h-4 w-4 text-bears-orange" /> : <Target className="h-4 w-4 text-slate-400" />}
+                      <tr key={`${row.display_name}-${index}`} className="text-sm shadow-[0_1px_0_rgba(15,23,42,0.05)]">
+                        <td className="rounded-l-lg border border-r-0 border-slate-200 bg-slate-50/40 px-3 py-3 font-bold text-bears-navy">
+                          <span className="inline-flex items-center gap-2">
+                            {isTop && (
+                              <span className="h-1.5 w-1.5 rounded-full bg-bears-orange" />
+                            )}
                             {row.rank_position}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm font-semibold text-slate-900">{row.display_name}</td>
-                        <td className="px-6 py-4 text-sm font-semibold text-slate-900">{row.total_correct}</td>
-                        <td className="px-6 py-4 text-sm text-slate-800">
+                        <td className="border border-l-0 border-r-0 border-slate-200 bg-slate-50/40 px-3 py-3 text-sm font-semibold text-slate-900">{row.display_name}</td>
+                        <td className="border border-l-0 border-r-0 border-slate-200 bg-slate-50/40 px-3 py-3 text-sm font-semibold text-slate-900">{row.total_correct}</td>
+                        <td className="rounded-r-lg border border-l-0 border-slate-200 bg-slate-50/40 px-3 py-3 text-sm text-slate-800">
                           {accuracy.toFixed(1)}% ({row.total_correct}/{row.resolved_predictions})
                         </td>
                       </tr>

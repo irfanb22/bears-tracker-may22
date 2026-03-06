@@ -247,6 +247,14 @@ Confirmed from additional screenshots:
 - Ongoing development now in Codex.
 - Current working style is vibe coding / iterative no-heavy-process development.
 - Keep this file updated after major feature, infra, or auth changes.
+- Git safety rule (critical, added 2026-03-05):
+  - Always start work on a dedicated branch prefixed with `codex/`.
+  - Never commit directly to `main`.
+  - Never push directly to `origin/main`.
+  - Before any push action, explicitly ask user for confirmation.
+  - If current branch is `main`, stop and ask whether to create/switch to a `codex/*` branch before continuing.
+  - Branch and save naming should be plain-English and easy to understand (example: `codex/redesign-mobile-qa`, `codex/confidence-meter-logic`).
+  - At the start of each new session, ask user to confirm preferred branch name and commit/save naming for that session.
 - Review workflow preference (added 2026-03-05):
   - When a session includes UI review, interaction testing, or click-through QA, explicitly start local dev server and provide localhost URL.
   - At session start, confirm whether user wants live browser review mode enabled for that session.
@@ -408,6 +416,10 @@ Reference mockup artifacts created in this session:
   - added secondary bottom pager control on mobile for card-page navigation visibility
 - Cleanup:
   - removed dev-only active preview row from My Predictions after QA
+- Process safeguard added after production push incident:
+  - branch policy now requires `codex/*` branch workflow and no direct commits/pushes to `main`
+  - explicit user confirmation required before push actions
+  - naming policy added: easy-to-understand branch/commit names, confirmed with user at session start
 
 ### 2026-03-04 (Redesign Phase Lock - UI Only)
 - Completed redesign lock pass and removed temporary preview artifact:

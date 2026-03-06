@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { XCircle } from 'lucide-react';
 import { AuthForm } from './AuthForm';
+import { useEffect } from 'react';
 
 interface RegisterModalProps {
   isOpen: boolean;
@@ -10,6 +10,19 @@ interface RegisterModalProps {
 }
 
 export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModalProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -26,14 +39,9 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            onClick={onClose}
           >
-            <div className="relative w-full max-w-md">
-              <button
-                onClick={onClose}
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 z-10"
-              >
-                <XCircle className="w-6 h-6" />
-              </button>
+            <div className="w-full max-w-md" onClick={(event) => event.stopPropagation()}>
               <AuthForm 
                 mode="register" 
                 isModal 

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Check, X, Loader2, ArrowRight, AlertCircle, LogIn, XCircle, Clock, Star } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Loader2, AlertCircle, LogIn, Clock, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
@@ -8,6 +8,7 @@ import { formatDistanceToNow, isPast } from 'date-fns';
 import { LoginModal } from './LoginModal';
 import { RegisterModal } from './RegisterModal';
 import type { Question } from '../lib/PredictionContext';
+import { PredictionEditorModal } from './PredictionEditorModal';
 
 interface PredictionInterfaceProps {
   selectedCategory?: string;
@@ -34,11 +35,42 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
   const [successMessages, setSuccessMessages] = useState<Record<string, boolean>>({});
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Filter questions based on selected category
   const filteredQuestions = selectedCategory === 'all'
     ? questions
     : questions.filter(q => q.category === selectedCategory);
+  const cardsPerPage = 3;
+  const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / cardsPerPage));
+  const pagedQuestions = filteredQuestions.slice(
+    (currentPage - 1) * cardsPerPage,
+    currentPage * cardsPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    setCurrentPage((previousPage) => Math.min(previousPage, totalPages));
+  }, [totalPages]);
+
+  useEffect(() => {
+    if (!selectedPrediction || !showAuthPrompt) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedPrediction(null);
+        setShowAuthPrompt(false);
+        setSelectedValue(null);
+        setSelectedConfidence(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [selectedPrediction, showAuthPrompt]);
 
   if (predictionsLoading) {
     return (
@@ -129,24 +161,26 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
     }), {}) || {};
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const getDummyConfidence = (questionId: string) => {
+    const seed = questionId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const score = 25 + (seed % 65); // 25-89
+
+    const label: 'Low' | 'Medium' | 'High' = score >= 70
+      ? 'High'
+      : score >= 45
+      ? 'Medium'
+      : 'Low';
+
+    return { score, label };
+  };
+
+  const handlePrediction = async (questionId: string, prediction: string, confidence: 'low' | 'medium' | 'high') => {
     if (!user) {
       setShowAuthPrompt(true);
       return;
     }
-    
-    await handlePrediction();
-  };
 
-  const handlePrediction = async () => {
-    if (!user || !selectedPrediction || !selectedValue || !selectedConfidence) {
-      setError('Please select both a prediction and confidence level');
-      return;
-    }
-
-    setLoading(prev => ({ ...prev, [selectedPrediction]: true }));
+    setLoading(prev => ({ ...prev, [questionId]: true }));
     setError(null);
 
     try {
@@ -157,9 +191,9 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
         throw new Error('No active session');
       }
 
-      await makeContextPrediction(selectedPrediction, selectedValue, selectedConfidence);
+      await makeContextPrediction(questionId, prediction, confidence);
 
-      setSuccessMessages(prev => ({ ...prev, [selectedPrediction]: true }));
+      setSuccessMessages(prev => ({ ...prev, [questionId]: true }));
       
       setSelectedPrediction(null);
       setSelectedValue(null);
@@ -177,7 +211,7 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
         setError('Failed to save prediction');
       }
     } finally {
-      setLoading(prev => ({ ...prev, [selectedPrediction]: false }));
+      setLoading(prev => ({ ...prev, [questionId]: false }));
     }
   };
 
@@ -196,59 +230,14 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
     setError(null);
   };
 
-  const renderPredictionOptions = (question: Question) => {
-    if (question.question_type === 'yes_no') {
-      return (
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <button
-            type="button"
-            onClick={() => setSelectedValue('yes')}
-            className={`flex items-center justify-center gap-2 p-4 rounded-lg transition-colors ${
-              selectedValue === 'yes'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-100 hover:bg-green-50 text-gray-700 hover:text-green-700'
-            }`}
-          >
-            <Check className="w-5 h-5" />
-            Yes
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedValue('no')}
-            className={`flex items-center justify-center gap-2 p-4 rounded-lg transition-colors ${
-              selectedValue === 'no'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-700'
-            }`}
-          >
-            <X className="w-5 h-5" />
-            No
-          </button>
-        </div>
-      );
-    }
+  const openPredictionModal = (questionId: string) => {
+    const existingPrediction = userPredictions[questionId];
 
-    return (
-      <div className="space-y-3 mb-6">
-        {question.choices?.map((choice) => (
-          <button
-            key={choice.id}
-            type="button"
-            onClick={() => setSelectedValue(choice.text)}
-            className={`w-full flex items-center justify-between p-4 rounded-lg transition-colors ${
-              selectedValue === choice.text
-                ? 'bg-bears-navy text-white'
-                : 'bg-gray-100 hover:bg-bears-navy/10 text-gray-700'
-            }`}
-          >
-            <span className="font-medium">{choice.text}</span>
-            {selectedValue === choice.text && (
-              <Check className="w-5 h-5" />
-            )}
-          </button>
-        ))}
-      </div>
-    );
+    setSelectedPrediction(questionId);
+    setSelectedValue(existingPrediction?.prediction ?? null);
+    setSelectedConfidence(existingPrediction?.confidence ?? null);
+    setShowAuthPrompt(false);
+    setError(null);
   };
 
   const renderPredictionStats = (question: Question) => {
@@ -334,6 +323,32 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
     );
   };
 
+  const renderPagerControls = (extraClassName?: string) => (
+    <div className={`mb-4 flex items-center justify-end gap-3 ${extraClassName ?? ''}`}>
+      <button
+        type="button"
+        onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+        disabled={currentPage === 1}
+        className="rounded-full border border-slate-300 bg-white p-2 text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+        aria-label="Previous card page"
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <span className="text-sm font-semibold text-slate-600">
+        {currentPage} of {totalPages}
+      </span>
+      <button
+        type="button"
+        onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+        disabled={currentPage === totalPages}
+        className="rounded-full border border-slate-300 bg-white p-2 text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+        aria-label="Next card page"
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
+    </div>
+  );
+
   return (
     <>
       {error && (
@@ -343,8 +358,10 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
         </div>
       )}
 
+      {filteredQuestions.length > cardsPerPage && renderPagerControls()}
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
-        {filteredQuestions.map((question) => {
+        {pagedQuestions.map((question) => {
           const hasPredicted = userPredictions[question.id];
           const totalVotes = aggregatedPredictions[question.id]?.total || 0;
           const asset = questionAssets[question.id];
@@ -375,6 +392,8 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
                 .sort((a, b) => b.percentage - a.percentage)
                 .slice(0, 3)
             : [];
+          const confidence = getDummyConfidence(question.id);
+          const meterPosition = Math.min(Math.max(confidence.score, 2), 98);
 
           return (
             <motion.div
@@ -522,50 +541,40 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
                 )}
               </div>
 
+              <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center justify-between text-xs">
+                  <p className="font-bold uppercase tracking-wide text-slate-600">Fan Confidence</p>
+                  <p className="font-extrabold text-slate-800">{confidence.label}</p>
+                </div>
+                <div className="relative mt-2 h-2 overflow-hidden rounded-full bg-gradient-to-r from-slate-400 via-amber-400 to-emerald-500">
+                  <motion.div
+                    initial={{ left: 0 }}
+                    animate={{ left: `${meterPosition}%` }}
+                    transition={{ duration: 0.4 }}
+                    className="absolute top-0 h-2"
+                  >
+                    <span className="absolute -top-1.5 h-5 w-0.5 bg-slate-900" />
+                  </motion.div>
+                </div>
+                <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  Preview only
+                </p>
+              </div>
+
               <div className="mt-4 flex gap-2">
                 <button
-                  onClick={() => !isExpired && setSelectedPrediction(question.id)}
-                  disabled={isExpired}
+                  onClick={() => openPredictionModal(question.id)}
                   className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition ${
                     isExpired
-                      ? 'cursor-not-allowed bg-slate-200 text-slate-500'
+                      ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
                       : hasPredicted
                       ? 'bg-emerald-600 text-white hover:bg-emerald-700'
                       : 'bg-bears-navy text-white hover:bg-bears-navy/90'
                   }`}
                 >
-                  {isExpired ? 'Prediction Closed' : hasPredicted ? 'Update Prediction' : 'Make Prediction'}
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg bg-slate-100 px-3 py-2 text-xs font-bold text-slate-600"
-                >
-                  Details
+                  {isExpired ? 'View Details' : hasPredicted ? 'View / Edit Prediction' : 'Make Prediction'}
                 </button>
               </div>
-
-              {hasPredicted && (
-                <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-slate-600">Your call:</span>
-                    <span className="font-bold capitalize text-bears-navy">
-                      {hasPredicted.prediction}
-                    </span>
-                  </div>
-                  <div className="mt-1.5 flex items-center justify-between text-xs">
-                    <span className="font-medium text-slate-600">Fan confidence:</span>
-                    <span className={`rounded-full px-2 py-0.5 font-bold ${
-                      hasPredicted.confidence === 'high'
-                        ? 'bg-green-100 text-green-800'
-                        : hasPredicted.confidence === 'medium'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {hasPredicted.confidence.charAt(0).toUpperCase() + hasPredicted.confidence.slice(1)}
-                    </span>
-                  </div>
-                </div>
-              )}
 
               <AnimatePresence>
                 {successMessages[question.id] && (
@@ -584,15 +593,17 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
         })}
       </div>
 
+      {filteredQuestions.length > cardsPerPage && renderPagerControls('mt-4 md:hidden')}
+
       <AnimatePresence>
-        {selectedPrediction && (
+        {selectedPrediction && showAuthPrompt && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={handleClose}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              className="fixed inset-0 z-40 bg-slate-900/35"
             />
 
             <motion.div
@@ -600,122 +611,64 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              onClick={(e) => e.stopPropagation()}
+              onClick={handleClose}
             >
-              {showAuthPrompt ? (
-                <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-auto p-6 text-center relative">
-                  <button
-                    onClick={handleClose}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              <div
+                className="mx-auto w-full max-w-[500px] rounded-3xl bg-white p-5 text-center shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <LogIn className="mx-auto mb-4 h-12 w-12 text-bears-orange" />
+                <h2 className="mb-4 text-2xl font-bold text-bears-navy">
+                  Sign In to Make Predictions
+                </h2>
+                <p className="mb-6 text-gray-600">
+                  Join the Bears prediction community to save your predictions and compete with other fans!
+                </p>
+                <div className="space-y-3">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      handleClose();
+                      setShowLoginModal(true);
+                    }}
+                    className="w-full rounded-lg bg-bears-navy py-3 text-white transition-colors hover:bg-bears-navy/90"
                   >
-                    <XCircle className="w-6 h-6" />
-                  </button>
-                  <LogIn className="w-12 h-12 text-bears-orange mx-auto mb-4" />
-                  <h2 className="text-2xl font-bold text-bears-navy mb-4">
-                    Sign In to Make Predictions
-                  </h2>
-                  <p className="text-gray-600 mb-6">
-                    Join the Bears prediction community to save your predictions and compete with other fans!
-                  </p>
-                  <div className="space-y-3">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => {
-                        handleClose();
-                        setShowLoginModal(true);
-                      }}
-                      className="w-full py-3 bg-bears-navy text-white rounded-lg hover:bg-bears-navy/90 transition-colors"
-                    >
-                      Sign In
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => {
-                        handleClose();
-                        setShowRegisterModal(true);
-                      }}
-                      className="w-full py-3 bg-bears-orange text-white rounded-lg hover:bg-bears-orange/90 transition-colors"
-                    >
-                      Create Account
-                    </motion.button>
-                  </div>
+                    Sign In
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      handleClose();
+                      setShowRegisterModal(true);
+                    }}
+                    className="w-full rounded-lg bg-bears-orange py-3 text-white transition-colors hover:bg-bears-orange/90"
+                  >
+                    Create Account
+                  </motion.button>
                 </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-auto relative">
-                  <button
-                    type="button"
-                    onClick={handleClose}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <XCircle className="w-6 h-6" />
-                  </button>
-                  <div className="p-6">
-                    {(() => {
-                      const question = questions.find(q => q.id === selectedPrediction);
-                      if (!question) return null;
-                      
-                      return (
-                        <>
-                          <h2 className="text-2xl font-bold text-bears-navy mb-4 pr-8">
-                            {question.text}
-                          </h2>
-
-                          {renderPredictionOptions(question)}
-
-                          <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              How confident are you?
-                            </label>
-                            <div className="grid grid-cols-3 gap-3">
-                              {(['low', 'medium', 'high'] as const).map((level) => (
-                                <button
-                                  key={level}
-                                  type="button"
-                                  onClick={() => setSelectedConfidence(level)}
-                                  className={`p-2 rounded-lg text-sm font-medium transition-colors ${
-                                    selectedConfidence === level
-                                      ? 'bg-bears-navy text-white'
-                                      : 'bg-gray-100 text-gray-700 hover:bg-bears-navy/10'
-                                  }`}
-                                >
-                                  {level.charAt(0).toUpperCase() + level.slice(1)}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {error && (
-                            <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg">
-                              {error}
-                            </div>
-                          )}
-
-                          <button
-                            type="submit"
-                            disabled={!selectedValue || !selectedConfidence || loading[selectedPrediction]}
-                            className="w-full flex items-center justify-center gap-2 p-4 bg-bears-orange text-white rounded-lg hover:bg-bears-orange/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {loading[selectedPrediction] ? (
-                              <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                              <>
-                                Submit Prediction
-                                <ArrowRight className="w-5 h-5" />
-                              </>
-                            )}
-                          </button>
-                        </>
-                      );
-                    })()}
-                  </div>
-                </form>
-              )}
+              </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
+
+      <PredictionEditorModal
+        isOpen={!!selectedPrediction && !showAuthPrompt}
+        question={selectedPrediction ? questions.find((q) => q.id === selectedPrediction) ?? null : null}
+        initialValue={selectedValue}
+        initialConfidence={selectedConfidence}
+        userPrediction={selectedPrediction ? userPredictions[selectedPrediction] : null}
+        error={error}
+        loading={selectedPrediction ? Boolean(loading[selectedPrediction]) : false}
+        onClose={handleClose}
+        onSave={async (predictionValue, confidenceValue) => {
+          if (!selectedPrediction) return;
+          await handlePrediction(selectedPrediction, predictionValue, confidenceValue);
+        }}
+        submitLabel="Submit Prediction"
+      />
 
       <LoginModal 
         isOpen={showLoginModal}
