@@ -20,7 +20,18 @@ export function Leaderboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchLeaderboard = async () => {
+    const normalizeDisplayName = (value: unknown, index: number) => {
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value.trim();
+      }
+      return `Fan ${index + 1}`;
+    };
+
+    const fetchLeaderboard = async (showSpinner = false) => {
+      if (showSpinner) {
+        setLoading(true);
+      }
+
       try {
         const { data, error: rpcError } = await supabase.rpc('get_season_leaderboard', {
           target_season: TARGET_SEASON
@@ -30,7 +41,13 @@ export function Leaderboard() {
           throw rpcError;
         }
 
-        setRows((data || []) as LeaderboardRow[]);
+        const normalizedRows = ((data || []) as LeaderboardRow[]).map((row, index) => ({
+          ...row,
+          display_name: normalizeDisplayName(row.display_name, index),
+        }));
+
+        setRows(normalizedRows);
+        setError(null);
       } catch (err) {
         console.error('Error loading leaderboard:', err);
         setError(err instanceof Error ? err.message : 'Failed to load leaderboard');
@@ -39,7 +56,20 @@ export function Leaderboard() {
       }
     };
 
-    fetchLeaderboard();
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchLeaderboard(false);
+      }
+    };
+
+    void fetchLeaderboard(true);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+    };
   }, []);
 
   if (loading) {

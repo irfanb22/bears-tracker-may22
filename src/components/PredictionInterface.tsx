@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Loader2, AlertCircle, LogIn, Clock, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
@@ -36,6 +36,116 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [confidenceSentiment, setConfidenceSentiment] = useState<
+    Record<string, { score: number; label: 'Low' | 'Medium' | 'High' }>
+  >({});
+  const [confidenceSentimentLoading, setConfidenceSentimentLoading] = useState(false);
+
+  const deriveConfidenceLabel = useCallback((score: number): 'Low' | 'Medium' | 'High' => {
+    if (score >= 70) return 'High';
+    if (score >= 40) return 'Medium';
+    return 'Low';
+  }, []);
+
+  const parseConfidenceLabel = useCallback(
+    (value: unknown, score: number): 'Low' | 'Medium' | 'High' => {
+      if (typeof value === 'string') {
+        const normalized = value.toLowerCase();
+        if (normalized === 'high') return 'High';
+        if (normalized === 'medium') return 'Medium';
+        if (normalized === 'low') return 'Low';
+      }
+      return deriveConfidenceLabel(score);
+    },
+    [deriveConfidenceLabel]
+  );
+
+  const fetchConfidenceSentiment = useCallback(async () => {
+    if (questions.length === 0) {
+      setConfidenceSentiment({});
+      setConfidenceSentimentLoading(false);
+      return;
+    }
+
+    setConfidenceSentimentLoading(true);
+    let loadedFromRpc = false;
+
+    try {
+      const { data, error: rpcError } = await supabase.rpc('get_question_confidence_sentiment');
+      if (rpcError) throw rpcError;
+
+      const byQuestion = ((data as Array<Record<string, unknown>>) || []).reduce<
+        Record<string, { score: number; label: 'Low' | 'Medium' | 'High' }>
+      >((acc, row) => {
+        const questionId = typeof row.question_id === 'string' ? row.question_id : null;
+        if (!questionId) return acc;
+
+        const rawScore = Number(row.meter_percent);
+        if (!Number.isFinite(rawScore)) return acc;
+
+        const score = Math.min(Math.max(rawScore, 0), 100);
+        acc[questionId] = {
+          score,
+          label: parseConfidenceLabel(row.sentiment_label ?? row.confidence_label, score),
+        };
+        return acc;
+      }, {});
+
+      setConfidenceSentiment(byQuestion);
+      loadedFromRpc = true;
+    } catch (rpcErr) {
+      console.warn('Confidence sentiment RPC unavailable, falling back to client-side aggregation.', rpcErr);
+    }
+
+    if (!loadedFromRpc) {
+      try {
+        const { data, error: fallbackError } = await supabase
+          .from('predictions')
+          .select('question_id, confidence')
+          .not('question_id', 'is', null);
+
+        if (fallbackError) throw fallbackError;
+
+        const confidenceTotals = ((data as Array<{ question_id: string | null; confidence: string | null }>) || []).reduce<
+          Record<string, { sum: number; count: number }>
+        >((acc, row) => {
+          if (!row.question_id || !row.confidence) return acc;
+
+          const confidenceValue = row.confidence === 'high' ? 3 : row.confidence === 'medium' ? 2 : row.confidence === 'low' ? 1 : null;
+          if (!confidenceValue) return acc;
+
+          if (!acc[row.question_id]) {
+            acc[row.question_id] = { sum: 0, count: 0 };
+          }
+
+          acc[row.question_id].sum += confidenceValue;
+          acc[row.question_id].count += 1;
+          return acc;
+        }, {});
+
+        const byQuestion = Object.entries(confidenceTotals).reduce<
+          Record<string, { score: number; label: 'Low' | 'Medium' | 'High' }>
+        >((acc, [questionId, values]) => {
+          const avgConfidence = values.sum / values.count;
+          const score = ((avgConfidence - 1) / 2) * 100;
+          const normalizedScore = Math.min(Math.max(score, 0), 100);
+
+          acc[questionId] = {
+            score: normalizedScore,
+            label: deriveConfidenceLabel(normalizedScore),
+          };
+          return acc;
+        }, {});
+
+        setConfidenceSentiment(byQuestion);
+      } catch (fallbackErr) {
+        console.error('Error fetching confidence sentiment:', fallbackErr);
+        setConfidenceSentiment({});
+      }
+    }
+
+    setConfidenceSentimentLoading(false);
+  }, [deriveConfidenceLabel, parseConfidenceLabel, questions.length]);
 
   // Filter questions based on selected category
   const filteredQuestions = selectedCategory === 'all'
@@ -55,6 +165,10 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
   useEffect(() => {
     setCurrentPage((previousPage) => Math.min(previousPage, totalPages));
   }, [totalPages]);
+
+  useEffect(() => {
+    void fetchConfidenceSentiment();
+  }, [fetchConfidenceSentiment, aggregatedPredictions]);
 
   useEffect(() => {
     if (!selectedPrediction || !showAuthPrompt) return;
@@ -97,45 +211,6 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
     );
   }
 
-  const getStatusBadge = (status: string, deadline: string) => {
-    const isExpired = isPast(new Date(deadline));
-    const timeLeft = formatDistanceToNow(new Date(deadline), { addSuffix: true });
-    
-    switch (status) {
-      case 'live':
-        return (
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1.5 px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              Question is Live
-            </span>
-            {!isExpired && (
-              <span className="flex items-center gap-1.5 text-sm text-gray-500">
-                <Clock className="w-4 h-4" />
-                {timeLeft}
-              </span>
-            )}
-          </div>
-        );
-      case 'pending':
-        return (
-          <span className="flex items-center gap-1.5 px-2 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full">
-            <span className="w-2 h-2 bg-yellow-500 rounded-full" />
-            Question is Pending
-          </span>
-        );
-      case 'completed':
-        return (
-          <span className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-full">
-            <span className="w-2 h-2 bg-gray-500 rounded-full" />
-            Question is Closed
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
-
   const calculatePercentages = (questionId: string, question: Question): Record<string, number> => {
     const data = aggregatedPredictions[questionId];
     if (!data || data.total === 0) {
@@ -159,19 +234,6 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
       ...acc,
       [choice.text]: Math.round((Number(data[choice.text] || 0) / data.total) * 100)
     }), {}) || {};
-  };
-
-  const getDummyConfidence = (questionId: string) => {
-    const seed = questionId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    const score = 25 + (seed % 65); // 25-89
-
-    const label: 'Low' | 'Medium' | 'High' = score >= 70
-      ? 'High'
-      : score >= 45
-      ? 'Medium'
-      : 'Low';
-
-    return { score, label };
   };
 
   const handlePrediction = async (questionId: string, prediction: string, confidence: 'low' | 'medium' | 'high') => {
@@ -392,8 +454,16 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
                 .sort((a, b) => b.percentage - a.percentage)
                 .slice(0, 3)
             : [];
-          const confidence = getDummyConfidence(question.id);
-          const meterPosition = Math.min(Math.max(confidence.score, 2), 98);
+          const confidence = confidenceSentiment[question.id];
+          const meterPosition = confidence ? Math.min(Math.max(confidence.score, 2), 98) : 50;
+          const confidencePercent = confidence ? Math.round(confidence.score) : null;
+          const confidenceLabel = confidence
+            ? confidence.label
+            : confidenceSentimentLoading
+            ? 'Loading'
+            : totalVotes === 0
+            ? 'No picks yet'
+            : 'Unavailable';
 
           return (
             <motion.div
@@ -543,22 +613,47 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
 
               <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
                 <div className="flex items-center justify-between text-xs">
-                  <p className="font-bold uppercase tracking-wide text-slate-600">Fan Confidence</p>
-                  <p className="font-extrabold text-slate-800">{confidence.label}</p>
+                  <div className="group relative">
+                    <p
+                      className="cursor-help font-bold uppercase tracking-wide text-slate-600"
+                      tabIndex={0}
+                      aria-label="Fan Confidence Index info"
+                    >
+                      Fan Confidence Index
+                    </p>
+                    <span className="pointer-events-none absolute -top-8 left-0 z-10 whitespace-nowrap rounded bg-slate-900 px-2 py-1 text-[10px] font-semibold normal-case tracking-normal text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                      Aggregate measure of how confident fans are in this prediction.
+                    </span>
+                  </div>
+                  <p className="font-extrabold text-slate-800">{confidenceLabel}</p>
                 </div>
-                <div className="relative mt-2 h-2 overflow-hidden rounded-full bg-gradient-to-r from-slate-400 via-amber-400 to-emerald-500">
+                <div
+                  className="group relative mt-2 h-2 overflow-visible rounded-full bg-gradient-to-r from-slate-400 via-amber-400 to-emerald-500"
+                  title={confidencePercent !== null ? `Fan conviction: ${confidencePercent}%` : 'Fan conviction unavailable'}
+                >
+                  {confidencePercent !== null && (
+                    <span className="pointer-events-none absolute -top-7 left-1/2 z-10 -translate-x-1/2 rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                      {confidencePercent}%
+                    </span>
+                  )}
                   <motion.div
                     initial={{ left: 0 }}
                     animate={{ left: `${meterPosition}%` }}
                     transition={{ duration: 0.4 }}
-                    className="absolute top-0 h-2"
+                    className={`absolute top-0 h-2 ${confidence ? '' : 'opacity-40'}`}
                   >
                     <span className="absolute -top-1.5 h-5 w-0.5 bg-slate-900" />
                   </motion.div>
                 </div>
-                <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                  Preview only
-                </p>
+                {!confidence && (
+                  <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                    {confidenceSentimentLoading
+                      ? 'Loading conviction data'
+                      : totalVotes === 0
+                      ? 'No conviction data yet'
+                      : 'Conviction unavailable'}
+                  </p>
+                )}
               </div>
 
               <div className="mt-4 flex gap-2">
