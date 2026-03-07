@@ -3,6 +3,7 @@ export interface Game {
   opponent: string;
   date: string;
   location: string;
+  season: number;
   created_at: string;
 }
 

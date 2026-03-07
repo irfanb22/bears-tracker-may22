@@ -21,14 +21,14 @@ import { SiteFooter } from './components/SiteFooter';
 import { ScrollToTop } from './components/ScrollToTop';
 
 const categories = [
-  { id: 'all', label: 'All Predictions' },
+  { id: 'all', label: 'All' },
   { id: 'qb', label: 'QB' },
   { id: 'rookies', label: 'Rookies' },
   { id: 'player_stats', label: 'Player Stats' },
   { id: 'team_stats', label: 'Team Stats' },
-  { id: 'pro_bowlers', label: 'Pro Bowlers' },
-  { id: 'draft_predictions', label: 'Draft' },
-  { id: 'playoffs', label: 'Playoffs' }
+  { id: 'awards', label: 'Awards' },
+  { id: 'playoffs', label: 'Playoffs' },
+  { id: 'draft_predictions', label: 'Draft' }
 ];
 
 function HomePage() {

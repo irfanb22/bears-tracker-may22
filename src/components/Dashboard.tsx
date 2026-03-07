@@ -40,17 +40,17 @@ interface PredictionWithQuestion {
 type FilterStatus = 'all' | 'active' | 'resolved' | 'pending';
 
 const CATEGORY_LABELS: Record<string, string> = {
-  all: 'All Predictions',
+  all: 'All',
   qb: 'QB',
   rookies: 'Rookies',
   player_stats: 'Player Stats',
   team_stats: 'Team Stats',
-  pro_bowlers: 'Pro Bowlers',
-  draft_predictions: 'Draft',
+  awards: 'Awards',
   playoffs: 'Playoffs',
+  draft_predictions: 'Draft',
 };
 
-const CATEGORY_ORDER = ['all', 'qb', 'rookies', 'player_stats', 'team_stats', 'pro_bowlers', 'draft_predictions', 'playoffs'];
+const CATEGORY_ORDER = ['all', 'qb', 'rookies', 'player_stats', 'team_stats', 'awards', 'playoffs', 'draft_predictions'];
 
 const getCategoryLabel = (category: string) => {
   return CATEGORY_LABELS[category] || category.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
