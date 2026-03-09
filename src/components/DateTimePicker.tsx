@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { format, isValid } from 'date-fns';
+import { format, parse, isValid } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, ChevronUp, ChevronDown } from 'lucide-react';
@@ -61,7 +61,7 @@ export function DateTimePicker({ value, onChange, className }: DateTimePickerPro
       setHours(now.getHours());
       setMinutes(now.getMinutes());
     }
-  }, [value, selectedDate]);
+  }, [value]);
 
   const handleDaySelect = (date: Date | undefined) => {
     if (date) {

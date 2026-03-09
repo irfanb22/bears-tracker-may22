@@ -9,13 +9,8 @@ interface AggregationTest {
   total: number;
 }
 
-interface AccessTestResult {
-  type: string;
-  data: unknown;
-}
-
 export function DebugPredictionAccess() {
-  const [data, setData] = useState<AccessTestResult[] | null>(null);
+  const [data, setData] = useState<any[] | null>(null);
   const [aggregations, setAggregations] = useState<AggregationTest[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

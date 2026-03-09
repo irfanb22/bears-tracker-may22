@@ -2,7 +2,6 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
 import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 
 interface AdminProtectedRouteProps {
   children: React.ReactNode;
@@ -13,35 +12,14 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
-
+    // Simple admin check based on email
     if (!user) {
       setIsAdmin(false);
       return;
     }
 
-    const checkAdmin = async () => {
-      const { data, error } = await supabase.rpc('current_user_is_admin');
-      if (error) {
-        if (import.meta.env.DEV) {
-          console.error('Failed to check admin status:', error.message);
-        }
-        if (isMounted) {
-          setIsAdmin(false);
-        }
-        return;
-      }
-
-      if (isMounted) {
-        setIsAdmin(Boolean(data));
-      }
-    };
-
-    checkAdmin();
-
-    return () => {
-      isMounted = false;
-    };
+    // Set admin status based on email check
+    setIsAdmin(user.email === 'irfanbhanji@gmail.com');
   }, [user]);
 
   // Show loading state while checking
