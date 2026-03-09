@@ -1,6 +1,6 @@
 # Bears Prediction Tracker - Project Context
 
-Last updated: 2026-03-05
+Last updated: 2026-03-07
 Repository path: `/Users/irfan/Projects/bears-tracker-may22-main`
 
 ## 1. What This Site Is
@@ -32,12 +32,13 @@ Current primary business goal:
 - Home page with 2025 season prediction questions.
 - Category filters:
   - `all`
-  - `qb` (UI mockup tag)
+  - `qb`
+  - `rookies`
   - `player_stats`
   - `team_stats`
-  - `pro_bowlers` (UI mockup tag)
+  - `awards`
   - `draft_predictions`
-  - `playoffs` (UI mockup tag)
+  - `playoffs`
 - Community percentages shown per question.
 - "How It Works" page explaining product intent.
 
@@ -149,11 +150,17 @@ Primary entities currently used:
 - `predictions`
 - `choices`
 - `prediction_types`
-- `games` (present in migrations/legacy components)
+- `games`
 
 Prediction behavior:
 - User has one current prediction per question (`upsert` on `user_id, question_id`).
 - Aggregates are computed from all predictions for community percentages.
+
+Game prediction model (current schema):
+- `predictions` supports both question picks and game picks.
+- A prediction targets either `question_id` or `game_id` (not both).
+- `prediction_type_id` is used to distinguish `question` vs `game`.
+- `games.season` is now part of the data model for explicit season separation.
 
 ## 5.1 Official Scoring Policy (Current)
 
@@ -177,6 +184,51 @@ Accuracy formula:
 Confidence product intent:
 - Confidence is a fan-sentiment signal, not a scoring multiplier.
 - Use confidence to understand community conviction on a topic (for example, how strongly fans feel about a yes/no outcome).
+
+## 5.2 Confidence Sentiment Aggregation (Current Rule)
+
+Intent:
+- Confidence drives sentiment/meter display only.
+- Confidence does not affect points.
+
+Aggregation logic:
+- Map confidence levels to numeric values:
+  - `low = 1`
+  - `medium = 2`
+  - `high = 3`
+- For each question, compute the average confidence across users.
+- Each user contributes one confidence value per question (latest saved value only).
+
+Meter conversion:
+- Convert average confidence (`1..3`) to percent (`0..100`) with:
+  - `meter_percent = ((avg_confidence_score - 1) / 2) * 100`
+
+Current label thresholds in database function:
+- `Low` if meter `< 40`
+- `Medium` if meter `>= 40` and `< 70`
+- `High` if meter `>= 70`
+
+Current implementation status:
+- Database aggregation function exists in production:
+  - `public.get_question_confidence_sentiment(target_season integer default 2025)`
+- Home card meter UI is still on dummy placeholder logic and needs wiring to this function.
+
+## 5.3 Taxonomy Baseline (Locked for 2026 Foundation)
+
+Canonical topic/tag set:
+- `all`
+- `qb`
+- `rookies`
+- `player_stats`
+- `team_stats`
+- `awards`
+- `playoffs`
+- `draft_predictions`
+
+2025 question set status:
+- Test question removed from production.
+- Active 2025 set is `13` questions.
+- 2025 categories were recategorized to align with the canonical tags above.
 
 ## 6. Environment and Credentials (Safe Handling)
 
@@ -247,6 +299,14 @@ Confirmed from additional screenshots:
 - Ongoing development now in Codex.
 - Current working style is vibe coding / iterative no-heavy-process development.
 - Keep this file updated after major feature, infra, or auth changes.
+- Git safety rule (critical, added 2026-03-05):
+  - Always start work on a dedicated branch prefixed with `codex/`.
+  - Never commit directly to `main`.
+  - Never push directly to `origin/main`.
+  - Before any push action, explicitly ask user for confirmation.
+  - If current branch is `main`, stop and ask whether to create/switch to a `codex/*` branch before continuing.
+  - Branch and save naming should be plain-English and easy to understand (example: `codex/redesign-mobile-qa`, `codex/confidence-meter-logic`).
+  - At the start of each new session, ask user to confirm preferred branch name and commit/save naming for that session.
 - Review workflow preference (added 2026-03-05):
   - When a session includes UI review, interaction testing, or click-through QA, explicitly start local dev server and provide localhost URL.
   - At session start, confirm whether user wants live browser review mode enabled for that session.
@@ -304,6 +364,14 @@ Current phase status (as of 2026-03-04):
   - users open a game picker experience
   - users submit per-game Bears win/loss picks
   - game picks are included in 2026 prediction tracking/scoring views
+
+### Priority 4: Reports Section + Email Content Workflow (Planned)
+- Add a `Reports` section/page to bearsprediction.com for long-form posts.
+- Expected cadence: approximately `3 reports per year`.
+- Reports are both on-site content and email content for existing users.
+- Writing workflow:
+  - user is primary writer/voice for report content
+  - Codex role is editing, structuring, and formatting support
 
 ### Question Management Operating Decision (Current)
 - Do question creation/deadline updates through **Codex/terminal** for now.
@@ -385,9 +453,69 @@ Reference mockup artifacts created in this session:
   - sentiment explains fan confidence
   - scoring still follows official points rules unless intentionally changed later
 
+### Planned Reports Feature (Future Scope)
+- Add top-level `Reports` page containing long-form report entries (blog-style reading experience).
+- Planned recurring reports:
+  1. `Season Recap Report` (post-season):
+     - analyze fan prediction accuracy for the full season
+     - summarize optimism vs pessimism patterns
+     - highlight easiest vs hardest questions for users
+     - compare expectation vs actual season outcome
+  2. `Season Kickoff Report` (preseason/start of season):
+     - introduce upcoming season questions (for example, `20+` predictions)
+     - explain categories and why each question/storyline matters
+  3. `Mid-Season Report` (halfway point):
+     - summarize in-progress prediction performance
+     - highlight trend shifts and emerging season narratives
+- Distribution model:
+  - each report is published in the site `Reports` section
+  - each report is also emailed to existing users for engagement and progress updates
+
+### Reports TODO (Planning Backlog)
+- Define `Reports` route and information architecture placement (top nav vs footer/secondary entry).
+- Define report data model and storage (title, slug, publish date, season, summary, body, status).
+- Build reports listing page + single report detail page.
+- Add admin/editor workflow for drafting, editing, and publishing report posts.
+- Connect reports to email workflow so published reports can be adapted for user announcements.
+- Sequence dependency:
+  - finish confidence-meter logic and question taxonomy audit first
+  - then produce season recap report using finalized aggregates
+
 ---
 
 ## Change Log
+
+### 2026-03-07 (Taxonomy + Confidence + Season Model Decisions Locked)
+- Locked canonical topic/tag set for ongoing use:
+  - `all`, `qb`, `rookies`, `player_stats`, `team_stats`, `awards`, `playoffs`, `draft_predictions`
+- Completed 2025 question taxonomy cleanup in production:
+  - recategorized questions to new tags
+  - removed test question
+  - confirmed final 2025 question count is `13`
+- Confirmed confidence policy and scoring separation:
+  - confidence is sentiment-only (not points)
+  - scoring remains simple `1`/`0`
+- Added production DB function for question confidence sentiment aggregation:
+  - `public.get_question_confidence_sentiment(target_season integer default 2025)`
+  - uses `low=1`, `medium=2`, `high=3` and meter percent conversion
+- Updated game scoring function behavior in production to simple `1`/`0` (confidence ignored).
+- Added repo migration for explicit game season separation:
+  - `supabase/migrations/20260307103000_add_season_to_games.sql`
+  - adds `games.season`, backfills by NFL season rollover logic, and indexes `season`
+- Noted remaining UI task:
+  - wire home confidence meter from dummy frontend values to DB aggregation function output.
+
+### 2026-03-06 (Reports Feature Planning Added)
+- Added planned `Reports` feature scope for site + email communication workflow.
+- Captured three recurring report types:
+  - season recap
+  - season kickoff
+  - mid-season update
+- Added explicit writing ownership model:
+  - user writes primary content
+  - Codex edits/structures/formats
+- Added Reports TODO backlog and sequencing note:
+  - complete confidence logic + question tag audit before recap report wiring.
 
 ### 2026-03-05 (Mobile QA + Interaction Cleanup)
 - Completed iterative mobile QA pass and visual cleanup across redesigned routes:
@@ -408,6 +536,10 @@ Reference mockup artifacts created in this session:
   - added secondary bottom pager control on mobile for card-page navigation visibility
 - Cleanup:
   - removed dev-only active preview row from My Predictions after QA
+- Process safeguard added after production push incident:
+  - branch policy now requires `codex/*` branch workflow and no direct commits/pushes to `main`
+  - explicit user confirmation required before push actions
+  - naming policy added: easy-to-understand branch/commit names, confirmed with user at session start
 
 ### 2026-03-04 (Redesign Phase Lock - UI Only)
 - Completed redesign lock pass and removed temporary preview artifact:

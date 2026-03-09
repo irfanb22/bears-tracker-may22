@@ -263,9 +263,13 @@ export function AdminDashboard() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-bears-orange focus:border-bears-orange"
                       required
                     >
+                      <option value="qb">QB</option>
+                      <option value="rookies">Rookies</option>
                       <option value="player_stats">Player Stats</option>
                       <option value="team_stats">Team Stats</option>
-                      <option value="draft_predictions">Draft Predictions</option>
+                      <option value="awards">Awards</option>
+                      <option value="playoffs">Playoffs</option>
+                      <option value="draft_predictions">Draft</option>
                     </select>
                   </div>
 

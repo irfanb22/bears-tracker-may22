@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Check, X, Loader2, ArrowRight, AlertCircle, LogIn, XCircle, FolderRoot as Football, Clock } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Loader2, AlertCircle, LogIn, Clock, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
@@ -7,7 +7,8 @@ import { usePredictions } from '../lib/PredictionContext';
 import { formatDistanceToNow, isPast } from 'date-fns';
 import { LoginModal } from './LoginModal';
 import { RegisterModal } from './RegisterModal';
-import type { Question, Choice } from '../lib/PredictionContext';
+import type { Question } from '../lib/PredictionContext';
+import { PredictionEditorModal } from './PredictionEditorModal';
 
 interface PredictionInterfaceProps {
   selectedCategory?: string;
@@ -34,11 +35,156 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
   const [successMessages, setSuccessMessages] = useState<Record<string, boolean>>({});
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [confidenceSentiment, setConfidenceSentiment] = useState<
+    Record<string, { score: number; label: 'Low' | 'Medium' | 'High' }>
+  >({});
+  const [confidenceSentimentLoading, setConfidenceSentimentLoading] = useState(false);
+
+  const deriveConfidenceLabel = useCallback((score: number): 'Low' | 'Medium' | 'High' => {
+    if (score >= 70) return 'High';
+    if (score >= 40) return 'Medium';
+    return 'Low';
+  }, []);
+
+  const parseConfidenceLabel = useCallback(
+    (value: unknown, score: number): 'Low' | 'Medium' | 'High' => {
+      if (typeof value === 'string') {
+        const normalized = value.toLowerCase();
+        if (normalized === 'high') return 'High';
+        if (normalized === 'medium') return 'Medium';
+        if (normalized === 'low') return 'Low';
+      }
+      return deriveConfidenceLabel(score);
+    },
+    [deriveConfidenceLabel]
+  );
+
+  const fetchConfidenceSentiment = useCallback(async () => {
+    if (questions.length === 0) {
+      setConfidenceSentiment({});
+      setConfidenceSentimentLoading(false);
+      return;
+    }
+
+    setConfidenceSentimentLoading(true);
+    let loadedFromRpc = false;
+
+    try {
+      const { data, error: rpcError } = await supabase.rpc('get_question_confidence_sentiment');
+      if (rpcError) throw rpcError;
+
+      const byQuestion = ((data as Array<Record<string, unknown>>) || []).reduce<
+        Record<string, { score: number; label: 'Low' | 'Medium' | 'High' }>
+      >((acc, row) => {
+        const questionId = typeof row.question_id === 'string' ? row.question_id : null;
+        if (!questionId) return acc;
+
+        const rawScore = Number(row.meter_percent);
+        if (!Number.isFinite(rawScore)) return acc;
+
+        const score = Math.min(Math.max(rawScore, 0), 100);
+        acc[questionId] = {
+          score,
+          label: parseConfidenceLabel(row.sentiment_label ?? row.confidence_label, score),
+        };
+        return acc;
+      }, {});
+
+      setConfidenceSentiment(byQuestion);
+      loadedFromRpc = true;
+    } catch (rpcErr) {
+      console.warn('Confidence sentiment RPC unavailable, falling back to client-side aggregation.', rpcErr);
+    }
+
+    if (!loadedFromRpc) {
+      try {
+        const { data, error: fallbackError } = await supabase
+          .from('predictions')
+          .select('question_id, confidence')
+          .not('question_id', 'is', null);
+
+        if (fallbackError) throw fallbackError;
+
+        const confidenceTotals = ((data as Array<{ question_id: string | null; confidence: string | null }>) || []).reduce<
+          Record<string, { sum: number; count: number }>
+        >((acc, row) => {
+          if (!row.question_id || !row.confidence) return acc;
+
+          const confidenceValue = row.confidence === 'high' ? 3 : row.confidence === 'medium' ? 2 : row.confidence === 'low' ? 1 : null;
+          if (!confidenceValue) return acc;
+
+          if (!acc[row.question_id]) {
+            acc[row.question_id] = { sum: 0, count: 0 };
+          }
+
+          acc[row.question_id].sum += confidenceValue;
+          acc[row.question_id].count += 1;
+          return acc;
+        }, {});
+
+        const byQuestion = Object.entries(confidenceTotals).reduce<
+          Record<string, { score: number; label: 'Low' | 'Medium' | 'High' }>
+        >((acc, [questionId, values]) => {
+          const avgConfidence = values.sum / values.count;
+          const score = ((avgConfidence - 1) / 2) * 100;
+          const normalizedScore = Math.min(Math.max(score, 0), 100);
+
+          acc[questionId] = {
+            score: normalizedScore,
+            label: deriveConfidenceLabel(normalizedScore),
+          };
+          return acc;
+        }, {});
+
+        setConfidenceSentiment(byQuestion);
+      } catch (fallbackErr) {
+        console.error('Error fetching confidence sentiment:', fallbackErr);
+        setConfidenceSentiment({});
+      }
+    }
+
+    setConfidenceSentimentLoading(false);
+  }, [deriveConfidenceLabel, parseConfidenceLabel, questions.length]);
 
   // Filter questions based on selected category
   const filteredQuestions = selectedCategory === 'all'
     ? questions
     : questions.filter(q => q.category === selectedCategory);
+  const cardsPerPage = 3;
+  const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / cardsPerPage));
+  const pagedQuestions = filteredQuestions.slice(
+    (currentPage - 1) * cardsPerPage,
+    currentPage * cardsPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    setCurrentPage((previousPage) => Math.min(previousPage, totalPages));
+  }, [totalPages]);
+
+  useEffect(() => {
+    void fetchConfidenceSentiment();
+  }, [fetchConfidenceSentiment, aggregatedPredictions]);
+
+  useEffect(() => {
+    if (!selectedPrediction || !showAuthPrompt) return;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedPrediction(null);
+        setShowAuthPrompt(false);
+        setSelectedValue(null);
+        setSelectedConfidence(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [selectedPrediction, showAuthPrompt]);
 
   if (predictionsLoading) {
     return (
@@ -65,46 +211,7 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
     );
   }
 
-  const getStatusBadge = (status: string, deadline: string) => {
-    const isExpired = isPast(new Date(deadline));
-    const timeLeft = formatDistanceToNow(new Date(deadline), { addSuffix: true });
-    
-    switch (status) {
-      case 'live':
-        return (
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1.5 px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              Question is Live
-            </span>
-            {!isExpired && (
-              <span className="flex items-center gap-1.5 text-sm text-gray-500">
-                <Clock className="w-4 h-4" />
-                {timeLeft}
-              </span>
-            )}
-          </div>
-        );
-      case 'pending':
-        return (
-          <span className="flex items-center gap-1.5 px-2 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full">
-            <span className="w-2 h-2 bg-yellow-500 rounded-full" />
-            Question is Pending
-          </span>
-        );
-      case 'completed':
-        return (
-          <span className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-full">
-            <span className="w-2 h-2 bg-gray-500 rounded-full" />
-            Question is Closed
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
-
-  const calculatePercentages = (questionId: string, question: Question) => {
+  const calculatePercentages = (questionId: string, question: Question): Record<string, number> => {
     const data = aggregatedPredictions[questionId];
     if (!data || data.total === 0) {
       if (question.question_type === 'yes_no') {
@@ -118,35 +225,24 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
 
     if (question.question_type === 'yes_no') {
       return {
-        yes: Math.round((data.yes / data.total) * 100),
-        no: Math.round((data.no / data.total) * 100)
+        yes: Math.round((Number(data.yes || 0) / data.total) * 100),
+        no: Math.round((Number(data.no || 0) / data.total) * 100)
       };
     }
 
     return question.choices?.reduce((acc, choice) => ({
       ...acc,
-      [choice.text]: Math.round((data[choice.text] / data.total) * 100)
+      [choice.text]: Math.round((Number(data[choice.text] || 0) / data.total) * 100)
     }), {}) || {};
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handlePrediction = async (questionId: string, prediction: string, confidence: 'low' | 'medium' | 'high') => {
     if (!user) {
       setShowAuthPrompt(true);
       return;
     }
-    
-    await handlePrediction();
-  };
 
-  const handlePrediction = async () => {
-    if (!user || !selectedPrediction || !selectedValue || !selectedConfidence) {
-      setError('Please select both a prediction and confidence level');
-      return;
-    }
-
-    setLoading(prev => ({ ...prev, [selectedPrediction]: true }));
+    setLoading(prev => ({ ...prev, [questionId]: true }));
     setError(null);
 
     try {
@@ -157,9 +253,9 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
         throw new Error('No active session');
       }
 
-      await makeContextPrediction(selectedPrediction, selectedValue, selectedConfidence);
+      await makeContextPrediction(questionId, prediction, confidence);
 
-      setSuccessMessages(prev => ({ ...prev, [selectedPrediction]: true }));
+      setSuccessMessages(prev => ({ ...prev, [questionId]: true }));
       
       setSelectedPrediction(null);
       setSelectedValue(null);
@@ -177,7 +273,7 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
         setError('Failed to save prediction');
       }
     } finally {
-      setLoading(prev => ({ ...prev, [selectedPrediction]: false }));
+      setLoading(prev => ({ ...prev, [questionId]: false }));
     }
   };
 
@@ -188,59 +284,22 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
     setSelectedConfidence(null);
   };
 
-  const renderPredictionOptions = (question: Question) => {
-    if (question.question_type === 'yes_no') {
-      return (
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <button
-            type="button"
-            onClick={() => setSelectedValue('yes')}
-            className={`flex items-center justify-center gap-2 p-4 rounded-lg transition-colors ${
-              selectedValue === 'yes'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-100 hover:bg-green-50 text-gray-700 hover:text-green-700'
-            }`}
-          >
-            <Check className="w-5 h-5" />
-            Yes
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedValue('no')}
-            className={`flex items-center justify-center gap-2 p-4 rounded-lg transition-colors ${
-              selectedValue === 'no'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-700'
-            }`}
-          >
-            <X className="w-5 h-5" />
-            No
-          </button>
-        </div>
-      );
-    }
+  const openPredictionWithValue = (questionId: string, value: string) => {
+    setSelectedPrediction(questionId);
+    setSelectedValue(value);
+    setSelectedConfidence(null);
+    setShowAuthPrompt(false);
+    setError(null);
+  };
 
-    return (
-      <div className="space-y-3 mb-6">
-        {question.choices?.map((choice) => (
-          <button
-            key={choice.id}
-            type="button"
-            onClick={() => setSelectedValue(choice.text)}
-            className={`w-full flex items-center justify-between p-4 rounded-lg transition-colors ${
-              selectedValue === choice.text
-                ? 'bg-bears-navy text-white'
-                : 'bg-gray-100 hover:bg-bears-navy/10 text-gray-700'
-            }`}
-          >
-            <span className="font-medium">{choice.text}</span>
-            {selectedValue === choice.text && (
-              <Check className="w-5 h-5" />
-            )}
-          </button>
-        ))}
-      </div>
-    );
+  const openPredictionModal = (questionId: string) => {
+    const existingPrediction = userPredictions[questionId];
+
+    setSelectedPrediction(questionId);
+    setSelectedValue(existingPrediction?.prediction ?? null);
+    setSelectedConfidence(existingPrediction?.confidence ?? null);
+    setShowAuthPrompt(false);
+    setError(null);
   };
 
   const renderPredictionStats = (question: Question) => {
@@ -326,6 +385,32 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
     );
   };
 
+  const renderPagerControls = (extraClassName?: string) => (
+    <div className={`mb-4 flex items-center justify-end gap-3 ${extraClassName ?? ''}`}>
+      <button
+        type="button"
+        onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+        disabled={currentPage === 1}
+        className="rounded-full border border-slate-300 bg-white p-2 text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+        aria-label="Previous card page"
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <span className="text-sm font-semibold text-slate-600">
+        {currentPage} of {totalPages}
+      </span>
+      <button
+        type="button"
+        onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+        disabled={currentPage === totalPages}
+        className="rounded-full border border-slate-300 bg-white p-2 text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+        aria-label="Next card page"
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
+    </div>
+  );
+
   return (
     <>
       {error && (
@@ -335,142 +420,285 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-        {filteredQuestions.map((question) => {
+      {filteredQuestions.length > cardsPerPage && renderPagerControls()}
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+        {pagedQuestions.map((question) => {
           const hasPredicted = userPredictions[question.id];
           const totalVotes = aggregatedPredictions[question.id]?.total || 0;
           const asset = questionAssets[question.id];
           const isExpired = isPast(new Date(question.deadline));
-          
+          const percentages = calculatePercentages(question.id, question);
+          const statusTone = question.status === 'live'
+            ? 'bg-emerald-50 text-emerald-700'
+            : question.status === 'pending'
+            ? 'bg-amber-50 text-amber-700'
+            : 'bg-slate-100 text-slate-700';
+          const statusText = question.status === 'live'
+            ? 'LIVE'
+            : question.status === 'pending'
+            ? 'PENDING'
+            : 'CLOSED';
+          const deadlineLabel = new Date(question.deadline).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+          });
+          const topChoices = question.question_type === 'multiple_choice'
+            ? (question.choices || [])
+                .map((choice) => ({
+                  text: choice.text,
+                  percentage: percentages[choice.text] || 0
+                }))
+                .sort((a, b) => b.percentage - a.percentage)
+                .slice(0, 3)
+            : [];
+          const confidence = confidenceSentiment[question.id];
+          const meterPosition = confidence ? Math.min(Math.max(confidence.score, 2), 98) : 50;
+          const confidencePercent = confidence ? Math.round(confidence.score) : null;
+          const confidenceLabel = confidence
+            ? confidence.label
+            : confidenceSentimentLoading
+            ? 'Loading'
+            : totalVotes === 0
+            ? 'No picks yet'
+            : 'Unavailable';
+
           return (
             <motion.div
               key={question.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`bg-white rounded-xl shadow-sm overflow-hidden border ${
+              className={`rounded-xl border bg-white p-4 sm:p-5 ${
                 question.featured
-                  ? 'border-bears-orange/20 shadow-bears-orange/10'
-                  : 'border-gray-100/50'
-              } backdrop-blur-xl`}
-              style={{
-                background: question.featured
-                  ? 'linear-gradient(to bottom right, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9))'
-                  : 'rgba(255, 255, 255, 0.9)',
-                boxShadow: question.featured
-                  ? '0 4px 24px -1px rgba(200, 56, 3, 0.1)'
-                  : '0 4px 24px -1px rgba(0, 0, 0, 0.05)',
-              }}
+                  ? 'border-bears-orange/45 shadow-[0_0_0_1px_rgba(200,56,3,0.12)_inset]'
+                  : 'border-slate-200'
+              }`}
             >
-              <div className="p-4 lg:p-5">
-                <div className="flex items-start gap-3 lg:gap-4 mb-4 lg:mb-5">
-                  <div className="w-14 h-14 lg:w-16 lg:h-16 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0">
-                    {asset?.image ? (
-                      <img
-                        src={asset.image}
-                        alt={question.text}
-                        className="w-full h-full object-cover rounded-xl border-2 border-bears-navy/10"
-                      />
-                    ) : asset?.icon && (
-                      <div className="w-full h-full bg-bears-navy/5 flex items-center justify-center">
-                        <asset.icon className="w-8 h-8 lg:w-10 lg:h-10 text-bears-navy" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg lg:text-xl font-semibold text-bears-navy">{question.text}</h3>
-                    <div className="mt-2 flex flex-col gap-2">
-                      {getStatusBadge(question.status, question.deadline)}
-                      <div className="text-sm text-gray-500 flex items-center gap-2">
-                        <span>{totalVotes.toLocaleString()} Total Predictions</span>
-                      </div>
-                    </div>
-                  </div>
+              {question.featured && (
+                <div className="mb-3 inline-flex items-center gap-1 rounded-full bg-bears-orange/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-[#7a2604]">
+                  <Star className="h-3.5 w-3.5" />
+                  Featured
                 </div>
+              )}
 
-                <div className="space-y-4">
-                  {/* Always show prediction stats */}
-                  {renderPredictionStats(question)}
-
-                  <button
-                    onClick={() => !isExpired && setSelectedPrediction(question.id)}
-                    disabled={isExpired}
-                    className={`w-full flex items-center justify-center gap-2 p-3 rounded-lg transition-colors ${
-                      isExpired
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : hasPredicted
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : 'bg-bears-navy text-white hover:bg-bears-navy/90'
-                    }`}
-                  >
-                    {isExpired ? (
-                      <>
-                        <Clock className="w-5 h-5" />
-                        Prediction Closed
-                      </>
-                    ) : hasPredicted ? (
-                      <>
-                        <Check className="w-5 h-5" />
-                        Update Prediction
-                      </>
-                    ) : (
-                      <>
-                        Make Prediction
-                        <ArrowRight className="w-5 h-5" />
-                      </>
-                    )}
-                  </button>
-
-                  {hasPredicted && (
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Your prediction:</span>
-                        <span className="font-medium text-bears-navy capitalize">
-                          {hasPredicted.prediction}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-gray-600">Confidence:</span>
-                        <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                          hasPredicted.confidence === 'high'
-                            ? 'bg-green-100 text-green-800'
-                            : hasPredicted.confidence === 'medium'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {hasPredicted.confidence.charAt(0).toUpperCase() + hasPredicted.confidence.slice(1)}
-                        </span>
-                      </div>
+              <div className="flex items-start gap-3">
+                <div className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-lg">
+                  {asset?.image ? (
+                    <img
+                      src={asset.image}
+                      alt={question.text}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : asset?.icon && (
+                    <div className="flex h-full w-full items-center justify-center bg-bears-navy/5">
+                      <asset.icon className="h-7 w-7 text-bears-navy" />
                     </div>
                   )}
-
-                  <AnimatePresence>
-                    {successMessages[question.id] && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="text-center text-green-600 text-sm"
-                      >
-                        Prediction saved successfully!
-                      </motion.div>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-bold leading-snug text-bears-navy sm:text-[17px]">
+                    {question.text}
+                  </h3>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${statusTone}`}>
+                      {statusText}
+                    </span>
+                    {!isExpired && question.status === 'live' && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+                        <Clock className="h-3 w-3" />
+                        {formatDistanceToNow(new Date(question.deadline), { addSuffix: true })}
+                      </span>
                     )}
-                  </AnimatePresence>
+                  </div>
+                  <p className="mt-1 text-[11px] font-medium text-slate-500">
+                    Deadline {deadlineLabel}
+                  </p>
                 </div>
               </div>
+
+              <div className="mt-4 border-t border-slate-100 pt-4">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">
+                  Fan Volume ({totalVotes.toLocaleString()} picks)
+                </p>
+
+                {question.question_type === 'yes_no' ? (
+                  <div className="mt-2 space-y-3">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <button
+                          type="button"
+                          onClick={() => !isExpired && openPredictionWithValue(question.id, 'yes')}
+                          disabled={isExpired}
+                          className={`rounded-full border px-2.5 py-1 font-bold transition ${
+                            isExpired
+                              ? 'cursor-not-allowed border-slate-200 text-slate-400'
+                              : 'border-bears-navy/30 text-bears-navy hover:bg-bears-navy/5'
+                          }`}
+                        >
+                          Yes
+                        </button>
+                        <span className="font-bold text-slate-700">{percentages.yes}%</span>
+                      </div>
+                      <div className="h-2 rounded-full overflow-hidden bg-slate-100">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${percentages.yes}%` }}
+                          transition={{ duration: 0.45 }}
+                          className="h-full bg-bears-navy"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <button
+                          type="button"
+                          onClick={() => !isExpired && openPredictionWithValue(question.id, 'no')}
+                          disabled={isExpired}
+                          className={`rounded-full border px-2.5 py-1 font-bold transition ${
+                            isExpired
+                              ? 'cursor-not-allowed border-slate-200 text-slate-400'
+                              : 'border-bears-orange/35 text-[#7a2604] hover:bg-bears-orange/5'
+                          }`}
+                        >
+                          No
+                        </button>
+                        <span className="font-bold text-slate-700">{percentages.no}%</span>
+                      </div>
+                      <div className="h-2 rounded-full overflow-hidden bg-slate-100">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${percentages.no}%` }}
+                          transition={{ duration: 0.45 }}
+                          className="h-full bg-bears-orange"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2 space-y-3">
+                    {topChoices.map((choice) => (
+                      <div key={choice.text} className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                          <button
+                            type="button"
+                            onClick={() => !isExpired && openPredictionWithValue(question.id, choice.text)}
+                            disabled={isExpired}
+                            className={`rounded-full border px-2.5 py-1 font-bold transition ${
+                              isExpired
+                                ? 'cursor-not-allowed border-slate-200 text-slate-400'
+                                : 'border-slate-300 text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            {choice.text}
+                          </button>
+                          <span className="font-bold text-slate-700">{choice.percentage}%</span>
+                        </div>
+                        <div className="h-2 rounded-full overflow-hidden bg-slate-100">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${choice.percentage}%` }}
+                            transition={{ duration: 0.45 }}
+                            className="h-full bg-bears-navy"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    {topChoices.length === 0 && renderPredictionStats(question)}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="group relative">
+                    <p
+                      className="cursor-help font-bold uppercase tracking-wide text-slate-600"
+                      tabIndex={0}
+                      aria-label="Fan Confidence Index info"
+                    >
+                      Fan Confidence Index
+                    </p>
+                    <span className="pointer-events-none absolute -top-8 left-0 z-10 whitespace-nowrap rounded bg-slate-900 px-2 py-1 text-[10px] font-semibold normal-case tracking-normal text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                      Aggregate measure of how confident fans are in this prediction.
+                    </span>
+                  </div>
+                  <p className="font-extrabold text-slate-800">{confidenceLabel}</p>
+                </div>
+                <div
+                  className="group relative mt-2 h-2 overflow-visible rounded-full bg-gradient-to-r from-slate-400 via-amber-400 to-emerald-500"
+                  title={confidencePercent !== null ? `Fan conviction: ${confidencePercent}%` : 'Fan conviction unavailable'}
+                >
+                  {confidencePercent !== null && (
+                    <span className="pointer-events-none absolute -top-7 left-1/2 z-10 -translate-x-1/2 rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                      {confidencePercent}%
+                    </span>
+                  )}
+                  <motion.div
+                    initial={{ left: 0 }}
+                    animate={{ left: `${meterPosition}%` }}
+                    transition={{ duration: 0.4 }}
+                    className={`absolute top-0 h-2 ${confidence ? '' : 'opacity-40'}`}
+                  >
+                    <span className="absolute -top-1.5 h-5 w-0.5 bg-slate-900" />
+                  </motion.div>
+                </div>
+                {!confidence && (
+                  <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                    {confidenceSentimentLoading
+                      ? 'Loading conviction data'
+                      : totalVotes === 0
+                      ? 'No conviction data yet'
+                      : 'Conviction unavailable'}
+                  </p>
+                )}
+              </div>
+
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={() => openPredictionModal(question.id)}
+                  className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition ${
+                    isExpired
+                      ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                      : hasPredicted
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                      : 'bg-bears-navy text-white hover:bg-bears-navy/90'
+                  }`}
+                >
+                  {isExpired ? 'View Details' : hasPredicted ? 'View / Edit Prediction' : 'Make Prediction'}
+                </button>
+              </div>
+
+              <AnimatePresence>
+                {successMessages[question.id] && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className="mt-2 text-center text-xs font-semibold text-emerald-700"
+                  >
+                    Prediction saved successfully.
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           );
         })}
       </div>
 
+      {filteredQuestions.length > cardsPerPage && renderPagerControls('mt-4 md:hidden')}
+
       <AnimatePresence>
-        {selectedPrediction && (
+        {selectedPrediction && showAuthPrompt && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={handleClose}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              className="fixed inset-0 z-40 bg-slate-900/35"
             />
 
             <motion.div
@@ -478,122 +706,64 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4"
-              onClick={(e) => e.stopPropagation()}
+              onClick={handleClose}
             >
-              {showAuthPrompt ? (
-                <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-auto p-6 text-center relative">
-                  <button
-                    onClick={handleClose}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              <div
+                className="mx-auto w-full max-w-[500px] rounded-3xl bg-white p-5 text-center shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <LogIn className="mx-auto mb-4 h-12 w-12 text-bears-orange" />
+                <h2 className="mb-4 text-2xl font-bold text-bears-navy">
+                  Sign In to Make Predictions
+                </h2>
+                <p className="mb-6 text-gray-600">
+                  Join the Bears prediction community to save your predictions and compete with other fans!
+                </p>
+                <div className="space-y-3">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      handleClose();
+                      setShowLoginModal(true);
+                    }}
+                    className="w-full rounded-lg bg-bears-navy py-3 text-white transition-colors hover:bg-bears-navy/90"
                   >
-                    <XCircle className="w-6 h-6" />
-                  </button>
-                  <LogIn className="w-12 h-12 text-bears-orange mx-auto mb-4" />
-                  <h2 className="text-2xl font-bold text-bears-navy mb-4">
-                    Sign In to Make Predictions
-                  </h2>
-                  <p className="text-gray-600 mb-6">
-                    Join the Bears prediction community to save your predictions and compete with other fans!
-                  </p>
-                  <div className="space-y-3">
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => {
-                        handleClose();
-                        setShowLoginModal(true);
-                      }}
-                      className="w-full py-3 bg-bears-navy text-white rounded-lg hover:bg-bears-navy/90 transition-colors"
-                    >
-                      Sign In
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => {
-                        handleClose();
-                        setShowRegisterModal(true);
-                      }}
-                      className="w-full py-3 bg-bears-orange text-white rounded-lg hover:bg-bears-orange/90 transition-colors"
-                    >
-                      Create Account
-                    </motion.button>
-                  </div>
+                    Sign In
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      handleClose();
+                      setShowRegisterModal(true);
+                    }}
+                    className="w-full rounded-lg bg-bears-orange py-3 text-white transition-colors hover:bg-bears-orange/90"
+                  >
+                    Create Account
+                  </motion.button>
                 </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-auto relative">
-                  <button
-                    type="button"
-                    onClick={handleClose}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <XCircle className="w-6 h-6" />
-                  </button>
-                  <div className="p-6">
-                    {(() => {
-                      const question = questions.find(q => q.id === selectedPrediction);
-                      if (!question) return null;
-                      
-                      return (
-                        <>
-                          <h2 className="text-2xl font-bold text-bears-navy mb-4 pr-8">
-                            {question.text}
-                          </h2>
-
-                          {renderPredictionOptions(question)}
-
-                          <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              How confident are you?
-                            </label>
-                            <div className="grid grid-cols-3 gap-3">
-                              {(['low', 'medium', 'high'] as const).map((level) => (
-                                <button
-                                  key={level}
-                                  type="button"
-                                  onClick={() => setSelectedConfidence(level)}
-                                  className={`p-2 rounded-lg text-sm font-medium transition-colors ${
-                                    selectedConfidence === level
-                                      ? 'bg-bears-navy text-white'
-                                      : 'bg-gray-100 text-gray-700 hover:bg-bears-navy/10'
-                                  }`}
-                                >
-                                  {level.charAt(0).toUpperCase() + level.slice(1)}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {error && (
-                            <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg">
-                              {error}
-                            </div>
-                          )}
-
-                          <button
-                            type="submit"
-                            disabled={!selectedValue || !selectedConfidence || loading[selectedPrediction]}
-                            className="w-full flex items-center justify-center gap-2 p-4 bg-bears-orange text-white rounded-lg hover:bg-bears-orange/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {loading[selectedPrediction] ? (
-                              <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                              <>
-                                Submit Prediction
-                                <ArrowRight className="w-5 h-5" />
-                              </>
-                            )}
-                          </button>
-                        </>
-                      );
-                    })()}
-                  </div>
-                </form>
-              )}
+              </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
+
+      <PredictionEditorModal
+        isOpen={!!selectedPrediction && !showAuthPrompt}
+        question={selectedPrediction ? questions.find((q) => q.id === selectedPrediction) ?? null : null}
+        initialValue={selectedValue}
+        initialConfidence={selectedConfidence}
+        userPrediction={selectedPrediction ? userPredictions[selectedPrediction] : null}
+        error={error}
+        loading={selectedPrediction ? Boolean(loading[selectedPrediction]) : false}
+        onClose={handleClose}
+        onSave={async (predictionValue, confidenceValue) => {
+          if (!selectedPrediction) return;
+          await handlePrediction(selectedPrediction, predictionValue, confidenceValue);
+        }}
+        submitLabel="Submit Prediction"
+      />
 
       <LoginModal 
         isOpen={showLoginModal}

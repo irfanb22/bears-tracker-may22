@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
-import { Loader2, Mail, ArrowRight, AlertCircle, CheckCircle } from 'lucide-react';
+import { Loader2, Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authDebugger } from '../lib/authDebug';
 
@@ -178,10 +178,7 @@ export function AuthForm({ mode, isModal, onClose, onSwitchMode, onForgotPasswor
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            <>
-              {mode === 'login' ? 'Sign in' : 'Create account'}
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </>
+            mode === 'login' ? 'Sign in' : 'Create account'
           )}
         </button>
       </div>
