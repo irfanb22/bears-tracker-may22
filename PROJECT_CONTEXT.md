@@ -334,44 +334,41 @@ Local machine status (as of 2026-02-22):
 Pending repo wiring:
 - Push initial commit from this local git repo only when approved.
 
-## 10. Current Priority Order (As Decided 2026-03-02)
+## 10. Current Priority Order (Updated 2026-03-09)
 
-Current phase status (as of 2026-03-04):
-- Active roadmap phase: **Phase 1 (2025 Season Closeout + User Communication)**.
+Current phase status (as of 2026-03-09):
+- Active roadmap phase: **Phase 1 (Consolidated): View Recap + User Email Campaign**.
 - Phase 1 completion state: **partially complete**.
+- Phase 3 completion state: **complete**.
+- Phase 4 completion state: **complete**.
+- 2026 game-by-game expansion moved to **Phase 7 (final phase, not scheduled yet)**.
 - Major done items already verified:
   - role-based admin access is working
   - scoring policy is defined (`1`/`0`, confidence excluded from points)
   - basic scoring/dashboard updates shipped
-  - UI redesign pass is now **visually locked** for Home/Navbar/My Predictions/Leaderboard (UI-only)
+  - UI redesign pass is complete for Home/Navbar/My Predictions/Leaderboard
+  - fan confidence sentiment phase is complete
 
-### Priority 1: Visual Refresh + Mobile Quality
-- This priority is explicitly the same as **Phase 3: Full UX/UI Redesign**.
-- Redesign the full site for a cleaner, easier experience:
-  - better layout and spacing
-  - clearer navigation and status states
-  - more polished mobile and desktop behavior
-- Goal: make the app feel easier to use and more modern.
+### Priority 1: Build `View Recap` End-of-Season Experience
+- Implement the currently empty `View Recap` flow.
+- Make this the on-site end-of-season report experience.
+- Include meaningful recap content and outcomes from 2025 season predictions.
 
-### Priority 2: User Email List + Announcement Send
-- Build/export list of active/registered users.
-- Draft announcement email (2025 finalized, leaderboard live, 2026 questions coming later).
-- Send to current participants/users.
+### Priority 2: Active User List + Brevo Marketing Email
+- Build/export list of active registered users.
+- Send campaign using **Brevo**.
+- Email content must include:
+  - summary details of the new `View Recap`
+  - CTA to leaderboard/scoreboard so fans can see how they did
+  - note that first new question (the draft question) is planned for early April 2026
 
-### Priority 3: Build Out 2026 Questions
-- After visual refresh + email send, create and publish 2026 question set.
-- Include a dedicated 2026 game-by-game pick flow:
-  - users open a game picker experience
-  - users submit per-game Bears win/loss picks
-  - game picks are included in 2026 prediction tracking/scoring views
+### Priority 3: Roadmap Sequencing Cleanup
+- Keep Phase 3 and Phase 4 marked complete in planning docs.
+- Keep 2026 full game-by-game expansion deferred to final phase planning.
 
-### Priority 4: Reports Section + Email Content Workflow (Planned)
-- Add a `Reports` section/page to bearsprediction.com for long-form posts.
-- Expected cadence: approximately `3 reports per year`.
-- Reports are both on-site content and email content for existing users.
-- Writing workflow:
-  - user is primary writer/voice for report content
-  - Codex role is editing, structuring, and formatting support
+### Priority 4: 2026 Product Expansion (Deferred to Final Phase)
+- 2026 game-by-game picks are intentionally deferred until scheduled later.
+- This is now Phase 7 and treated as last-phase scope.
 
 ### Question Management Operating Decision (Current)
 - Do question creation/deadline updates through **Codex/terminal** for now.
@@ -398,19 +395,14 @@ Current phase status (as of 2026-03-04):
   - include these picks in 2026 prediction tracking/scoring views.
 
 ### Resume Here (Next Session Starting Point)
-1. Redesign UI pass is locked (visual-only) across:
-   - Home
-   - Navbar
-   - My Predictions
-   - Leaderboard
-2. Mobile QA pass is now substantially complete for redesigned surfaces:
-   - homepage banner/nav/topics/cards/modal interactions validated and refined
-   - My Predictions mobile layout cleaned and made more readable
-   - global footer and route scroll-to-top behavior implemented
-3. Next build phase (before full wiring):
-   - implement real fan-confidence sentiment logic (replace dummy confidence meter preview)
-   - run taxonomy audit: review all current questions and align category tags/topics with redesigned topic model
-   - then wire recap/secondary actions and finalize end-to-end display-name + leaderboard validation
+1. Build out the `View Recap` button destination and end-of-season report experience.
+2. After recap is complete, export active users and prepare Brevo send.
+3. Send recap marketing email:
+   - recap summary
+   - leaderboard CTA
+   - early-April draft question note
+4. Keep 2026 game-by-game scope deferred:
+   - Phase 7 (final phase), not scheduled yet
 
 Reference mockup artifacts created in this session:
 - `mockups-halas-locked-foundation.html` (final typography/foundation baseline)
@@ -419,33 +411,34 @@ Reference mockup artifacts created in this session:
 
 ## 12. Upcoming Roadmap (Phased)
 
-### Phase 1: 2025 Season Closeout + User Communication
-- Send an email update to all users that:
-  - 2025 predictions are finalized
-  - leaderboard is ready to view now
-  - 2026 prediction questions will be added later in the year
-- Keep message simple and clear, with direct link to leaderboard.
+### Phase 1 (Consolidated Former Phase 1 + Phase 2): View Recap + User Communication
+- Build and launch the `View Recap` experience as the end-of-season report.
+- After recap launch, export active users and send marketing email via Brevo.
+- Email content requirements:
+  - include recap summary details
+  - include leaderboard CTA so users can see how they performed
+  - include future note: first draft question targeted for early April 2026
 
-### Phase 2: 2026 Product Expansion
-- Add game-to-game predictions for the full Bears season:
-  - each game gets its own prediction prompts
-  - users can make and update picks by game before deadlines
-  - game picks become part of dashboard + scoring views
-
-### Phase 3: Full UX/UI Redesign
+### Phase 3: Full UX/UI Redesign (Completed)
 - Redesign the full site for a cleaner, easier experience:
   - better layout and spacing
   - clearer navigation and status states
   - more polished mobile and desktop behavior
 - Goal: make the app feel easier to use and more modern.
 
-### Phase 4: Fan Confidence Sentiment
+### Phase 4: Fan Confidence Sentiment (Completed)
 - Add a community confidence sentiment indicator per prediction/question.
 - Use average confidence across users to show simple labels:
   - High confidence
   - Medium confidence
   - Low confidence
 - Show this sentiment alongside existing prediction percentages.
+
+### Phase 7 (Final): 2026 Product Expansion (Deferred / Not Scheduled Yet)
+- Add game-to-game predictions for the full Bears season:
+  - each game gets its own prediction prompts
+  - users can make and update picks by game before deadlines
+  - game picks become part of dashboard + scoring views
 
 ### Notes for Implementation
 - Keep this in plain language for users (avoid technical jargon in UI copy).
@@ -478,8 +471,9 @@ Reference mockup artifacts created in this session:
 - Add admin/editor workflow for drafting, editing, and publishing report posts.
 - Connect reports to email workflow so published reports can be adapted for user announcements.
 - Sequence dependency:
-  - finish confidence-meter logic and question taxonomy audit first
-  - then produce season recap report using finalized aggregates
+  - complete consolidated Phase 1 recap + Brevo email flow first
+  - keep Phase 7 as last-phase scope (not scheduled yet)
+  - produce season recap report using finalized aggregates
 
 ---
 
