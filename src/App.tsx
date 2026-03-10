@@ -81,7 +81,7 @@ function HomePage() {
       <section className="sticky top-16 z-40 border-b border-yellow-300 bg-yellow-200/95 px-4 py-2.5 md:top-20">
         <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 text-center sm:flex-row sm:justify-center sm:gap-3">
           <p className="text-center text-sm font-bold leading-tight text-yellow-900 sm:text-base">
-            2025 Predictions Are Live
+            The 2025 Predictions Are Final
           </p>
           <button
             type="button"
