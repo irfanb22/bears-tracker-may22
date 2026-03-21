@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminProtectedRoute } from './components/AdminProtectedRoute';
 import { Navbar } from './components/Navbar';
@@ -19,6 +19,7 @@ import { AuthDebugPanel } from './components/AuthDebugPanel';
 import { DebugPredictionAccess } from './components/DebugPredictionAccess';
 import { SiteFooter } from './components/SiteFooter';
 import { ScrollToTop } from './components/ScrollToTop';
+import { SeasonRecap } from './components/SeasonRecap';
 
 const categories = [
   { id: 'all', label: 'All' },
@@ -33,6 +34,7 @@ const categories = [
 
 function HomePage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -85,6 +87,7 @@ function HomePage() {
           </p>
           <button
             type="button"
+            onClick={() => navigate('/season-recap')}
             className="w-full rounded-md border border-yellow-700/30 bg-yellow-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-yellow-900 sm:w-auto"
           >
             View Recap
@@ -183,6 +186,7 @@ export function AppComponent() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/season-recap" element={<SeasonRecap />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route
