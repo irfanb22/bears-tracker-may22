@@ -260,8 +260,7 @@ function RevisedRecap() {
             <p>
               The Bears exceeded expectations. The offense clicked in the second half. The playoff
               drought ended. Chicago picked up its first playoff win in over a decade. Caleb
-              delivered clutch performances down the stretch. But if you watched the games, you
-              knew. Iceman.
+              delivered clutch performances down the stretch. Iceman.
             </p>
             <p>Now to the predictions.</p>
           </div>
