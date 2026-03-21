@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { RegisterModal } from './RegisterModal';
 import { LoginModal } from './LoginModal';
@@ -7,6 +7,7 @@ import recapHeroImage from '../assets/ben and caleb.jpeg';
 import odunzeImage from '../assets/OdunRo00_2024.jpg';
 import PlayoffSplitChart from './PlayoffSplitChart';
 import DraftPickChart from './DraftPickChart';
+import { useAuth } from '../lib/auth';
 
 const revisedAccuracyRows = [
   { label: 'Caleb breaks passing record', pct: 90 },
@@ -95,44 +96,66 @@ function RevisedAccuracyChart() {
   );
 }
 
-function InlineCta() {
+function InlineCta({
+  onMyPredictionsClick,
+  onLeaderboardClick
+}: {
+  onMyPredictionsClick: () => void;
+  onLeaderboardClick: () => void;
+}) {
   return (
     <div className="rounded-[1.75rem] border border-bears-orange/20 bg-orange-50 px-6 py-5">
       <p className="text-base leading-8 text-slate-700">
         <span className="font-bold text-bears-navy">Want to see how you did?</span> Check your
         results in{' '}
-        <Link
-          to="/dashboard"
+        <button
+          type="button"
+          onClick={onMyPredictionsClick}
           className="font-semibold text-bears-orange underline-offset-4 hover:underline"
         >
           My Predictions
-        </Link>{' '}
+        </button>{' '}
         or see where you stand on the{' '}
-        <Link
-          to="/leaderboard"
+        <button
+          type="button"
+          onClick={onLeaderboardClick}
           className="font-semibold text-bears-orange underline-offset-4 hover:underline"
         >
           Leaderboard
-        </Link>
+        </button>
         .
       </p>
     </div>
   );
 }
 
-function MidPieceCta() {
+function MidPieceCta({
+  onMyPredictionsClick,
+  onLeaderboardClick
+}: {
+  onMyPredictionsClick: () => void;
+  onLeaderboardClick: () => void;
+}) {
   return (
     <div className="rounded-[1.75rem] border border-bears-navy/10 bg-bears-navy px-6 py-6 text-white">
       <p className="text-lg font-bold">See how your picks stacked up.</p>
       <p className="mt-2 text-sm leading-7 text-slate-200">
         Check{' '}
-        <Link to="/dashboard" className="font-semibold text-white underline underline-offset-4">
+        <button
+          type="button"
+          onClick={onMyPredictionsClick}
+          className="font-semibold text-white underline underline-offset-4"
+        >
           My Predictions
-        </Link>{' '}
+        </button>{' '}
         to see your scorecard, or visit the{' '}
-        <Link to="/leaderboard" className="font-semibold text-white underline underline-offset-4">
+        <button
+          type="button"
+          onClick={onLeaderboardClick}
+          className="font-semibold text-white underline underline-offset-4"
+        >
           Leaderboard
-        </Link>{' '}
+        </button>{' '}
         to see where you rank.
       </p>
     </div>
@@ -223,7 +246,13 @@ function OffenseSurpriseCallout() {
   );
 }
 
-function RevisedRecap() {
+function RevisedRecap({
+  onMyPredictionsClick,
+  onLeaderboardClick
+}: {
+  onMyPredictionsClick: () => void;
+  onLeaderboardClick: () => void;
+}) {
   return (
     <article className="mx-auto max-w-4xl">
       <header className="border-b border-slate-300 pb-10">
@@ -247,7 +276,10 @@ function RevisedRecap() {
 
       <div className="mt-10 space-y-12">
         <RevisedAccuracyChart />
-        <InlineCta />
+        <InlineCta
+          onMyPredictionsClick={onMyPredictionsClick}
+          onLeaderboardClick={onLeaderboardClick}
+        />
 
         <section className="max-w-3xl">
           <h2 className="text-3xl font-black tracking-tight text-bears-navy">The Season in Context</h2>
@@ -367,7 +399,10 @@ function RevisedRecap() {
           </div>
         </section>
 
-        <MidPieceCta />
+        <MidPieceCta
+          onMyPredictionsClick={onMyPredictionsClick}
+          onLeaderboardClick={onLeaderboardClick}
+        />
 
         <section className="max-w-3xl">
           <h2 className="text-3xl font-black tracking-tight text-bears-navy">What&apos;s Next</h2>
@@ -398,15 +433,29 @@ function RevisedRecap() {
 }
 
 export function SeasonRecap() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  const handleProtectedNavigation = (path: '/dashboard' | '/leaderboard') => {
+    if (user) {
+      navigate(path);
+      return;
+    }
+
+    setIsLoginModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <Navbar onRegisterClick={() => setIsRegisterModalOpen(true)} />
 
       <main className="px-4 py-10 md:px-6 md:py-14">
-        <RevisedRecap />
+        <RevisedRecap
+          onMyPredictionsClick={() => handleProtectedNavigation('/dashboard')}
+          onLeaderboardClick={() => handleProtectedNavigation('/leaderboard')}
+        />
       </main>
 
       <RegisterModal
