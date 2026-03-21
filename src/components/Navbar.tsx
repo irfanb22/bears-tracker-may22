@@ -49,6 +49,7 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
   };
 
   const navItems = [
+    { label: '2025 Recap', path: '/season-recap' },
     { label: 'Leaderboard', path: '/leaderboard' },
     { label: 'My Predictions', path: '/dashboard' },
     ...(isAdmin ? [{ label: 'Admin', path: '/admin' }] : []),
@@ -129,6 +130,16 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
             <>
               <div className="hidden items-center gap-2 sm:flex">
                 <button
+                  onClick={() => navigate('/season-recap')}
+                  className={`rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
+                    isActive('/season-recap')
+                      ? 'bg-white/10 text-white'
+                      : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                  }`}
+                >
+                  2025 Recap
+                </button>
+                <button
                   onClick={() => setIsLoginModalOpen(true)}
                   className="rounded-md px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
                 >
@@ -194,6 +205,19 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
                   </>
                 ) : (
                   <>
+                    <button
+                      onClick={() => {
+                        navigate('/season-recap');
+                        setIsMenuOpen(false);
+                      }}
+                      className={`block w-full rounded-md px-4 py-3 text-center text-sm font-semibold transition-colors ${
+                        isActive('/season-recap')
+                          ? 'bg-white/10 text-white'
+                          : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                      }`}
+                    >
+                      2025 Recap
+                    </button>
                     <button
                       onClick={() => {
                         setIsLoginModalOpen(true);
