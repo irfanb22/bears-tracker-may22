@@ -129,39 +129,6 @@ function InlineCta({
   );
 }
 
-function MidPieceCta({
-  onMyPredictionsClick,
-  onLeaderboardClick
-}: {
-  onMyPredictionsClick: () => void;
-  onLeaderboardClick: () => void;
-}) {
-  return (
-    <div className="rounded-[1.75rem] border border-bears-navy/10 bg-bears-navy px-6 py-6 text-white">
-      <p className="text-lg font-bold">See how your picks stacked up.</p>
-      <p className="mt-2 text-sm leading-7 text-slate-200">
-        Check{' '}
-        <button
-          type="button"
-          onClick={onMyPredictionsClick}
-          className="font-semibold text-white underline underline-offset-4"
-        >
-          My Predictions
-        </button>{' '}
-        to see your scorecard, or visit the{' '}
-        <button
-          type="button"
-          onClick={onLeaderboardClick}
-          className="font-semibold text-white underline underline-offset-4"
-        >
-          Leaderboard
-        </button>{' '}
-        to see where you rank.
-      </p>
-    </div>
-  );
-}
-
 function CalebRecordCallout() {
   return (
     <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-6">
@@ -228,7 +195,7 @@ function OdunzeStatsCallout() {
 
 function OffenseSurpriseCallout() {
   return (
-    <div className="max-w-xs rounded-[1.25rem] border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="w-full rounded-[1.25rem] border border-slate-200 bg-white p-4 shadow-sm sm:max-w-xs">
       <p className="text-xs font-bold uppercase tracking-[0.2em] text-bears-orange">
         The Offense No One Saw Coming
       </p>
@@ -262,6 +229,9 @@ function RevisedRecap({
         <h1 className="mt-4 text-4xl font-black leading-tight text-bears-navy md:text-6xl">
           How Bears Fans Predicted the Season
         </h1>
+        <p className="mt-4 text-sm font-medium text-slate-500">
+          By Irfan | Published March 22, 2026
+        </p>
         <HeroFigure />
         <div className="max-w-3xl space-y-4 text-lg leading-8 text-slate-700">
           <p>13 predictions. 1 season. Some calls were obvious. Others split the fanbase right down the middle.</p>
@@ -305,10 +275,10 @@ function RevisedRecap({
             <p>
               Caleb Williams breaking the Bears&apos; single-season passing record was the most
               confident correct call of the year. Williams threw for 3,942 yards, surpassing Erik
-              Kramer&apos;s franchise mark.
-            </p>
-            <p className="font-semibold text-bears-navy">
-              90% of fans predicted it, most with high confidence.
+              Kramer&apos;s franchise mark.{' '}
+              <span className="font-semibold text-bears-navy">
+                90% of fans predicted it, most with high confidence.
+              </span>
             </p>
             <CalebRecordCallout />
             <p>
@@ -316,23 +286,27 @@ function RevisedRecap({
               will be a prediction in 2026.
             </p>
             <p>
-              He started every game, something 58% of fans correctly predicted, though confidence
-              was mixed. Durability for a Bears QB has been a question mark.
+              He also started every game, something 58% of fans correctly predicted, though
+              confidence was mixed. Durability for a Bears QB has been a question mark in the past.
             </p>
             <p>
               One question we probably should have asked was completion percentage. Ben&apos;s stated
               goal for him was 70%, but Williams finished at a league-low 59%.
             </p>
             <p>
+              Speaking of BJ, Bears fans had a lot of confidence in him. 79% saw Johnson as a
+              Coach of the Year finalist.
+            </p>
+            <p>
+              While fans trusted Johnson to elevate the offense, they weren&apos;t buying the defense.
               87% correctly predicted the Bears would not finish as a top-10 defense, most with
               high confidence. It would have been a bottom-10 unit if not for leading the league in
               turnovers.
             </p>
             <p>
-              72% predicted the Bears would win more than eight games. Correct. Joe Thuney making
-              the Pro Bowl was another solid call, with 68% of fans getting it right. The offensive
-              line was a big reason the offense clicked. Ben Johnson being named a Coach of the Year
-              finalist? 79% saw it coming.
+              When it came to win total, 72% predicted the Bears would win more than eight games.
+              Few would have predicted 11 wins, though, given that most weren&apos;t even confident
+              the Bears would make the playoffs.
             </p>
           </div>
         </section>
@@ -344,8 +318,10 @@ function RevisedRecap({
               The Bears making the playoffs was the most divisive prediction of the season. Just 54%
               picked correctly, with confidence spread almost evenly across the board.
             </p>
-            <PlayoffSplitChart />
             <p>A true coin flip and the kind of question we&apos;ll have a lot more of in 2026.</p>
+            <div className="w-full rounded-[1.25rem] border border-slate-200 bg-white p-4 shadow-sm sm:max-w-sm">
+              <PlayoffSplitChart />
+            </div>
           </div>
         </section>
 
@@ -390,19 +366,16 @@ function RevisedRecap({
             The Impossible Question
           </h2>
           <div className="mt-6 space-y-5 text-lg leading-8 text-slate-800">
-            <p>The hardest question of the year: who would the Bears select with the 10th pick?</p>
             <p>
+              The hardest question of the year: who would the Bears select with the 10th pick?
               Most fans expected Penn State tight end Tyler Warren. The Bears went with Colston
               Loveland, who wasn&apos;t even listed as an option.
             </p>
-            <DraftPickChart />
+            <div className="w-full rounded-[1.25rem] border border-slate-200 bg-white p-4 shadow-sm sm:max-w-sm">
+              <DraftPickChart />
+            </div>
           </div>
         </section>
-
-        <MidPieceCta
-          onMyPredictionsClick={onMyPredictionsClick}
-          onLeaderboardClick={onLeaderboardClick}
-        />
 
         <section className="max-w-3xl">
           <h2 className="text-3xl font-black tracking-tight text-bears-navy">What&apos;s Next</h2>
@@ -414,7 +387,7 @@ function RevisedRecap({
               starting with the draft.
             </p>
             <div className="pt-2">
-              <p className="font-semibold text-bears-navy">Bear Down 🐻⬇</p>
+              <p className="font-semibold text-bears-navy">Thanks for joining the community.</p>
               <div className="mt-5">
                 <p
                   className="text-4xl text-bears-navy"
@@ -422,7 +395,6 @@ function RevisedRecap({
                 >
                   Irfan
                 </p>
-                <p className="mt-1 text-sm italic text-slate-500">Creator and Editor</p>
               </div>
             </div>
           </div>
