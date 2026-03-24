@@ -1,6 +1,6 @@
 # Bears Prediction Tracker - Project Context
 
-Last updated: 2026-03-07
+Last updated: 2026-03-24
 Repository path: `/Users/irfan/Projects/bears-tracker-may22-main`
 
 ## 1. What This Site Is
@@ -596,6 +596,69 @@ Reference mockup artifacts created in this session:
 ### 2026-03-02 (Priority Clarification)
 - Clarified that "visual refresh" is the same as **Phase 3 Full UX/UI Redesign**.
 - Set full UX/UI redesign as the immediate next build focus.
+
+### 2026-03-24 (Brevo API Email Integration Working)
+- Built and deployed a first-pass Brevo email integration through a Supabase Edge Function.
+- Purpose:
+  - stop relying on Brevo's visual campaign editor for recap/reminder emails
+  - keep email templates in code
+  - pull recipients directly from the app database
+  - create a reusable path for future deadline reminders, midseason emails, and season recap sends
+- Current implementation files:
+  - `supabase/functions/send-brevo-email/index.ts`
+  - `supabase/functions/_shared/seasonRecapEmail.ts`
+  - `supabase/functions/README.md`
+  - `supabase/queries/season_2025_recap_recipients.sql`
+- Current branch for this work:
+  - `codex/brevo-email-integration`
+- What is already proven:
+  - Supabase CLI installed locally
+  - function deployed successfully to production Supabase project
+  - Brevo API key configured in Supabase Edge Function secrets
+  - sender secrets configured:
+    - `BREVO_SENDER_EMAIL=noreply@bearsprediction.com`
+    - `BREVO_SENDER_NAME=Bears Prediction Tracker`
+  - test send to `irfanbhanji1@gmail.com` succeeded
+  - HTML email rendered successfully in Gmail
+  - unsubscribe system is now also working end-to-end:
+    - `email_preferences` table created in production
+    - `unsubscribe-email` function deployed
+    - unsubscribe link in email updates Supabase correctly
+    - verified `marketing_subscribed = false` and populated `unsubscribed_at` for test account
+- Important operational note:
+  - Brevo IP security blocked initial API requests because Supabase Edge Functions used previously unrecognized outbound IPv6 addresses.
+  - To get the test send working, unknown IP blocking in Brevo had to be relaxed/disabled.
+  - This must be revisited later for a cleaner long-term security setup.
+- Current send model:
+  - transactional/API-based send through Brevo
+  - not a Brevo drag-and-drop marketing campaign workflow
+  - recipient segment can be resolved directly from `2025` prediction participants in the database
+- Current limitations:
+  - no admin UI yet for preview/send
+  - no reply-to handling configured yet
+  - image hosting strategy still needs to be finalized
+  - unsubscribe confirmation page currently returns raw HTML instead of rendering as a styled page
+- Plain-English workflow right now:
+  - update the email template in code
+  - deploy the function
+  - send a test email through terminal/HTTP request
+  - review in inbox
+  - send to full audience when ready
+- TODO for this email system:
+  - decide final image strategy for recap emails
+  - add real recap graphics/images to the coded template
+  - add `reply-to` support once desired inbox is confirmed
+  - add send logging
+  - fix unsubscribe confirmation page rendering so browser shows styled page instead of raw HTML source
+  - add lightweight admin UI so terminal/curl are no longer required for:
+    - send test email
+    - preview payload/template
+    - send to selected segment
+  - create reusable templates for:
+    - season recap
+    - deadline reminder
+    - new question live
+    - midseason update
 
 ### 2026-03-02 (Design Decisions + Resume Point Captured)
 - Logged locked UX/UI decisions from redesign working session (Halas Desk, terminology, nav, interaction model).
