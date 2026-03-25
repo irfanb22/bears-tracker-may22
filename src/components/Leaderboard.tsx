@@ -3,6 +3,7 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import { Navbar } from './Navbar';
 import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
+import { ANALYTICS_EVENTS, captureEvent } from '../lib/analytics';
 
 interface LeaderboardRow {
   rank_position: number;
@@ -71,6 +72,15 @@ export function Leaderboard() {
       document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
     };
   }, []);
+
+  useEffect(() => {
+    if (loading || error) return;
+
+    captureEvent(ANALYTICS_EVENTS.leaderboardViewed, {
+      season: TARGET_SEASON,
+      row_count: rows.length,
+    });
+  }, [error, loading, rows.length]);
 
   if (loading) {
     return (

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, AlertCircle, LogIn, Clock, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
@@ -9,6 +9,7 @@ import { LoginModal } from './LoginModal';
 import { RegisterModal } from './RegisterModal';
 import type { Question } from '../lib/PredictionContext';
 import { PredictionEditorModal } from './PredictionEditorModal';
+import { ANALYTICS_EVENTS, captureEvent } from '../lib/analytics';
 
 interface PredictionInterfaceProps {
   selectedCategory?: string;
@@ -40,6 +41,13 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
     Record<string, { score: number; label: 'Low' | 'Medium' | 'High' }>
   >({});
   const [confidenceSentimentLoading, setConfidenceSentimentLoading] = useState(false);
+  const viewedQuestionIdsRef = useRef<Set<string>>(new Set());
+  const previousPageRef = useRef(currentPage);
+
+  const questionsById = useMemo(
+    () => Object.fromEntries(questions.map((question) => [question.id, question])),
+    [questions]
+  );
 
   const deriveConfidenceLabel = useCallback((score: number): 'Low' | 'Medium' | 'High' => {
     if (score >= 70) return 'High';
@@ -167,8 +175,48 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
   }, [totalPages]);
 
   useEffect(() => {
+    if (previousPageRef.current === currentPage) return;
+
+    captureEvent(ANALYTICS_EVENTS.paginationChanged, {
+      surface: 'prediction_interface',
+      page_number: currentPage,
+      previous_page: previousPageRef.current,
+      category: selectedCategory,
+    });
+    previousPageRef.current = currentPage;
+  }, [currentPage, selectedCategory]);
+
+  useEffect(() => {
     void fetchConfidenceSentiment();
   }, [fetchConfidenceSentiment, aggregatedPredictions]);
+
+  useEffect(() => {
+    pagedQuestions.forEach((question, index) => {
+      if (viewedQuestionIdsRef.current.has(question.id)) return;
+
+      viewedQuestionIdsRef.current.add(question.id);
+      captureEvent(ANALYTICS_EVENTS.predictionCardViewed, {
+        question_id: question.id,
+        category: question.category,
+        question_type: question.question_type,
+        position: index + 1 + (currentPage - 1) * cardsPerPage,
+      });
+    });
+  }, [cardsPerPage, currentPage, pagedQuestions]);
+
+  useEffect(() => {
+    if (!selectedPrediction || showAuthPrompt) return;
+
+    const question = questionsById[selectedPrediction];
+    if (!question) return;
+
+    captureEvent(ANALYTICS_EVENTS.predictionEditorOpened, {
+      question_id: question.id,
+      category: question.category,
+      source_surface: 'prediction_interface',
+      locked_state: isPast(new Date(question.deadline)),
+    });
+  }, [questionsById, selectedPrediction, showAuthPrompt]);
 
   useEffect(() => {
     if (!selectedPrediction || !showAuthPrompt) return;
@@ -237,7 +285,12 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
   };
 
   const handlePrediction = async (questionId: string, prediction: string, confidence: 'low' | 'medium' | 'high') => {
+    const question = questionsById[questionId];
     if (!user) {
+      captureEvent(ANALYTICS_EVENTS.predictionAuthGateHit, {
+        question_id: questionId,
+        category: question?.category,
+      });
       setShowAuthPrompt(true);
       return;
     }
@@ -255,6 +308,15 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
 
       await makeContextPrediction(questionId, prediction, confidence);
 
+      captureEvent(ANALYTICS_EVENTS.predictionSubmitted, {
+        question_id: questionId,
+        category: question?.category,
+        question_type: question?.question_type,
+        prediction_value: prediction,
+        confidence,
+        is_edit: Boolean(userPredictions[questionId]),
+      });
+
       setSuccessMessages(prev => ({ ...prev, [questionId]: true }));
       
       setSelectedPrediction(null);
@@ -263,6 +325,11 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
 
     } catch (err) {
       console.error('Error saving prediction:', err);
+      captureEvent(ANALYTICS_EVENTS.predictionSubmitFailed, {
+        question_id: questionId,
+        category: question?.category,
+        error_type: err instanceof Error ? err.message : 'unknown',
+      });
       if (err instanceof Error) {
         if (err.message === 'No active session') {
           setShowAuthPrompt(true);
@@ -285,6 +352,14 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
   };
 
   const openPredictionWithValue = (questionId: string, value: string) => {
+    const question = questionsById[questionId];
+    captureEvent(ANALYTICS_EVENTS.predictionStarted, {
+      question_id: questionId,
+      category: question?.category,
+      question_type: question?.question_type,
+      source_surface: 'prediction_interface_quick_pick',
+      prediction_value: value,
+    });
     setSelectedPrediction(questionId);
     setSelectedValue(value);
     setSelectedConfidence(null);
@@ -294,6 +369,14 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
 
   const openPredictionModal = (questionId: string) => {
     const existingPrediction = userPredictions[questionId];
+    const question = questionsById[questionId];
+    captureEvent(ANALYTICS_EVENTS.predictionStarted, {
+      question_id: questionId,
+      category: question?.category,
+      question_type: question?.question_type,
+      source_surface: 'prediction_interface_button',
+      has_existing_prediction: Boolean(existingPrediction),
+    });
 
     setSelectedPrediction(questionId);
     setSelectedValue(existingPrediction?.prediction ?? null);
@@ -725,6 +808,9 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       handleClose();
+                      captureEvent(ANALYTICS_EVENTS.loginCtaClicked, {
+                        source: 'prediction_auth_gate',
+                      });
                       setShowLoginModal(true);
                     }}
                     className="w-full rounded-lg bg-bears-navy py-3 text-white transition-colors hover:bg-bears-navy/90"
@@ -736,6 +822,9 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
                     whileTap={{ scale: 0.98 }}
                     onClick={() => {
                       handleClose();
+                      captureEvent(ANALYTICS_EVENTS.signupCtaClicked, {
+                        source: 'prediction_auth_gate',
+                      });
                       setShowRegisterModal(true);
                     }}
                     className="w-full rounded-lg bg-bears-orange py-3 text-white transition-colors hover:bg-bears-orange/90"
@@ -767,6 +856,7 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
 
       <LoginModal 
         isOpen={showLoginModal}
+        source="prediction_gate_login"
         onClose={() => setShowLoginModal(false)}
         onSwitchToRegister={() => {
           setShowLoginModal(false);
@@ -776,6 +866,7 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
 
       <RegisterModal
         isOpen={showRegisterModal}
+        source="prediction_gate_register"
         onClose={() => setShowRegisterModal(false)}
         onSwitchToLogin={() => {
           setShowRegisterModal(false);

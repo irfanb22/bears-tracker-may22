@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { RegisterModal } from './RegisterModal';
@@ -8,6 +8,7 @@ import odunzeImage from '../assets/OdunRo00_2024.jpg';
 import PlayoffSplitChart from './PlayoffSplitChart';
 import DraftPickChart from './DraftPickChart';
 import { useAuth } from '../lib/auth';
+import { ANALYTICS_EVENTS, captureEvent } from '../lib/analytics';
 
 const revisedAccuracyRows = [
   { label: 'Caleb breaks passing record', pct: 90 },
@@ -410,12 +411,22 @@ export function SeasonRecap() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
+  useEffect(() => {
+    captureEvent(ANALYTICS_EVENTS.seasonRecapViewed);
+  }, []);
+
   const handleProtectedNavigation = (path: '/dashboard' | '/leaderboard') => {
+    captureEvent(ANALYTICS_EVENTS.seasonRecapCtaClicked, {
+      destination: path,
+      source: 'season_recap_inline_cta',
+      is_authenticated: Boolean(user),
+    });
     if (user) {
       navigate(path);
       return;
     }
 
+    captureEvent(ANALYTICS_EVENTS.loginCtaClicked, { source: 'season_recap_gate' });
     setIsLoginModalOpen(true);
   };
 
@@ -432,6 +443,7 @@ export function SeasonRecap() {
 
       <RegisterModal
         isOpen={isRegisterModalOpen}
+        source="season_recap_register"
         onClose={() => setIsRegisterModalOpen(false)}
         onSwitchToLogin={() => {
           setIsRegisterModalOpen(false);
@@ -441,6 +453,7 @@ export function SeasonRecap() {
 
       <LoginModal
         isOpen={isLoginModalOpen}
+        source="season_recap_login"
         onClose={() => setIsLoginModalOpen(false)}
         onSwitchToRegister={() => {
           setIsLoginModalOpen(false);

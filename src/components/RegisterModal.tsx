@@ -2,16 +2,23 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AuthForm } from './AuthForm';
 import { useEffect } from 'react';
+import { ANALYTICS_EVENTS, captureEvent } from '../lib/analytics';
 
 interface RegisterModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSwitchToLogin: () => void;
+  source?: string;
 }
 
-export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModalProps) {
+export function RegisterModal({ isOpen, onClose, onSwitchToLogin, source = 'unknown' }: RegisterModalProps) {
   useEffect(() => {
     if (!isOpen) return;
+
+    captureEvent(ANALYTICS_EVENTS.authModalOpened, {
+      mode: 'register',
+      source,
+    });
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -45,6 +52,7 @@ export function RegisterModal({ isOpen, onClose, onSwitchToLogin }: RegisterModa
               <AuthForm 
                 mode="register" 
                 isModal 
+                source={source}
                 onClose={onClose}
                 onSwitchMode={onSwitchToLogin}
               />
