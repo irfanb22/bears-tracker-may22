@@ -5,7 +5,10 @@ import { AuthProvider } from './lib/auth';
 import { PredictionProvider } from './lib/PredictionContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import App from './App';
+import { initAnalytics } from './lib/analytics';
 import './index.css';
+
+initAnalytics();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

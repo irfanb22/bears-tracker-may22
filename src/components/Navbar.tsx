@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LoginModal } from './LoginModal';
 import BearClawLogo from '../assets/bears_claw_logo.png';
 import { supabase } from '../lib/supabase';
+import { ANALYTICS_EVENTS, captureEvent } from '../lib/analytics';
 
 interface NavbarProps {
   onRegisterClick?: () => void;
@@ -44,8 +45,19 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
   }, [user]);
 
   const handleSignOut = async () => {
+    captureEvent(ANALYTICS_EVENTS.logoutClicked, {
+      source: 'navbar',
+    });
     await signOut();
     navigate('/');
+  };
+
+  const handleNavClick = (path: string, source: 'navbar_desktop' | 'navbar_mobile') => {
+    captureEvent(ANALYTICS_EVENTS.navClicked, {
+      destination: path,
+      source,
+    });
+    navigate(path);
   };
 
   const navItems = [
@@ -69,7 +81,7 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
           <button
             type="button"
             className="flex items-center gap-3 rounded-md pr-2 text-left"
-            onClick={() => navigate('/')}
+            onClick={() => handleNavClick('/', 'navbar_desktop')}
           >
             <span className="block h-10 w-10 flex-shrink-0 overflow-hidden sm:h-11 sm:w-11">
               <img
@@ -94,7 +106,7 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
                   return (
                     <button
                       key={item.path}
-                      onClick={() => navigate(item.path)}
+                      onClick={() => handleNavClick(item.path, 'navbar_desktop')}
                       className={`rounded-md px-3 py-2 text-sm font-semibold transition-colors ${
                         active
                           ? 'bg-white/10 text-white'
@@ -130,7 +142,7 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
             <>
               <div className="hidden items-center gap-2 sm:flex">
                 <button
-                  onClick={() => navigate('/season-recap')}
+                  onClick={() => handleNavClick('/season-recap', 'navbar_desktop')}
                   className={`rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
                     isActive('/season-recap')
                       ? 'bg-white/10 text-white'
@@ -140,13 +152,19 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
                   2025 Recap
                 </button>
                 <button
-                  onClick={() => setIsLoginModalOpen(true)}
+                  onClick={() => {
+                    captureEvent(ANALYTICS_EVENTS.loginCtaClicked, { source: 'navbar_desktop' });
+                    setIsLoginModalOpen(true);
+                  }}
                   className="rounded-md px-4 py-2 text-sm font-semibold text-gray-300 transition-colors hover:bg-white/5 hover:text-white"
                 >
                   Log In
                 </button>
                 <button
-                  onClick={onRegisterClick}
+                  onClick={() => {
+                    captureEvent(ANALYTICS_EVENTS.signupCtaClicked, { source: 'navbar_desktop' });
+                    onRegisterClick?.();
+                  }}
                   className="rounded-lg bg-bears-orange px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-bears-orange/90"
                 >
                   Sign Up
@@ -180,7 +198,7 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
                         <button
                           key={item.path}
                           onClick={() => {
-                            navigate(item.path);
+                            handleNavClick(item.path, 'navbar_mobile');
                             setIsMenuOpen(false);
                           }}
                           className={`block w-full rounded-md px-4 py-3 text-left text-sm font-semibold transition-colors ${
@@ -207,7 +225,7 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
                   <>
                     <button
                       onClick={() => {
-                        navigate('/season-recap');
+                        handleNavClick('/season-recap', 'navbar_mobile');
                         setIsMenuOpen(false);
                       }}
                       className={`block w-full rounded-md px-4 py-3 text-center text-sm font-semibold transition-colors ${
@@ -220,6 +238,7 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
                     </button>
                     <button
                       onClick={() => {
+                        captureEvent(ANALYTICS_EVENTS.loginCtaClicked, { source: 'navbar_mobile' });
                         setIsLoginModalOpen(true);
                         setIsMenuOpen(false);
                       }}
@@ -230,6 +249,7 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
                     <div className="px-4 pt-1">
                       <button
                         onClick={() => {
+                          captureEvent(ANALYTICS_EVENTS.signupCtaClicked, { source: 'navbar_mobile' });
                           onRegisterClick?.();
                           setIsMenuOpen(false);
                         }}
@@ -248,6 +268,7 @@ export function Navbar({ onRegisterClick }: NavbarProps) {
 
       <LoginModal
         isOpen={isLoginModalOpen}
+        source="navbar_login"
         onClose={() => setIsLoginModalOpen(false)}
         onSwitchToRegister={onRegisterClick ?? (() => {})}
       />

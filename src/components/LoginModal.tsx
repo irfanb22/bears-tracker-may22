@@ -3,15 +3,26 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AuthForm } from './AuthForm';
 import { ForgotPasswordModal } from './ForgotPasswordModal';
 import { useEffect, useState } from 'react';
+import { ANALYTICS_EVENTS, captureEvent } from '../lib/analytics';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSwitchToRegister: () => void;
+  source?: string;
 }
 
-export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalProps) {
+export function LoginModal({ isOpen, onClose, onSwitchToRegister, source = 'unknown' }: LoginModalProps) {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    captureEvent(ANALYTICS_EVENTS.authModalOpened, {
+      mode: 'login',
+      source,
+    });
+  }, [isOpen, source]);
 
   useEffect(() => {
     if (!isOpen || showForgotPassword) return;
@@ -49,6 +60,7 @@ export function LoginModal({ isOpen, onClose, onSwitchToRegister }: LoginModalPr
                 <AuthForm 
                   mode="login" 
                   isModal 
+                  source={source}
                   onClose={onClose}
                   onSwitchMode={onSwitchToRegister}
                   onForgotPassword={() => setShowForgotPassword(true)}

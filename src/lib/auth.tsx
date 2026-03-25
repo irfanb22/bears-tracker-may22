@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { User, AuthError, AuthResponse } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { authDebugger } from './authDebug';
+import { identifyAnalyticsUser, resetAnalyticsUser } from './analytics';
 
 // Define the shape of our auth context
 interface AuthContextType {
@@ -47,6 +48,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         authDebugger.log('Initial session retrieved', { session });
         setUser(session?.user ?? null);
+        if (session?.user) {
+          identifyAnalyticsUser(session.user);
+        } else {
+          resetAnalyticsUser();
+        }
       }
       setLoading(false);
     });
@@ -58,6 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       authDebugger.log('Auth state changed', { event: _event, session });
       setUser(session?.user ?? null);
       authDebugger.logAuthState(session?.user ?? null);
+      if (session?.user) {
+        identifyAnalyticsUser(session.user);
+      } else if (_event === 'SIGNED_OUT') {
+        resetAnalyticsUser();
+      }
     });
 
     return () => {

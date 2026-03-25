@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isPast } from 'date-fns';
 import { AlertCircle, Clock, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +7,7 @@ import { PredictionModal } from './PredictionModal';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { questionAssets } from '../lib/PredictionContext';
+import { ANALYTICS_EVENTS, captureEvent } from '../lib/analytics';
 
 interface Question {
   id: string;
@@ -90,6 +91,12 @@ export function Dashboard() {
   const [displayNameNotice, setDisplayNameNotice] = useState<string | null>(null);
   const [displayNameNoticeTone, setDisplayNameNoticeTone] = useState<'success' | 'error' | null>(null);
   const [showUsernameHelp, setShowUsernameHelp] = useState(false);
+  const hasTrackedDashboardViewRef = useRef(false);
+  const previousFiltersRef = useRef({
+    season: selectedSeason,
+    category: selectedCategory,
+    status: selectedStatus,
+  });
 
   const fetchDashboardData = useCallback(async () => {
     if (!user) return;
@@ -145,6 +152,16 @@ export function Dashboard() {
   }, [fetchDashboardData]);
 
   useEffect(() => {
+    if (loading || hasTrackedDashboardViewRef.current) return;
+
+    captureEvent(ANALYTICS_EVENTS.dashboardViewed, {
+      selected_season: selectedSeason,
+      prediction_count: predictions.length,
+    });
+    hasTrackedDashboardViewRef.current = true;
+  }, [loading, predictions.length, selectedSeason]);
+
+  useEffect(() => {
     const loadDisplayName = async () => {
       if (!user) return;
 
@@ -168,6 +185,30 @@ export function Dashboard() {
     await fetchDashboardData();
     setSelectedPrediction(null);
   };
+
+  useEffect(() => {
+    const previous = previousFiltersRef.current;
+    if (
+      previous.season === selectedSeason &&
+      previous.category === selectedCategory &&
+      previous.status === selectedStatus
+    ) {
+      return;
+    }
+    captureEvent(ANALYTICS_EVENTS.dashboardFilterChanged, {
+      season: selectedSeason,
+      category: selectedCategory,
+      status: selectedStatus,
+      previous_season: previous.season,
+      previous_category: previous.category,
+      previous_status: previous.status,
+    });
+    previousFiltersRef.current = {
+      season: selectedSeason,
+      category: selectedCategory,
+      status: selectedStatus,
+    };
+  }, [selectedCategory, selectedSeason, selectedStatus]);
 
   const handleDisplayNameSave = async () => {
     if (!user) return;
@@ -212,6 +253,7 @@ export function Dashboard() {
       setEditingDisplayName(false);
       setDisplayNameNoticeTone('success');
       setDisplayNameNotice('Username updated.');
+      captureEvent(ANALYTICS_EVENTS.displayNameSaved);
     } catch (err) {
       console.error('Error updating display name:', err);
       setDisplayNameNoticeTone('error');
@@ -228,6 +270,9 @@ export function Dashboard() {
       } else {
         setDisplayNameNotice('Could not update username right now.');
       }
+      captureEvent(ANALYTICS_EVENTS.displayNameSaveFailed, {
+        error_type: isDuplicateName ? 'duplicate_name' : 'unknown',
+      });
     } finally {
       setSavingDisplayName(false);
     }
@@ -369,6 +414,7 @@ export function Dashboard() {
                   <button
                     type="button"
                     onClick={() => {
+                      captureEvent(ANALYTICS_EVENTS.displayNameEditStarted);
                       setDisplayNameDraft(displayNameCurrent || user?.email?.split('@')[0] || '');
                       setDisplayNameNotice(null);
                       setDisplayNameNoticeTone(null);
@@ -609,6 +655,12 @@ export function Dashboard() {
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    captureEvent(ANALYTICS_EVENTS.dashboardPredictionOpened, {
+                                      question_id: prediction.question_id,
+                                      season: prediction.questions?.season,
+                                      category: prediction.questions?.category,
+                                      prediction_state: getPredictionState(prediction.questions),
+                                    });
                                     setSelectedPrediction(prediction);
                                   }}
                                   className="rounded-md bg-bears-navy px-3 py-1.5 text-xs font-bold text-white hover:bg-bears-navy/90"
@@ -688,6 +740,12 @@ export function Dashboard() {
                             <button
                               type="button"
                               onClick={() => {
+                                captureEvent(ANALYTICS_EVENTS.dashboardPredictionOpened, {
+                                  question_id: prediction.question_id,
+                                  season: prediction.questions?.season,
+                                  category: prediction.questions?.category,
+                                  prediction_state: getPredictionState(prediction.questions),
+                                });
                                 setSelectedPrediction(prediction);
                               }}
                               className="rounded-md bg-bears-navy px-3 py-1.5 text-xs font-bold text-white"

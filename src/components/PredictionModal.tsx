@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { PredictionEditorModal } from './PredictionEditorModal';
+import { ANALYTICS_EVENTS, captureEvent } from '../lib/analytics';
 
 interface PredictionModalProps {
   isOpen: boolean;
@@ -14,6 +15,8 @@ interface PredictionModalProps {
     questions?: {
       id?: string;
       text: string;
+      category?: string;
+      season?: number;
       status?: 'live' | 'pending' | 'completed';
       question_type: 'yes_no' | 'multiple_choice';
       deadline: string;
@@ -70,10 +73,26 @@ export function PredictionModal({ isOpen, onClose, onPredictionUpdate, predictio
 
       if (updateError) throw updateError;
 
+      captureEvent(ANALYTICS_EVENTS.predictionSubmitted, {
+        question_id: prediction.question_id,
+        season: prediction.questions?.season,
+        category: prediction.questions?.category,
+        question_type: prediction.questions?.question_type,
+        prediction_value: selectedValue,
+        confidence: selectedConfidence,
+        is_edit: true,
+      });
+
       onPredictionUpdate();
       handleClose();
     } catch (err) {
       console.error('Error updating prediction:', err);
+      captureEvent(ANALYTICS_EVENTS.predictionSubmitFailed, {
+        question_id: prediction.question_id,
+        season: prediction.questions?.season,
+        category: prediction.questions?.category,
+        error_type: err instanceof Error ? err.message : 'unknown',
+      });
       setError(err instanceof Error ? err.message : 'Failed to update prediction');
     } finally {
       setLoading(false);

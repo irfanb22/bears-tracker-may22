@@ -4,10 +4,12 @@ import { useAuth } from '../lib/auth';
 import { Loader2, Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { authDebugger } from '../lib/authDebug';
+import { ANALYTICS_EVENTS, captureEvent } from '../lib/analytics';
 
 interface AuthFormProps {
   mode: 'login' | 'register';
   isModal?: boolean;
+  source?: string;
   onClose?: () => void;
   onSwitchMode?: () => void;
   onForgotPassword?: () => void;
@@ -19,7 +21,16 @@ interface LocationState {
   from?: string;
 }
 
-export function AuthForm({ mode, isModal, onClose, onSwitchMode, onForgotPassword }: AuthFormProps) {
+function getAuthErrorType(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || '');
+
+  if (/invalid login credentials/i.test(message)) return 'invalid_credentials';
+  if (/email not confirmed/i.test(message)) return 'email_not_confirmed';
+  if (/already registered|user already registered/i.test(message)) return 'already_registered';
+  return 'unknown';
+}
+
+export function AuthForm({ mode, isModal, source = 'unknown', onClose, onSwitchMode, onForgotPassword }: AuthFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | React.ReactNode | null>(null);
@@ -59,6 +70,10 @@ export function AuthForm({ mode, isModal, onClose, onSwitchMode, onForgotPasswor
 
     try {
       if (mode === 'login') {
+        captureEvent(ANALYTICS_EVENTS.loginSubmitted, {
+          source,
+          is_modal: Boolean(isModal),
+        });
         authDebugger.log('Attempting sign in');
         const { error: signInError, data } = await signIn(email, password);
         if (signInError) throw signInError;
@@ -75,8 +90,17 @@ export function AuthForm({ mode, isModal, onClose, onSwitchMode, onForgotPasswor
 
         // Navigate to the return path or dashboard
         const redirectPath = returnPath || '/dashboard';
+        captureEvent(ANALYTICS_EVENTS.loginSucceeded, {
+          source,
+          redirect_path: redirectPath,
+          is_modal: Boolean(isModal),
+        });
         navigate(redirectPath, { replace: true });
       } else {
+        captureEvent(ANALYTICS_EVENTS.signupSubmitted, {
+          source,
+          is_modal: Boolean(isModal),
+        });
         authDebugger.log('Attempting sign up');
         const { error: signUpError, data } = await signUp(email, password);
         if (signUpError) throw signUpError;
@@ -87,9 +111,18 @@ export function AuthForm({ mode, isModal, onClose, onSwitchMode, onForgotPasswor
         });
         
         setSuccess(true);
+        captureEvent(ANALYTICS_EVENTS.signupSucceeded, {
+          source,
+          is_modal: Boolean(isModal),
+        });
       }
     } catch (err) {
       authDebugger.logError(`${mode} error`, err);
+      captureEvent(mode === 'login' ? ANALYTICS_EVENTS.loginFailed : ANALYTICS_EVENTS.signupFailed, {
+        source,
+        error_type: getAuthErrorType(err),
+        is_modal: Boolean(isModal),
+      });
       if (err instanceof Error) {
         // Handle specific error messages
         if (err.message.includes('Invalid login credentials')) {
@@ -161,7 +194,13 @@ export function AuthForm({ mode, isModal, onClose, onSwitchMode, onForgotPasswor
         <div className="flex items-center justify-end">
           <button
             type="button"
-            onClick={onForgotPassword}
+            onClick={() => {
+              captureEvent(ANALYTICS_EVENTS.passwordResetRequested, {
+                source,
+                surface: isModal ? 'modal' : 'page',
+              });
+              onForgotPassword?.();
+            }}
             className="text-sm text-bears-navy hover:text-bears-orange transition-colors"
           >
             Forgot your password?
@@ -186,7 +225,14 @@ export function AuthForm({ mode, isModal, onClose, onSwitchMode, onForgotPasswor
       <div className="text-center">
         <button
           type="button"
-          onClick={onSwitchMode}
+          onClick={() => {
+            captureEvent(ANALYTICS_EVENTS.authSwitchClicked, {
+              from_mode: mode,
+              to_mode: mode === 'login' ? 'register' : 'login',
+              source,
+            });
+            onSwitchMode?.();
+          }}
           className="text-sm text-bears-navy hover:text-bears-orange"
         >
           {mode === 'login'

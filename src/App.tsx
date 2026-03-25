@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminProtectedRoute } from './components/AdminProtectedRoute';
 import { Navbar } from './components/Navbar';
@@ -20,6 +20,7 @@ import { DebugPredictionAccess } from './components/DebugPredictionAccess';
 import { SiteFooter } from './components/SiteFooter';
 import { ScrollToTop } from './components/ScrollToTop';
 import { SeasonRecap } from './components/SeasonRecap';
+import { ANALYTICS_EVENTS, captureEvent, capturePageView } from './lib/analytics';
 import { usePredictions } from './lib/PredictionContext';
 
 const categories = [
@@ -41,6 +42,18 @@ function HomePage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [selectedSeason, setSelectedSeason] = useState(2025);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const previousCategoryRef = useRef(selectedCategory);
+
+  useEffect(() => {
+    if (previousCategoryRef.current === selectedCategory) return;
+
+    captureEvent(ANALYTICS_EVENTS.categoryFilterChanged, {
+      category: selectedCategory,
+      previous_category: previousCategoryRef.current,
+      surface: 'home',
+    });
+    previousCategoryRef.current = selectedCategory;
+  }, [selectedCategory]);
 
   const seasonQuestions = questions.filter((question) => question.season === selectedSeason);
   const visibleCategories = categories.filter((category) => {
@@ -117,7 +130,13 @@ function HomePage() {
           </p>
           <button
             type="button"
-            onClick={() => navigate('/season-recap')}
+            onClick={() => {
+              captureEvent(ANALYTICS_EVENTS.seasonRecapCtaClicked, {
+                destination: '/season-recap',
+                source: 'home_banner',
+              });
+              navigate('/season-recap');
+            }}
             className="w-full rounded-md border border-yellow-700/30 bg-yellow-100 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-yellow-900 sm:w-auto"
           >
             View Recap
@@ -144,7 +163,10 @@ function HomePage() {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setIsRegisterModalOpen(true)}
+                onClick={() => {
+                  captureEvent(ANALYTICS_EVENTS.signupCtaClicked, { source: 'home_hero' });
+                  setIsRegisterModalOpen(true);
+                }}
                 className="px-8 py-4 bg-bears-orange text-white text-lg font-semibold rounded-lg hover:bg-bears-orange/90 transition-colors"
               >
                 Get Started Now
@@ -178,7 +200,10 @@ function HomePage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="px-8 py-4 bg-bears-orange text-white text-lg font-semibold rounded-lg hover:bg-bears-orange/90 transition-colors"
-              onClick={() => setIsRegisterModalOpen(true)}
+              onClick={() => {
+                captureEvent(ANALYTICS_EVENTS.signupCtaClicked, { source: 'home_footer' });
+                setIsRegisterModalOpen(true);
+              }}
             >
               Get Started Now
             </motion.button>
@@ -188,6 +213,7 @@ function HomePage() {
 
       <RegisterModal 
         isOpen={isRegisterModalOpen} 
+        source="home_register"
         onClose={() => setIsRegisterModalOpen(false)}
         onSwitchToLogin={() => {
           setIsRegisterModalOpen(false);
@@ -197,6 +223,7 @@ function HomePage() {
 
       <LoginModal 
         isOpen={isLoginModalOpen}
+        source="home_login"
         onClose={() => setIsLoginModalOpen(false)}
         onSwitchToRegister={() => {
           setIsLoginModalOpen(false);
@@ -210,10 +237,36 @@ function HomePage() {
   );
 }
 
+function getRouteName(pathname: string) {
+  if (pathname === '/') return 'home';
+  if (pathname === '/season-recap') return 'season_recap';
+  if (pathname === '/auth/callback') return 'auth_callback';
+  if (pathname === '/how-it-works') return 'how_it_works';
+  if (pathname === '/dashboard') return 'dashboard';
+  if (pathname === '/leaderboard') return 'leaderboard';
+  if (pathname === '/admin') return 'admin';
+  return 'unknown';
+}
+
+function AnalyticsRouteTracker() {
+  const location = useLocation();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    capturePageView(getRouteName(location.pathname), {
+      is_authenticated: Boolean(user),
+      referrer: typeof document !== 'undefined' ? document.referrer || undefined : undefined,
+    });
+  }, [location.pathname, location.search, user]);
+
+  return null;
+}
+
 export function AppComponent() {
   return (
     <>
       <ScrollToTop />
+      <AnalyticsRouteTracker />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/season-recap" element={<SeasonRecap />} />
