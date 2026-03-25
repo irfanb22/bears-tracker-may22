@@ -235,7 +235,6 @@ function RevisedRecap({
         </p>
         <HeroFigure />
         <div className="max-w-3xl space-y-4 text-lg leading-8 text-slate-700">
-          <p>13 predictions. 1 season. Some calls were obvious. Others split the fanbase right down the middle.</p>
           <p>
             Before the season started, Bears Prediction Tracker asked fans to make calls on
             everything from Caleb&apos;s stats to the draft to whether this team would end the playoff

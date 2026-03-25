@@ -21,6 +21,7 @@ import { SiteFooter } from './components/SiteFooter';
 import { ScrollToTop } from './components/ScrollToTop';
 import { SeasonRecap } from './components/SeasonRecap';
 import { ANALYTICS_EVENTS, captureEvent, capturePageView } from './lib/analytics';
+import { usePredictions } from './lib/PredictionContext';
 
 const categories = [
   { id: 'all', label: 'All' },
@@ -35,9 +36,11 @@ const categories = [
 
 function HomePage() {
   const { user } = useAuth();
+  const { questions } = usePredictions();
   const navigate = useNavigate();
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [selectedSeason, setSelectedSeason] = useState(2025);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const previousCategoryRef = useRef(selectedCategory);
 
@@ -52,18 +55,43 @@ function HomePage() {
     previousCategoryRef.current = selectedCategory;
   }, [selectedCategory]);
 
+  const seasonQuestions = questions.filter((question) => question.season === selectedSeason);
+  const visibleCategories = categories.filter((category) => {
+    if (category.id === 'all') return true;
+    return seasonQuestions.some((question) => question.category === category.id);
+  });
+
+  useEffect(() => {
+    if (!visibleCategories.some((category) => category.id === selectedCategory)) {
+      setSelectedCategory('all');
+    }
+  }, [selectedCategory, visibleCategories]);
+
   const renderTopicsControls = () => (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-xs font-bold uppercase tracking-wide text-slate-500">
-          2026 Season
+        <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white p-1">
+          {[2025, 2026].map((season) => (
+            <button
+              key={season}
+              type="button"
+              onClick={() => setSelectedSeason(season)}
+              className={`rounded-full px-4 py-2 text-xs font-bold uppercase tracking-wide transition-colors ${
+                selectedSeason === season
+                  ? 'bg-bears-navy text-white'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              {season} Season
+            </button>
+          ))}
         </div>
       </div>
 
       <div className="relative border-b border-slate-200">
         <div className="overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <div className="flex min-w-max items-center gap-8 px-1 pr-14 sm:pr-4">
-            {categories.map((category) => (
+            {visibleCategories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setSelectedCategory(category.id)}
@@ -76,9 +104,11 @@ function HomePage() {
                 {category.label}
               </button>
             ))}
-            <span className="pb-3 text-base font-bold whitespace-nowrap text-slate-400">
-              2026 Game-by-Game Picks
-            </span>
+            {selectedSeason === 2026 && (
+              <span className="pb-3 text-base font-bold whitespace-nowrap text-slate-400">
+                2026 Game-by-Game Picks
+              </span>
+            )}
           </div>
         </div>
         <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-white to-transparent sm:hidden" />
@@ -122,7 +152,7 @@ function HomePage() {
           <div className="space-y-5">
             <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
               Make your calls on the biggest questions for the{' '}
-              <span className="animated-underline first">2026 Bears season</span>. 
+              <span className="animated-underline first">{selectedSeason} Bears season</span>.{' '}
               Back your predictions with{' '}
               <span className="animated-underline second">confidence</span> and 
               track your{' '}
@@ -150,7 +180,7 @@ function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col gap-6">
             {renderTopicsControls()}
-            <PredictionInterface selectedCategory={selectedCategory} />
+            <PredictionInterface selectedCategory={selectedCategory} selectedSeason={selectedSeason} />
           </div>
           
           {import.meta.env.DEV && <DebugPredictionAccess />}
@@ -164,7 +194,7 @@ function HomePage() {
               <Calendar className="w-12 h-12 text-bears-orange" />
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-8">
-              Sign up to lock in your predictions before Week 1
+              Sign up to save your predictions and follow each season
             </h2>
             <motion.button
               whileHover={{ scale: 1.05 }}

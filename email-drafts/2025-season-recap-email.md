@@ -9,9 +9,6 @@ Headline: How Bears Fans Predicted the Season
 Greeting:
 Hi Bears fan,
 
-Intro:
-13 predictions. 1 season. Some calls were obvious. Others split the fanbase right down the middle.
-
 Before the season started, Bears Prediction Tracker asked fans to make calls on everything from Caleb's stats to the draft to whether this team would end the playoff drought. Hundreds of you locked in your picks.
 
 The dust has settled. Here's how Bears fans did.

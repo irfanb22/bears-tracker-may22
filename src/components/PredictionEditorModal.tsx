@@ -68,7 +68,7 @@ export function PredictionEditorModal({
   }, [isOpen, onClose]);
 
   const hasDeadlinePassed = question?.deadline ? isPast(new Date(question.deadline)) : false;
-  const isLocked = !!question && (question.status === 'completed' || hasDeadlinePassed);
+  const isLocked = !!question && (question.status === 'pending' || question.status === 'completed' || hasDeadlinePassed);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -116,6 +116,11 @@ export function PredictionEditorModal({
 
     return (
       <div className="mb-5 max-h-[44vh] space-y-2.5 overflow-y-auto pr-1">
+        {(!question.choices || question.choices.length === 0) && (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-600">
+            Answer options will be added soon.
+          </div>
+        )}
         {question.choices?.map((choice) => (
           <button
             key={choice.id}
@@ -168,7 +173,9 @@ export function PredictionEditorModal({
 
                 {isLocked && (
                   <div className="mb-2.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
-                    Prediction is closed. You can view details below.
+                    {question.status === 'pending'
+                      ? 'This prediction is coming soon. Check back later for answer options.'
+                      : 'Prediction is closed. You can view details below.'}
                   </div>
                 )}
 

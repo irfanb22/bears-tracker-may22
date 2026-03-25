@@ -13,9 +13,10 @@ import { ANALYTICS_EVENTS, captureEvent } from '../lib/analytics';
 
 interface PredictionInterfaceProps {
   selectedCategory?: string;
+  selectedSeason?: number;
 }
 
-export function PredictionInterface({ selectedCategory = 'all' }: PredictionInterfaceProps) {
+export function PredictionInterface({ selectedCategory = 'all', selectedSeason = 2025 }: PredictionInterfaceProps) {
   const { user } = useAuth();
   const { 
     questions,
@@ -69,7 +70,10 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
   );
 
   const fetchConfidenceSentiment = useCallback(async () => {
-    if (questions.length === 0) {
+    const seasonQuestions = questions.filter((question) => question.season === selectedSeason);
+    const seasonQuestionIds = new Set(seasonQuestions.map((question) => question.id));
+
+    if (seasonQuestions.length === 0) {
       setConfidenceSentiment({});
       setConfidenceSentimentLoading(false);
       return;
@@ -79,7 +83,9 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
     let loadedFromRpc = false;
 
     try {
-      const { data, error: rpcError } = await supabase.rpc('get_question_confidence_sentiment');
+      const { data, error: rpcError } = await supabase.rpc('get_question_confidence_sentiment', {
+        target_season: selectedSeason,
+      });
       if (rpcError) throw rpcError;
 
       const byQuestion = ((data as Array<Record<string, unknown>>) || []).reduce<
@@ -118,6 +124,7 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
           Record<string, { sum: number; count: number }>
         >((acc, row) => {
           if (!row.question_id || !row.confidence) return acc;
+          if (!seasonQuestionIds.has(row.question_id)) return acc;
 
           const confidenceValue = row.confidence === 'high' ? 3 : row.confidence === 'medium' ? 2 : row.confidence === 'low' ? 1 : null;
           if (!confidenceValue) return acc;
@@ -153,12 +160,12 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
     }
 
     setConfidenceSentimentLoading(false);
-  }, [deriveConfidenceLabel, parseConfidenceLabel, questions.length]);
+  }, [deriveConfidenceLabel, parseConfidenceLabel, questions, selectedSeason]);
 
-  // Filter questions based on selected category
+  const seasonQuestions = questions.filter((question) => question.season === selectedSeason);
   const filteredQuestions = selectedCategory === 'all'
-    ? questions
-    : questions.filter(q => q.category === selectedCategory);
+    ? seasonQuestions
+    : seasonQuestions.filter((question) => question.category === selectedCategory);
   const cardsPerPage = 3;
   const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / cardsPerPage));
   const pagedQuestions = filteredQuestions.slice(
@@ -168,7 +175,7 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategory]);
+  }, [selectedCategory, selectedSeason]);
 
   useEffect(() => {
     setCurrentPage((previousPage) => Math.min(previousPage, totalPages));
@@ -511,6 +518,7 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
           const totalVotes = aggregatedPredictions[question.id]?.total || 0;
           const asset = questionAssets[question.id];
           const isExpired = isPast(new Date(question.deadline));
+          const canAnswer = question.status === 'live' && !isExpired;
           const percentages = calculatePercentages(question.id, question);
           const statusTone = question.status === 'live'
             ? 'bg-emerald-50 text-emerald-700'
@@ -520,7 +528,7 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
           const statusText = question.status === 'live'
             ? 'LIVE'
             : question.status === 'pending'
-            ? 'PENDING'
+            ? 'COMING SOON'
             : 'CLOSED';
           const deadlineLabel = new Date(question.deadline).toLocaleString('en-US', {
             month: 'short',
@@ -574,9 +582,13 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
                       alt={question.text}
                       className="h-full w-full object-cover"
                     />
-                  ) : asset?.icon && (
+                  ) : asset?.icon ? (
                     <div className="flex h-full w-full items-center justify-center bg-bears-navy/5">
                       <asset.icon className="h-7 w-7 text-bears-navy" />
+                    </div>
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-bears-navy/5">
+                      <Star className="h-5 w-5 text-bears-navy" />
                     </div>
                   )}
                 </div>
@@ -588,7 +600,7 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${statusTone}`}>
                       {statusText}
                     </span>
-                    {!isExpired && question.status === 'live' && (
+                    {canAnswer && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
                         <Clock className="h-3 w-3" />
                         {formatDistanceToNow(new Date(question.deadline), { addSuffix: true })}
@@ -612,10 +624,10 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
                       <div className="flex items-center justify-between text-xs">
                         <button
                           type="button"
-                          onClick={() => !isExpired && openPredictionWithValue(question.id, 'yes')}
-                          disabled={isExpired}
+                          onClick={() => canAnswer && openPredictionWithValue(question.id, 'yes')}
+                          disabled={!canAnswer}
                           className={`rounded-full border px-2.5 py-1 font-bold transition ${
-                            isExpired
+                            !canAnswer
                               ? 'cursor-not-allowed border-slate-200 text-slate-400'
                               : 'border-bears-navy/30 text-bears-navy hover:bg-bears-navy/5'
                           }`}
@@ -638,10 +650,10 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
                       <div className="flex items-center justify-between text-xs">
                         <button
                           type="button"
-                          onClick={() => !isExpired && openPredictionWithValue(question.id, 'no')}
-                          disabled={isExpired}
+                          onClick={() => canAnswer && openPredictionWithValue(question.id, 'no')}
+                          disabled={!canAnswer}
                           className={`rounded-full border px-2.5 py-1 font-bold transition ${
-                            isExpired
+                            !canAnswer
                               ? 'cursor-not-allowed border-slate-200 text-slate-400'
                               : 'border-bears-orange/35 text-[#7a2604] hover:bg-bears-orange/5'
                           }`}
@@ -667,10 +679,10 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
                         <div className="flex items-center justify-between text-xs">
                           <button
                             type="button"
-                            onClick={() => !isExpired && openPredictionWithValue(question.id, choice.text)}
-                            disabled={isExpired}
+                            onClick={() => canAnswer && openPredictionWithValue(question.id, choice.text)}
+                            disabled={!canAnswer}
                             className={`rounded-full border px-2.5 py-1 font-bold transition ${
-                              isExpired
+                              !canAnswer
                                 ? 'cursor-not-allowed border-slate-200 text-slate-400'
                                 : 'border-slate-300 text-slate-700 hover:bg-slate-50'
                             }`}
@@ -743,14 +755,14 @@ export function PredictionInterface({ selectedCategory = 'all' }: PredictionInte
                 <button
                   onClick={() => openPredictionModal(question.id)}
                   className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition ${
-                    isExpired
+                    !canAnswer
                       ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
                       : hasPredicted
                       ? 'bg-emerald-600 text-white hover:bg-emerald-700'
                       : 'bg-bears-navy text-white hover:bg-bears-navy/90'
                   }`}
                 >
-                  {isExpired ? 'View Details' : hasPredicted ? 'View / Edit Prediction' : 'Make Prediction'}
+                  {!canAnswer ? 'View Details' : hasPredicted ? 'View / Edit Prediction' : 'Make Prediction'}
                 </button>
               </div>
 
