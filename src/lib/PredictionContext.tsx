@@ -18,6 +18,7 @@ export interface Question {
   id: string;
   text: string;
   category: string;
+  season: number;
   status: 'live' | 'pending' | 'completed';
   deadline: string;
   featured: boolean;
@@ -41,6 +42,7 @@ export interface Prediction {
   questions?: {
     text: string;
     category: string;
+    season?: number;
   };
 }
 
@@ -324,6 +326,9 @@ export function PredictionProvider({ children }: { children: React.ReactNode }) 
       // Check if the question's deadline has passed
       const question = questions.find(q => q.id === questionId);
       if (!question) throw new Error('Question not found');
+      if (question.status !== 'live') {
+        throw new Error('This prediction is not open yet');
+      }
 
       const deadline = new Date(question.deadline);
       if (deadline < new Date()) {
