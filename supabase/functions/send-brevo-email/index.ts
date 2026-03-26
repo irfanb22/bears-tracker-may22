@@ -30,6 +30,11 @@ interface Contact {
   email: string;
 }
 
+interface AuthenticatedAdmin {
+  id: string;
+  email: string;
+}
+
 function getAdminClient() {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -55,6 +60,37 @@ function jsonResponse(payload: unknown, status = 200) {
 
 function dedupeEmails(values: string[]) {
   return [...new Set(values.map((value) => value.trim().toLowerCase()).filter(Boolean))];
+}
+
+async function requireAdmin(req: Request): Promise<AuthenticatedAdmin> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    throw new Error("Missing bearer token.");
+  }
+
+  const token = authHeader.slice("Bearer ".length).trim();
+  if (!token) {
+    throw new Error("Missing bearer token.");
+  }
+
+  const supabase = getAdminClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(token);
+
+  if (error || !user?.email) {
+    throw new Error("Unable to verify caller identity.");
+  }
+
+  if (user.email.trim().toLowerCase() !== "irfanbhanji@gmail.com") {
+    throw new Error("Admin access required.");
+  }
+
+  return {
+    id: user.id,
+    email: user.email.trim().toLowerCase(),
+  };
 }
 
 async function listAllAuthUsers() {
@@ -240,6 +276,80 @@ async function sendBrevoEmail({
   return response.json();
 }
 
+async function createEmailSendLog({
+  adminUserId,
+  request,
+  subject,
+  segment,
+}: {
+  adminUserId: string;
+  request: SendBrevoEmailRequest;
+  subject: string;
+  segment: SegmentName;
+}) {
+  const supabase = getAdminClient();
+  const payloadSnapshot = {
+    mode: request.mode ?? "send",
+    segment,
+    recipients: dedupeEmails(request.recipients ?? []),
+    testEmail: request.testEmail?.trim().toLowerCase() ?? null,
+    subject,
+    previewText: request.previewText ?? null,
+    imageUrls: request.imageUrls ?? {},
+    links: request.links ?? {},
+  };
+
+  const { data, error } = await supabase
+    .from("email_send_logs")
+    .insert({
+      sent_by_user_id: adminUserId,
+      mode: request.mode ?? "send",
+      segment,
+      test_email: request.testEmail?.trim().toLowerCase() ?? null,
+      subject,
+      recipient_count: 0,
+      status: "started",
+      payload_snapshot: payloadSnapshot,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create email send log: ${error.message}`);
+  }
+
+  return data.id as string;
+}
+
+async function finalizeEmailSendLog({
+  logId,
+  status,
+  recipientCount,
+  responseSnapshot,
+  errorMessage,
+}: {
+  logId: string;
+  status: "succeeded" | "failed";
+  recipientCount: number;
+  responseSnapshot?: unknown;
+  errorMessage?: string;
+}) {
+  const supabase = getAdminClient();
+  const { error } = await supabase
+    .from("email_send_logs")
+    .update({
+      status,
+      recipient_count: recipientCount,
+      response_snapshot: responseSnapshot ?? null,
+      error_message: errorMessage ?? null,
+    })
+    .eq("id", logId);
+
+  if (error) {
+    console.error("Failed to finalize email send log", error);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -250,6 +360,7 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const admin = await requireAdmin(req);
     const request = (await req.json()) as SendBrevoEmailRequest;
 
     const subject = request.subject ?? "How Bears fans predicted the 2025 season";
@@ -265,53 +376,85 @@ Deno.serve(async (req) => {
       Deno.env.get("EMAIL_UNSUBSCRIBE_URL") ??
       `https://${Deno.env.get("SUPABASE_PROJECT_ID") ?? "mvyvfvwguwqowytnkvvs"}.supabase.co/functions/v1/unsubscribe-email`;
     const unsubscribeSecret = Deno.env.get("UNSUBSCRIBE_SIGNING_SECRET");
+    const segment = request.segment ?? "season_2025_participants";
+    const logId = await createEmailSendLog({
+      adminUserId: admin.id,
+      request,
+      subject,
+      segment,
+    });
 
-    const recipients = await resolveRecipients(request);
+    try {
+      const recipients = await resolveRecipients(request);
 
-    if (recipients.length === 0) {
-      return jsonResponse({ error: "No recipients resolved for this request." }, 400);
-    }
-
-    const results = [];
-    for (const recipient of recipients) {
-      let unsubscribeUrl: string | undefined;
-      if (unsubscribeSecret && recipient.user_id) {
-        const token = await createUnsubscribeToken(
-          {
-            userId: recipient.user_id,
-            email: recipient.email,
-          },
-          unsubscribeSecret,
-        );
-        unsubscribeUrl = buildUnsubscribeUrl(unsubscribeBaseUrl, token);
+      if (recipients.length === 0) {
+        await finalizeEmailSendLog({
+          logId,
+          status: "failed",
+          recipientCount: 0,
+          errorMessage: "No recipients resolved for this request.",
+        });
+        return jsonResponse({ error: "No recipients resolved for this request." }, 400);
       }
 
-      const htmlContent = buildSeasonRecapEmail({
-        previewText,
-        imageUrls: request.imageUrls ?? {},
-        links,
-        unsubscribeUrl,
+      const results = [];
+      for (const recipient of recipients) {
+        let unsubscribeUrl: string | undefined;
+        if (unsubscribeSecret && recipient.user_id) {
+          const token = await createUnsubscribeToken(
+            {
+              userId: recipient.user_id,
+              email: recipient.email,
+            },
+            unsubscribeSecret,
+          );
+          unsubscribeUrl = buildUnsubscribeUrl(unsubscribeBaseUrl, token);
+        }
+
+        const htmlContent = buildSeasonRecapEmail({
+          previewText,
+          imageUrls: request.imageUrls ?? {},
+          links,
+          unsubscribeUrl,
+        });
+
+        const result = await sendBrevoEmail({
+          to: recipient.email,
+          subject,
+          htmlContent,
+        });
+
+        results.push({
+          email: recipient.email,
+          result,
+        });
+      }
+
+      const responsePayload = {
+        ok: true,
+        mode: request.mode ?? "send",
+        recipientCount: recipients.length,
+        recipients: recipients.map((recipient) => recipient.email),
+        results,
+      };
+
+      await finalizeEmailSendLog({
+        logId,
+        status: "succeeded",
+        recipientCount: recipients.length,
+        responseSnapshot: responsePayload,
       });
 
-      const result = await sendBrevoEmail({
-        to: recipient.email,
-        subject,
-        htmlContent,
+      return jsonResponse(responsePayload);
+    } catch (error) {
+      await finalizeEmailSendLog({
+        logId,
+        status: "failed",
+        recipientCount: 0,
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
       });
-
-      results.push({
-        email: recipient.email,
-        result,
-      });
+      throw error;
     }
-
-    return jsonResponse({
-      ok: true,
-      mode: request.mode ?? "send",
-      recipientCount: recipients.length,
-      recipients: recipients.map((recipient) => recipient.email),
-      results,
-    });
   } catch (error) {
     return jsonResponse(
       {

@@ -9,6 +9,7 @@ import { PredictionInterface } from './components/PredictionInterface';
 import { Dashboard } from './components/Dashboard';
 import { Leaderboard } from './components/Leaderboard';
 import { AdminDashboard } from './components/AdminDashboard';
+import { AdminEmailDashboard } from './components/AdminEmailDashboard';
 import { HowItWorks } from './components/HowItWorks';
 import { useAuth } from './lib/auth';
 import { AuthCallback } from './components/AuthCallback';
@@ -256,6 +257,7 @@ function getRouteName(pathname: string) {
   if (pathname === '/dashboard') return 'dashboard';
   if (pathname === '/leaderboard') return 'leaderboard';
   if (pathname === '/admin') return 'admin';
+  if (pathname === '/admin/email') return 'admin_email';
   return 'unknown';
 }
 
@@ -312,6 +314,14 @@ export function AppComponent() {
           element={
             <AdminProtectedRoute>
               <AdminDashboard />
+            </AdminProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/email"
+          element={
+            <AdminProtectedRoute>
+              <AdminEmailDashboard />
             </AdminProtectedRoute>
           }
         />

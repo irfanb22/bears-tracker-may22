@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { 
-  Loader2, Save, AlertCircle, Plus, X, Edit2, 
+  Loader2, Save, AlertCircle, Plus, X, Edit2, Mail, 
   CheckCircle, PlusCircle, MinusCircle, Star, StarOff, AlertTriangle
 } from 'lucide-react';
 import { Navbar } from './Navbar';
@@ -190,13 +191,22 @@ export function AdminDashboard() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-bears-navy">Admin Dashboard</h1>
-          <button
-            onClick={() => setShowNewQuestionForm(!showNewQuestionForm)}
-            className="flex items-center gap-2 px-4 py-2 bg-bears-orange text-white rounded-lg hover:bg-bears-orange/90 transition-colors"
-          >
-            {showNewQuestionForm ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-            {showNewQuestionForm ? 'Cancel' : 'New Question'}
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/admin/email"
+              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 shadow-sm transition-colors hover:border-slate-300 hover:text-slate-900"
+            >
+              <Mail className="h-5 w-5" />
+              Email Console
+            </Link>
+            <button
+              onClick={() => setShowNewQuestionForm(!showNewQuestionForm)}
+              className="flex items-center gap-2 px-4 py-2 bg-bears-orange text-white rounded-lg hover:bg-bears-orange/90 transition-colors"
+            >
+              {showNewQuestionForm ? <X className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+              {showNewQuestionForm ? 'Cancel' : 'New Question'}
+            </button>
+          </div>
         </div>
 
         <AnimatePresence>
