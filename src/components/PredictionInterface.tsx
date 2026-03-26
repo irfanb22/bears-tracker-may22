@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { usePredictions } from '../lib/PredictionContext';
 import { formatDistanceToNow, isPast } from 'date-fns';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { LoginModal } from './LoginModal';
 import { RegisterModal } from './RegisterModal';
 import type { Question } from '../lib/PredictionContext';
@@ -41,6 +41,7 @@ const CARD_STYLE: {
 
 export function PredictionInterface({ selectedCategory = 'all', selectedSeason = 2025 }: PredictionInterfaceProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { 
     questions,
@@ -296,7 +297,17 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
     setShowAuthPrompt(false);
     setError(null);
     handledQuestionParamRef.current = questionId;
-  }, [cardsPerPage, currentPage, filteredQuestions, location.search, userPredictions]);
+
+    const nextSearchParams = new URLSearchParams(location.search);
+    nextSearchParams.delete('question');
+    navigate(
+      {
+        pathname: location.pathname,
+        search: nextSearchParams.toString() ? `?${nextSearchParams.toString()}` : '',
+      },
+      { replace: true }
+    );
+  }, [cardsPerPage, currentPage, filteredQuestions, location.pathname, location.search, navigate, userPredictions]);
 
   if (predictionsLoading) {
     return (

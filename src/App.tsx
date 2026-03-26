@@ -39,10 +39,17 @@ function HomePage() {
   const { questions } = usePredictions();
   const navigate = useNavigate();
   const location = useLocation();
+  const initialSearchParams = new URLSearchParams(location.search);
+  const initialSeasonParam = initialSearchParams.get('season');
+  const initialCategoryParam = initialSearchParams.get('category');
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [selectedSeason, setSelectedSeason] = useState(2025);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedSeason, setSelectedSeason] = useState(
+    initialSeasonParam === '2025' || initialSeasonParam === '2026'
+      ? Number(initialSeasonParam)
+      : 2025
+  );
+  const [selectedCategory, setSelectedCategory] = useState(initialCategoryParam || 'all');
   const previousCategoryRef = useRef(selectedCategory);
 
   useEffect(() => {
@@ -67,26 +74,6 @@ function HomePage() {
       setSelectedCategory('all');
     }
   }, [selectedCategory, visibleCategories]);
-
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const seasonParam = searchParams.get('season');
-    const categoryParam = searchParams.get('category');
-
-    if (seasonParam === '2025' || seasonParam === '2026') {
-      const nextSeason = Number(seasonParam);
-      if (nextSeason !== selectedSeason) {
-        setSelectedSeason(nextSeason);
-      }
-    }
-
-    if (categoryParam) {
-      setSelectedCategory(categoryParam);
-      return;
-    }
-
-    setSelectedCategory('all');
-  }, [location.search, selectedSeason]);
 
   const renderTopicsControls = () => (
     <div className="flex flex-col gap-3">
