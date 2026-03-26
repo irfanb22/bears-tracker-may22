@@ -21,6 +21,7 @@ import { DebugPredictionAccess } from './components/DebugPredictionAccess';
 import { SiteFooter } from './components/SiteFooter';
 import { ScrollToTop } from './components/ScrollToTop';
 import { SeasonRecap } from './components/SeasonRecap';
+import { UnsubscribeStatusPage } from './components/UnsubscribeStatusPage';
 import { ANALYTICS_EVENTS, captureEvent, capturePageView } from './lib/analytics';
 import { usePredictions } from './lib/PredictionContext';
 
@@ -254,6 +255,7 @@ function getRouteName(pathname: string) {
   if (pathname === '/season-recap') return 'season_recap';
   if (pathname === '/auth/callback') return 'auth_callback';
   if (pathname === '/how-it-works') return 'how_it_works';
+  if (pathname === '/email/unsubscribed') return 'email_unsubscribed';
   if (pathname === '/dashboard') return 'dashboard';
   if (pathname === '/leaderboard') return 'leaderboard';
   if (pathname === '/admin') return 'admin';
@@ -283,6 +285,7 @@ export function AppComponent() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/season-recap" element={<SeasonRecap />} />
+        <Route path="/email/unsubscribed" element={<UnsubscribeStatusPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route
