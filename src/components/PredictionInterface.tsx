@@ -612,10 +612,6 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
                     <div className="flex h-full w-full items-center justify-center bg-bears-navy/5">
                       <Star className={CARD_STYLE.fallbackIconClassName} />
                     </div>
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-bears-navy/5">
-                      <Star className="h-5 w-5 text-bears-navy" />
-                    </div>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
