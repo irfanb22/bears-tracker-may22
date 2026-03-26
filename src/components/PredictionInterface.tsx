@@ -16,6 +16,28 @@ interface PredictionInterfaceProps {
   selectedSeason?: number;
 }
 
+const CARD_STYLE: {
+  cardClassName: string;
+  featuredClassName: string;
+  mediaClassName: string;
+  imageClassName: string;
+  iconClassName: string;
+  fallbackIconClassName: string;
+  dividerClassName: string;
+  panelClassName: string;
+  actionButtonClassName: string;
+} = {
+  cardClassName: 'rounded-2xl border border-slate-300 bg-white p-4 shadow-[0_18px_40px_rgba(15,23,42,0.14)] sm:p-5',
+  featuredClassName: 'border-bears-orange/60 shadow-[0_18px_42px_rgba(122,38,4,0.18),0_0_0_1px_rgba(200,56,3,0.12)_inset]',
+  mediaClassName: 'h-16 w-16 rounded-2xl border border-slate-200 bg-white shadow-[0_8px_18px_rgba(15,23,42,0.12)] sm:h-[4.5rem] sm:w-[4.5rem]',
+  imageClassName: 'h-full w-full object-cover',
+  iconClassName: 'h-9 w-9 text-bears-navy sm:h-10 sm:w-10',
+  fallbackIconClassName: 'h-7 w-7 text-bears-navy sm:h-8 sm:w-8',
+  dividerClassName: 'border-t border-slate-200/90',
+  panelClassName: 'rounded-xl border border-slate-200 bg-white/95 p-3 shadow-[0_10px_22px_rgba(15,23,42,0.08)]',
+  actionButtonClassName: 'rounded-xl shadow-[0_10px_20px_rgba(15,23,42,0.18)]',
+};
+
 export function PredictionInterface({ selectedCategory = 'all', selectedSeason = 2025 }: PredictionInterfaceProps) {
   const { user } = useAuth();
   const { 
@@ -561,10 +583,10 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
               key={question.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`rounded-xl border bg-white p-4 sm:p-5 ${
+              className={`${CARD_STYLE.cardClassName} ${
                 question.featured
-                  ? 'border-bears-orange/45 shadow-[0_0_0_1px_rgba(200,56,3,0.12)_inset]'
-                  : 'border-slate-200'
+                  ? CARD_STYLE.featuredClassName
+                  : ''
               }`}
             >
               {question.featured && (
@@ -575,16 +597,20 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
               )}
 
               <div className="flex items-start gap-3">
-                <div className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-lg">
+                <div className={`flex-shrink-0 overflow-hidden ${CARD_STYLE.mediaClassName}`}>
                   {asset?.image ? (
                     <img
                       src={asset.image}
                       alt={question.text}
-                      className="h-full w-full object-cover"
+                      className={CARD_STYLE.imageClassName}
                     />
                   ) : asset?.icon ? (
                     <div className="flex h-full w-full items-center justify-center bg-bears-navy/5">
-                      <asset.icon className="h-7 w-7 text-bears-navy" />
+                      <asset.icon className={CARD_STYLE.iconClassName} />
+                    </div>
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-bears-navy/5">
+                      <Star className={CARD_STYLE.fallbackIconClassName} />
                     </div>
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-bears-navy/5">
@@ -613,7 +639,7 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
                 </div>
               </div>
 
-              <div className="mt-4 border-t border-slate-100 pt-4">
+              <div className={`mt-4 pt-4 ${CARD_STYLE.dividerClassName}`}>
                 <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">
                   Fan Volume ({totalVotes.toLocaleString()} picks)
                 </p>
@@ -706,7 +732,7 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
                 )}
               </div>
 
-              <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className={`mt-4 ${CARD_STYLE.panelClassName}`}>
                 <div className="flex items-center justify-between text-xs">
                   <div className="group relative">
                     <p
@@ -754,7 +780,7 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
               <div className="mt-4 flex gap-2">
                 <button
                   onClick={() => openPredictionModal(question.id)}
-                  className={`flex-1 rounded-lg px-3 py-2 text-xs font-bold transition ${
+                  className={`flex-1 px-3 py-2 text-xs font-bold transition ${CARD_STYLE.actionButtonClassName} ${
                     !canAnswer
                       ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
                       : hasPredicted
