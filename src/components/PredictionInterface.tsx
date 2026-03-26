@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { usePredictions } from '../lib/PredictionContext';
 import { formatDistanceToNow, isPast } from 'date-fns';
+import { useLocation } from 'react-router-dom';
 import { LoginModal } from './LoginModal';
 import { RegisterModal } from './RegisterModal';
 import type { Question } from '../lib/PredictionContext';
@@ -39,6 +40,7 @@ const CARD_STYLE: {
 };
 
 export function PredictionInterface({ selectedCategory = 'all', selectedSeason = 2025 }: PredictionInterfaceProps) {
+  const location = useLocation();
   const { user } = useAuth();
   const { 
     questions,
@@ -66,6 +68,7 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
   const [confidenceSentimentLoading, setConfidenceSentimentLoading] = useState(false);
   const viewedQuestionIdsRef = useRef<Set<string>>(new Set());
   const previousPageRef = useRef(currentPage);
+  const handledQuestionParamRef = useRef<string | null>(null);
 
   const questionsById = useMemo(
     () => Object.fromEntries(questions.map((question) => [question.id, question])),
@@ -262,6 +265,38 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [selectedPrediction, showAuthPrompt]);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const questionId = searchParams.get('question');
+
+    if (!questionId) {
+      handledQuestionParamRef.current = null;
+      return;
+    }
+
+    if (handledQuestionParamRef.current === questionId) {
+      return;
+    }
+
+    const targetIndex = filteredQuestions.findIndex((question) => question.id === questionId);
+    if (targetIndex === -1) {
+      return;
+    }
+
+    const targetPage = Math.floor(targetIndex / cardsPerPage) + 1;
+    if (targetPage !== currentPage) {
+      setCurrentPage(targetPage);
+    }
+
+    const existingPrediction = userPredictions[questionId];
+    setSelectedPrediction(questionId);
+    setSelectedValue(existingPrediction?.prediction ?? null);
+    setSelectedConfidence(existingPrediction?.confidence ?? null);
+    setShowAuthPrompt(false);
+    setError(null);
+    handledQuestionParamRef.current = questionId;
+  }, [cardsPerPage, currentPage, filteredQuestions, location.search, userPredictions]);
 
   if (predictionsLoading) {
     return (
@@ -567,6 +602,9 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
                 .sort((a, b) => b.percentage - a.percentage)
                 .slice(0, 3)
             : [];
+          const hiddenChoiceCount = question.question_type === 'multiple_choice'
+            ? Math.max((question.choices?.length || 0) - topChoices.length, 0)
+            : 0;
           const confidence = confidenceSentiment[question.id];
           const meterPosition = confidence ? Math.min(Math.max(confidence.score, 2), 98) : 50;
           const confidencePercent = confidence ? Math.round(confidence.score) : null;
@@ -723,6 +761,15 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
                         </div>
                       </div>
                     ))}
+                    {hiddenChoiceCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => openPredictionModal(question.id)}
+                        className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-800"
+                      >
+                        View all
+                      </button>
+                    )}
                     {topChoices.length === 0 && renderPredictionStats(question)}
                   </div>
                 )}

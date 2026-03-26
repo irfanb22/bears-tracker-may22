@@ -216,10 +216,12 @@ function OffenseSurpriseCallout() {
 
 function RevisedRecap({
   onMyPredictionsClick,
-  onLeaderboardClick
+  onLeaderboardClick,
+  onDraftQuestionClick,
 }: {
   onMyPredictionsClick: () => void;
   onLeaderboardClick: () => void;
+  onDraftQuestionClick: () => void;
 }) {
   return (
     <article className="mx-auto max-w-4xl">
@@ -383,8 +385,15 @@ function RevisedRecap({
             <p>All 13 predictions are now resolved and up on the site.</p>
             <p>
               We&apos;re already working on 2026. More questions, more categories, and game-by-game
-              picks for the full season. The first 2026 prediction drops in a couple of weeks,
-              starting with the draft.
+              picks. The first question is already live:{' '}
+              <button
+                type="button"
+                onClick={onDraftQuestionClick}
+                className="font-semibold text-bears-orange underline decoration-bears-orange/60 underline-offset-4 hover:text-[#9a3005]"
+              >
+                Who will the Chicago Bears select with the 25th pick?
+              </button>{' '}
+              You can make your prediction now, and you&apos;ll have until draft day to lock it in.
             </p>
             <div className="pt-2">
               <p className="font-semibold text-bears-navy">Thanks for joining the community.</p>
@@ -409,6 +418,8 @@ export function SeasonRecap() {
   const { user } = useAuth();
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const firstDraftQuestionPath =
+    '/?season=2026&category=draft_predictions&question=f6a8dc28-c6d7-4ba2-9492-437292ec0d2f';
 
   useEffect(() => {
     captureEvent(ANALYTICS_EVENTS.seasonRecapViewed);
@@ -429,6 +440,15 @@ export function SeasonRecap() {
     setIsLoginModalOpen(true);
   };
 
+  const handleDraftQuestionClick = () => {
+    captureEvent(ANALYTICS_EVENTS.seasonRecapCtaClicked, {
+      destination: firstDraftQuestionPath,
+      source: 'season_recap_draft_question',
+      is_authenticated: Boolean(user),
+    });
+    navigate(firstDraftQuestionPath);
+  };
+
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <Navbar onRegisterClick={() => setIsRegisterModalOpen(true)} />
@@ -437,6 +457,7 @@ export function SeasonRecap() {
         <RevisedRecap
           onMyPredictionsClick={() => handleProtectedNavigation('/dashboard')}
           onLeaderboardClick={() => handleProtectedNavigation('/leaderboard')}
+          onDraftQuestionClick={handleDraftQuestionClick}
         />
       </main>
 

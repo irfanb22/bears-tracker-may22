@@ -38,6 +38,7 @@ function HomePage() {
   const { user } = useAuth();
   const { questions } = usePredictions();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [selectedSeason, setSelectedSeason] = useState(2025);
@@ -66,6 +67,26 @@ function HomePage() {
       setSelectedCategory('all');
     }
   }, [selectedCategory, visibleCategories]);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const seasonParam = searchParams.get('season');
+    const categoryParam = searchParams.get('category');
+
+    if (seasonParam === '2025' || seasonParam === '2026') {
+      const nextSeason = Number(seasonParam);
+      if (nextSeason !== selectedSeason) {
+        setSelectedSeason(nextSeason);
+      }
+    }
+
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+      return;
+    }
+
+    setSelectedCategory('all');
+  }, [location.search, selectedSeason]);
 
   const renderTopicsControls = () => (
     <div className="flex flex-col gap-3">
@@ -180,7 +201,10 @@ function HomePage() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col gap-6">
             {renderTopicsControls()}
-            <PredictionInterface selectedCategory={selectedCategory} selectedSeason={selectedSeason} />
+            <PredictionInterface
+              selectedCategory={selectedCategory}
+              selectedSeason={selectedSeason}
+            />
           </div>
           
           {import.meta.env.DEV && <DebugPredictionAccess />}
