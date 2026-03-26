@@ -1,6 +1,6 @@
 # Bears Prediction Tracker - Project Context
 
-Last updated: 2026-03-24
+Last updated: 2026-03-26
 Repository path: `/Users/irfan/Projects/bears-tracker-may22-main`
 
 ## 1. What This Site Is
@@ -634,31 +634,67 @@ Reference mockup artifacts created in this session:
   - not a Brevo drag-and-drop marketing campaign workflow
   - recipient segment can be resolved directly from `2025` prediction participants in the database
 - Current limitations:
-  - no admin UI yet for preview/send
   - no reply-to handling configured yet
   - image hosting strategy still needs to be finalized
-  - unsubscribe confirmation page currently returns raw HTML instead of rendering as a styled page
 - Plain-English workflow right now:
   - update the email template in code
-  - deploy the function
-  - send a test email through terminal/HTTP request
+  - open the admin email console on the site
+  - send a test email from the browser
   - review in inbox
   - send to full audience when ready
 - TODO for this email system:
   - decide final image strategy for recap emails
   - add real recap graphics/images to the coded template
   - add `reply-to` support once desired inbox is confirmed
-  - add send logging
-  - fix unsubscribe confirmation page rendering so browser shows styled page instead of raw HTML source
-  - add lightweight admin UI so terminal/curl are no longer required for:
-    - send test email
-    - preview payload/template
-    - send to selected segment
   - create reusable templates for:
     - season recap
     - deadline reminder
     - new question live
     - midseason update
+  - next immediate content pass:
+    - refine the 2025 recap email writing
+    - add/finalize recap images inside the coded template
+
+### 2026-03-26 (Admin Email Console + Unsubscribe Flow Simplified)
+- Completed the first production admin email console on the site.
+- Frontend additions:
+  - added `/admin/email` route for admin-only email operations
+  - added audience counts for:
+    - subscribed users
+    - subscribed users with at least one prediction
+    - unsubscribed users
+    - current production segment count
+  - added browser-based test send flow
+  - added browser-based production send flow with confirmation modal
+  - added recent send history list
+- Backend additions:
+  - added `public.email_send_logs` table
+  - added `public.current_user_is_admin()`
+  - added `public.get_admin_email_audience_counts()`
+  - hardened `send-brevo-email` to require admin auth and write send logs
+- Important troubleshooting learned today:
+  - test send failures from the admin page were not auth/UI bugs once logged in
+  - failed test sends correctly occurred when the target address had already unsubscribed
+  - `marketing_subscribed = false` blocks future marketing test sends as intended
+- Unsubscribe flow was simplified to a more reliable architecture:
+  - `unsubscribe-email` still handles token verification + DB update
+  - instead of trying to render HTML directly from the Supabase function, it now redirects to the main site
+  - new public site route: `/email/unsubscribed`
+  - the site route shows a generic success/error confirmation page
+- Why the architecture changed:
+  - Supabase Edge Function responses were being displayed as raw text in the browser even though the unsubscribe logic itself worked
+  - redirecting back to the main site proved to be the simpler, more durable solution
+- Verified current working state:
+  - admin email console is live on production site
+  - browser-based test send works
+  - unsubscribe updates `email_preferences` correctly
+  - unsubscribe confirmation now lands on the site instead of raw Supabase HTML
+- Copy cleanup completed:
+  - updated unsubscribe success text from the confusing resubscribe note to:
+    - `You are all set. Your email preferences have been updated.`
+- Next focused step for the email system:
+  - modify the 2025 season recap email copy
+  - add/finalize recap images in the coded email template before wider send
 
 ### 2026-03-02 (Design Decisions + Resume Point Captured)
 - Logged locked UX/UI decisions from redesign working session (Halas Desk, terminology, nav, interaction model).
