@@ -43,7 +43,7 @@ export function UnsubscribeStatusPage() {
 
             <p className="mt-4 text-sm leading-7 text-slate-500">
               {isSuccess
-                ? 'You can close this page now. If email preferences are surfaced in the app later, you will be able to resubscribe there.'
+                ? 'You are all set. Your email preferences have been updated.'
                 : 'If you still want to be removed from future emails, please try the most recent link from your inbox or contact support.'}
             </p>
 
