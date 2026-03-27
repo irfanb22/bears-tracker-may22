@@ -371,6 +371,29 @@ Deno.serve(async (req) => {
     const links: SeasonRecapLinks = {
       dashboard: request.links?.dashboard ?? "https://bearsprediction.com/dashboard",
       recap: request.links?.recap ?? "https://bearsprediction.com/season-recap",
+      leaderboard: request.links?.leaderboard ?? "https://bearsprediction.com/leaderboard",
+      draftQuestion:
+        request.links?.draftQuestion ??
+        "https://bearsprediction.com/?season=2026&category=draft_predictions&question=f6a8dc28-c6d7-4ba2-9492-437292ec0d2f",
+    };
+    const imageUrls: SeasonRecapImageUrls = {
+      hero: request.imageUrls?.hero ?? "https://bearsprediction.com/email/recap-2025/hero.jpg",
+      communityAccuracy:
+        request.imageUrls?.communityAccuracy ??
+        "https://bearsprediction.com/email/recap-2025/community-accuracy.png",
+      calebRecord:
+        request.imageUrls?.calebRecord ??
+        "https://bearsprediction.com/email/recap-2025/caleb-record.png",
+      playoff:
+        request.imageUrls?.playoff ??
+        "https://bearsprediction.com/email/recap-2025/playoff-split.png",
+      romeOdunze:
+        request.imageUrls?.romeOdunze ??
+        "https://bearsprediction.com/email/recap-2025/rome-odunze.png",
+      offenseSurprise:
+        request.imageUrls?.offenseSurprise ??
+        "https://bearsprediction.com/email/recap-2025/offense-surprise.png",
+      draft: request.imageUrls?.draft ?? "https://bearsprediction.com/email/recap-2025/draft-pick.png",
     };
     const unsubscribeBaseUrl =
       Deno.env.get("EMAIL_UNSUBSCRIBE_URL") ??
@@ -413,7 +436,7 @@ Deno.serve(async (req) => {
 
         const htmlContent = buildSeasonRecapEmail({
           previewText,
-          imageUrls: request.imageUrls ?? {},
+          imageUrls,
           links,
           unsubscribeUrl,
         });

@@ -11,6 +11,8 @@ export interface SeasonRecapImageUrls {
 export interface SeasonRecapLinks {
   dashboard: string;
   recap: string;
+  leaderboard: string;
+  draftQuestion: string;
 }
 
 interface SeasonRecapTemplateOptions {
@@ -33,11 +35,13 @@ function renderImageSection({
   imageUrl,
   alt,
   href,
+  caption,
   topPadding = 20,
 }: {
   imageUrl?: string;
   alt: string;
   href?: string;
+  caption?: string;
   topPadding?: number;
 }) {
   if (!imageUrl) return "";
@@ -59,6 +63,11 @@ function renderImageSection({
             ? `<a href="${escapeHtml(href)}" style="display:block; text-decoration:none;">${img}</a>`
             : img
         }
+        ${
+          caption
+            ? `<div style="padding-top:10px; font-size:13px; line-height:20px; color:#64748b;">${escapeHtml(caption)}</div>`
+            : ""
+        }
       </td>
     </tr>
   `;
@@ -73,6 +82,8 @@ export function buildSeasonRecapEmail({
   const safePreviewText = escapeHtml(previewText);
   const safeDashboardUrl = escapeHtml(links.dashboard);
   const safeRecapUrl = escapeHtml(links.recap);
+  const safeLeaderboardUrl = escapeHtml(links.leaderboard);
+  const safeDraftQuestionUrl = escapeHtml(links.draftQuestion);
 
   return `<!doctype html>
 <html lang="en">
@@ -114,33 +125,17 @@ export function buildSeasonRecapEmail({
               imageUrl: imageUrls.hero,
               alt: "Caleb Williams smiling with Ben Johnson on the sideline",
               href: safeRecapUrl,
+              caption: "Photo: Jacob Funk/Chicago Bears.",
             })}
 
             <tr>
               <td style="padding:28px 32px 0 32px; font-size:18px; line-height:32px; color:#334155;">
-                <p style="margin:0 0 18px 0;">Hi Bears fan,</p>
                 <p style="margin:0 0 18px 0;">
                   Before the season started, Bears Prediction Tracker asked fans to make calls on
                   everything from Caleb's stats to the draft to whether this team would end the
                   playoff drought. Hundreds of you locked in your picks.
                 </p>
-                <p style="margin:0;">The dust has settled. Here's how Bears fans did.</p>
-              </td>
-            </tr>
-
-            <tr>
-              <td style="padding:36px 32px 0 32px;">
-                <div style="font-size:12px; line-height:18px; letter-spacing:0.2em; text-transform:uppercase; font-weight:700; color:#64748b;">
-                  How The Community Did
-                </div>
-                <h2 style="margin:10px 0 0 0; font-size:28px; line-height:34px; font-weight:900; color:#0b162a;">
-                  How accurate were Bears fans across all 13 predictions?
-                </h2>
-                <div style="margin-top:14px; font-size:17px; line-height:30px; color:#334155;">
-                  Across all 13 season questions, Bears fans were most confident, and most correct,
-                  on Caleb Williams breaking the franchise's single-season passing record. Other
-                  calls were far more divided.
-                </div>
+                <p style="margin:0;">The dust has settled. Here's how you did.</p>
               </td>
             </tr>
 
@@ -148,16 +143,18 @@ export function buildSeasonRecapEmail({
               imageUrl: imageUrls.communityAccuracy,
               alt: "Community accuracy chart for 2025 Bears predictions",
               href: safeRecapUrl,
+              topPadding: 28,
             })}
 
             <tr>
-              <td align="center" style="padding:24px 32px 0 32px;">
-                <a
-                  href="${safeDashboardUrl}"
-                  style="display:inline-block; border-radius:999px; background-color:#c83803; padding:14px 28px; font-size:16px; line-height:20px; font-weight:700; color:#ffffff; text-decoration:none;"
-                >
-                  Check your results
-                </a>
+              <td style="padding:24px 32px 0 32px; font-size:17px; line-height:30px; color:#334155;">
+                <p style="margin:0;">
+                  <span style="font-weight:700; color:#0b162a;">Want to see how you did?</span>
+                  &nbsp;Check your results in
+                  <a href="${safeDashboardUrl}" style="color:#c83803; font-weight:600; text-decoration:underline;">My Predictions</a>
+                  &nbsp;or see where you stand on the
+                  <a href="${safeLeaderboardUrl}" style="color:#c83803; font-weight:600; text-decoration:underline;">Leaderboard</a>.
+                </p>
               </td>
             </tr>
 
@@ -239,8 +236,7 @@ export function buildSeasonRecapEmail({
                 <div style="margin-top:18px; font-size:17px; line-height:30px; color:#334155;">
                   <p style="margin:0 0 18px 0;">
                     The Bears making the playoffs was the most divisive prediction of the season.
-                    Just 54% of fans got it right, with confidence spread almost evenly across the
-                    board.
+                    Just 54% picked correctly, with confidence spread almost evenly across the board.
                   </p>
                   <p style="margin:0;">A true coin flip and the kind of question we'll have a lot more of in 2026.</p>
                 </div>
@@ -292,23 +288,14 @@ export function buildSeasonRecapEmail({
             })}
 
             <tr>
-              <td align="center" style="padding:24px 32px 0 32px;">
-                <a
-                  href="${safeRecapUrl}"
-                  style="display:inline-block; border-radius:999px; background-color:#0b162a; padding:14px 28px; font-size:16px; line-height:20px; font-weight:700; color:#ffffff; text-decoration:none;"
-                >
-                  Read the full recap
-                </a>
-              </td>
-            </tr>
-
-            <tr>
               <td style="padding:40px 32px 0 32px;">
                 <h2 style="margin:0; font-size:32px; line-height:38px; font-weight:900; color:#0b162a;">The Impossible Question</h2>
                 <div style="margin-top:18px; font-size:17px; line-height:30px; color:#334155;">
-                  The hardest question of the year: who would the Bears select with the 10th pick?
-                  Most fans expected Penn State tight end Tyler Warren. The Bears went with Colston
-                  Loveland, who wasn't even listed as an option.
+                  <p style="margin:0;">
+                    The hardest question of the year: who would the Bears select with the 10th pick?
+                    Most fans expected Penn State tight end Tyler Warren. The Bears went with Colston
+                    Loveland, who wasn't even listed as an option.
+                  </p>
                 </div>
               </td>
             </tr>
@@ -324,22 +311,14 @@ export function buildSeasonRecapEmail({
                 <div style="margin-top:18px; font-size:17px; line-height:30px; color:#334155;">
                   <p style="margin:0 0 18px 0;">All 13 predictions are now resolved and up on the site.</p>
                   <p style="margin:0;">
-                    We're already working on 2026. More questions, more categories, and
-                    game-by-game picks for the full season. The first 2026 prediction drops in a
-                    couple of weeks, starting with the draft.
+                    We're already working on 2026. More questions, more categories, and game-by-game
+                    picks. The first question is already live:
+                    <a href="${safeDraftQuestionUrl}" style="color:#c83803; font-weight:600; text-decoration:underline;">
+                      Who will the Chicago Bears select with the 25th pick?
+                    </a>
+                    You can make your prediction now, and you'll have until draft day to lock it in.
                   </p>
                 </div>
-              </td>
-            </tr>
-
-            <tr>
-              <td align="center" style="padding:28px 32px 0 32px;">
-                <a
-                  href="${safeDashboardUrl}"
-                  style="display:inline-block; border-radius:999px; background-color:#c83803; padding:14px 28px; font-size:16px; line-height:20px; font-weight:700; color:#ffffff; text-decoration:none;"
-                >
-                  Check your results
-                </a>
               </td>
             </tr>
 
