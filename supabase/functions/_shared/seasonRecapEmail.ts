@@ -36,12 +36,14 @@ function renderImageSection({
   alt,
   href,
   caption,
+  framed = true,
   topPadding = 20,
 }: {
   imageUrl?: string;
   alt: string;
   href?: string;
   caption?: string;
+  framed?: boolean;
   topPadding?: number;
 }) {
   if (!imageUrl) return "";
@@ -51,7 +53,7 @@ function renderImageSection({
       src="${escapeHtml(imageUrl)}"
       alt="${escapeHtml(alt)}"
       width="616"
-      style="display:block; width:100%; max-width:616px; height:auto; border:1px solid #cbd5e1; border-radius:24px;"
+      style="display:block; width:100%; max-width:616px; height:auto;${framed ? ' border:1px solid #cbd5e1; border-radius:24px;' : ''}"
     />
   `;
 
@@ -143,6 +145,7 @@ export function buildSeasonRecapEmail({
               imageUrl: imageUrls.communityAccuracy,
               alt: "Community accuracy chart for 2025 Bears predictions",
               href: safeRecapUrl,
+              framed: false,
               topPadding: 28,
             })}
 
