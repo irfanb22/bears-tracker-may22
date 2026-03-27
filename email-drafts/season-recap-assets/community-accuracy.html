@@ -9,10 +9,14 @@
         background: #ffffff;
         font-family: Arial, Helvetica, sans-serif;
         color: #1e293b;
+        width: 616px;
+        height: 640px;
+        overflow: hidden;
       }
 
       .card {
         width: 616px;
+        height: 640px;
         box-sizing: border-box;
         border: 1px solid #e2e8f0;
         border-radius: 24px;
@@ -96,6 +100,12 @@
         color: #64748b;
       }
 
+      html {
+        width: 616px;
+        height: 640px;
+        overflow: hidden;
+      }
+
       .legend span {
         margin-right: 18px;
       }
@@ -111,7 +121,7 @@
     </style>
   </head>
   <body>
-    <div class="card">
+    <div class="card" data-export-root>
       <p class="eyebrow">Bears Prediction Tracker</p>
       <h1>How accurate were Bears fans across all 13 predictions?</h1>
       <p class="subhead">Percentage of fans who predicted correctly</p>
