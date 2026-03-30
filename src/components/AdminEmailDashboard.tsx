@@ -159,7 +159,7 @@ function EmailPreviewBlock({ block }: { block: EmailBlock }) {
 
 function ComposerPreview({ draft }: { draft: EmailComposerDraft }) {
   return (
-    <div className="rounded-[32px] border border-slate-200 bg-[#eef2ff] p-4 shadow-sm">
+    <div className="rounded-[32px] border border-slate-200 bg-slate-100 p-4 shadow-sm">
       <div className="mx-auto max-w-[680px] overflow-hidden rounded-[24px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
         <div className="bg-bears-navy px-8 py-5 text-center">
           <div className="text-[20px] font-extrabold text-white">Bears Prediction Tracker</div>
@@ -170,7 +170,7 @@ function ComposerPreview({ draft }: { draft: EmailComposerDraft }) {
           <h1 className="mt-3 text-[38px] font-black leading-[1.05] tracking-tight text-bears-navy">
             How Bears Fans Predicted the Season
           </h1>
-          <p className="mt-3 text-sm text-slate-500">By Irfan | Published March 22, 2026</p>
+          <p className="mt-3 text-[13px] font-bold uppercase tracking-[0.18em] text-slate-500">IRFAN | MAR 31</p>
 
           <div className="mt-8 space-y-8">
             {draft.blocks.map((block) => (

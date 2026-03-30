@@ -84,6 +84,13 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
       "The dust has settled. See how Bears fans did across all 13 predictions and check your results.",
     blocks: [
       {
+        id: createBlockId('button'),
+        type: 'button',
+        label: 'Read on site',
+        href: EMAIL_LINKS.recap,
+        tone: 'secondary',
+      },
+      {
         id: createBlockId('image'),
         type: 'image',
         src: EMAIL_IMAGE_URLS.hero,
