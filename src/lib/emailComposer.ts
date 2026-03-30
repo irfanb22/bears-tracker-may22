@@ -67,7 +67,7 @@ export const EMAIL_CTA_LINKS = {
     'https://bearsprediction.com/?auth=login&redirect=%2F%3Fseason%3D2026%26category%3Ddraft_predictions%26question%3Df6a8dc28-c6d7-4ba2-9492-437292ec0d2f',
 } as const;
 
-const EMAIL_ASSET_VERSION = '2026-03-30-3';
+const EMAIL_ASSET_VERSION = '2026-03-30-4';
 
 export const EMAIL_IMAGE_URLS = {
   hero: 'https://bearsprediction.com/email/recap-2025/hero.jpg',
@@ -77,6 +77,7 @@ export const EMAIL_IMAGE_URLS = {
   romeOdunze: `https://bearsprediction.com/email/recap-2025/rome-odunze.png?v=${EMAIL_ASSET_VERSION}`,
   offenseSurprise: `https://bearsprediction.com/email/recap-2025/offense-surprise.png?v=${EMAIL_ASSET_VERSION}`,
   draft: `https://bearsprediction.com/email/recap-2025/draft-pick.png?v=${EMAIL_ASSET_VERSION}`,
+  draftLive: `https://bearsprediction.com/email/recap-2025/draft-question-live.png?v=${EMAIL_ASSET_VERSION}`,
 } as const;
 
 let emailBlockCounter = 0;
@@ -118,7 +119,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         src: EMAIL_IMAGE_URLS.communityAccuracy,
         alt: 'Community accuracy chart for 2025 Bears predictions',
         href: EMAIL_LINKS.recap,
-        width: 'full',
+        width: 'wide',
         framed: false,
       },
       {
@@ -180,7 +181,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         type: 'image',
         src: EMAIL_IMAGE_URLS.calebRecord,
         alt: 'Caleb versus the Bears passing record graphic',
-        width: 'wide',
+        width: 'medium',
         framed: true,
       },
       {
@@ -233,7 +234,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         type: 'image',
         src: EMAIL_IMAGE_URLS.playoff,
         alt: 'Playoff prediction split chart',
-        width: 'wide',
+        width: 'medium',
         framed: true,
       },
       {
@@ -256,7 +257,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         type: 'image',
         src: EMAIL_IMAGE_URLS.romeOdunze,
         alt: 'Rome Odunze 2025 stat card',
-        width: 'wide',
+        width: 'medium',
         framed: true,
       },
       {
@@ -274,7 +275,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         type: 'image',
         src: EMAIL_IMAGE_URLS.offenseSurprise,
         alt: 'Offense surprise stat card',
-        width: 'wide',
+        width: 'medium',
         framed: true,
       },
       {
@@ -292,7 +293,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         type: 'image',
         src: EMAIL_IMAGE_URLS.draft,
         alt: 'Draft prediction graphic',
-        width: 'wide',
+        width: 'medium',
         framed: true,
       },
       {
@@ -311,11 +312,18 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         text: 'We’re already working on 2026. More questions, more categories, and game-by-game picks. The first question is already live: Who will the Chicago Bears select with the 25th pick? You can make your prediction now, and you’ll have until draft day to lock it in.',
       },
       {
-        id: createBlockId('button'),
-        type: 'button',
-        label: 'Go to the draft question',
+        id: createBlockId('image'),
+        type: 'image',
+        src: EMAIL_IMAGE_URLS.draftLive,
+        alt: 'Live 2026 draft question card with answer options',
         href: EMAIL_CTA_LINKS.draftQuestion,
-        tone: 'primary',
+        width: 'wide',
+        framed: false,
+      },
+      {
+        id: createBlockId('paragraph'),
+        type: 'paragraph',
+        text: 'You can make your prediction now, and you’ll have until draft day to lock it in.',
       },
       {
         id: createBlockId('button'),

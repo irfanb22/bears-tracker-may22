@@ -125,8 +125,8 @@ function renderImageSection({
 }
 
 function getImageWidthPercent(width: EmailImageWidth) {
-  if (width === "medium") return "68%";
-  if (width === "wide") return "86%";
+  if (width === "medium") return "72%";
+  if (width === "wide") return "92%";
   return "100%";
 }
 
@@ -140,8 +140,8 @@ function renderComposerBlock(block: EmailBlock) {
   if (block.type === "heading") {
     return `
       <tr>
-        <td style="padding:36px 24px 0 24px;">
-          <h2 style="margin:0; font-size:34px; line-height:40px; font-weight:900; color:#0b162a;">${escapeHtml(block.text)}</h2>
+        <td style="padding:34px 20px 0 20px;">
+          <h2 style="margin:0; font-size:32px; line-height:38px; font-weight:900; color:#0b162a;">${escapeHtml(block.text)}</h2>
         </td>
       </tr>
     `;
@@ -150,7 +150,7 @@ function renderComposerBlock(block: EmailBlock) {
   if (block.type === "paragraph") {
     return `
       <tr>
-        <td style="padding:24px 24px 0 24px; font-size:19px; line-height:33px; color:#334155;">
+        <td style="padding:22px 20px 0 20px; font-size:18px; line-height:31px; color:#334155;">
           <p style="margin:0; white-space:pre-line;">${escapeHtml(block.text)}</p>
         </td>
       </tr>
@@ -170,7 +170,7 @@ function renderComposerBlock(block: EmailBlock) {
 
     return `
       <tr>
-        <td style="padding:24px 24px 0 24px;">
+        <td style="padding:22px 20px 0 20px;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="${getImageWidthPercent(block.width)}" align="center" style="width:${getImageWidthPercent(block.width)}; margin:0 auto;">
             <tr>
               <td>
@@ -200,10 +200,10 @@ function renderComposerBlock(block: EmailBlock) {
 
     return `
       <tr>
-        <td align="center" style="padding:28px 24px 0 24px;">
+        <td align="center" style="padding:30px 20px 0 20px;">
           <a
             href="${escapeHtml(block.href)}"
-            style="display:inline-block; border-radius:999px; padding:16px 30px; font-size:17px; line-height:20px; font-weight:700; text-decoration:none; ${buttonStyles}"
+            style="display:inline-block; border-radius:999px; padding:14px 26px; font-size:16px; line-height:20px; font-weight:700; text-decoration:none; ${buttonStyles}"
           >
             ${escapeHtml(block.label)}
           </a>
@@ -231,7 +231,7 @@ function renderButtonRow(buttons: EmailButtonBlock[]) {
         <td align="center" style="padding:0 8px;">
           <a
             href="${escapeHtml(button.href)}"
-            style="display:inline-block; border-radius:999px; padding:16px 30px; font-size:17px; line-height:20px; font-weight:700; text-decoration:none; white-space:nowrap; ${buttonStyles}"
+            style="display:inline-block; border-radius:999px; padding:14px 26px; font-size:16px; line-height:20px; font-weight:700; text-decoration:none; white-space:nowrap; ${buttonStyles}"
           >
             ${escapeHtml(button.label)}
           </a>
@@ -242,7 +242,7 @@ function renderButtonRow(buttons: EmailButtonBlock[]) {
 
   return `
     <tr>
-      <td align="center" style="padding:32px 24px 8px 24px;">
+      <td align="center" style="padding:30px 20px 10px 20px;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
           <tr>
             ${cells}
@@ -307,18 +307,18 @@ export function buildSeasonRecapEmail({
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f8fafc; margin:0; padding:24px 0;">
       <tr>
         <td align="center">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%; max-width:680px; background-color:#ffffff; border-radius:24px; overflow:hidden;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%; max-width:620px; background-color:#ffffff; border-radius:24px; overflow:hidden;">
             <tr>
-              <td style="background-color:#0b162a; padding:18px 24px; text-align:center;">
+              <td style="background-color:#0b162a; padding:18px 20px; text-align:center;">
                 <div style="font-size:20px; line-height:28px; font-weight:800; letter-spacing:0.01em; color:#ffffff;">Bears Prediction Tracker</div>
               </td>
             </tr>
             <tr>
-              <td style="padding:32px 24px 10px 24px;">
+              <td style="padding:30px 20px 10px 20px;">
                 <div style="font-size:12px; line-height:18px; letter-spacing:0.2em; text-transform:uppercase; font-weight:700; color:#c83803;">
                   2025 Season Recap
                 </div>
-                <h1 style="margin:14px 0 0 0; font-size:42px; line-height:44px; font-weight:900; color:#0b162a;">
+                <h1 style="margin:14px 0 0 0; font-size:38px; line-height:40px; font-weight:900; color:#0b162a;">
                   How Bears Fans Predicted the Season
                 </h1>
                 <div style="margin-top:16px; font-size:13px; line-height:18px; letter-spacing:0.18em; text-transform:uppercase; font-weight:700; color:#64748b;">
@@ -328,7 +328,7 @@ export function buildSeasonRecapEmail({
             </tr>
             ${renderedBlocks}
             <tr>
-              <td style="padding:24px 24px 36px 24px; text-align:center; border-top:1px solid #e2e8f0;">
+              <td style="padding:28px 20px 38px 20px; text-align:center; border-top:1px solid #e2e8f0;">
                 <div style="font-size:15px; line-height:28px;">
                   <a href="${safeRecapUrl}" style="color:#64748b; text-decoration:underline;">
                     View the recap on the site
