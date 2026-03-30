@@ -85,14 +85,14 @@ const buttonToneOptions: Array<{ value: EmailButtonTone; label: string }> = [
 ];
 
 function getImageBlockWidthClass(width: EmailImageWidth) {
-  if (width === 'medium') return 'max-w-[68%]';
-  if (width === 'wide') return 'max-w-[86%]';
+  if (width === 'medium') return 'max-w-[72%]';
+  if (width === 'wide') return 'max-w-[92%]';
   return 'max-w-full';
 }
 
 function getImageBlockWidthPercent(width: EmailImageWidth) {
-  if (width === 'medium') return '68%';
-  if (width === 'wide') return '86%';
+  if (width === 'medium') return '72%';
+  if (width === 'wide') return '92%';
   return '100%';
 }
 
@@ -110,12 +110,12 @@ function clampMoveIndex(index: number, direction: -1 | 1, length: number) {
 
 function EmailPreviewBlock({ block }: { block: EmailBlock }) {
   if (block.type === 'heading') {
-    return <h2 className="text-[32px] font-black leading-tight tracking-tight text-bears-navy">{block.text}</h2>;
+    return <h2 className="text-[30px] font-black leading-tight tracking-tight text-bears-navy">{block.text}</h2>;
   }
 
   if (block.type === 'paragraph') {
     return (
-      <p className="text-[19px] leading-[1.7] text-slate-700 whitespace-pre-wrap">
+      <p className="text-[18px] leading-[1.68] text-slate-700 whitespace-pre-wrap">
         {block.text}
       </p>
     );
@@ -159,7 +159,7 @@ function EmailPreviewBlock({ block }: { block: EmailBlock }) {
 
 function EmailPreviewButtonRow({ buttons }: { buttons: EmailButtonBlock[] }) {
   return (
-    <div className="flex flex-wrap items-center justify-center gap-4 py-2">
+    <div className="flex flex-wrap items-center justify-center gap-3 py-3">
       {buttons.map((button) => {
         const toneClass =
           button.tone === 'primary'
@@ -171,7 +171,7 @@ function EmailPreviewButtonRow({ buttons }: { buttons: EmailButtonBlock[] }) {
             key={button.id}
             href={button.href}
             onClick={(event) => event.preventDefault()}
-            className={`inline-flex rounded-full px-7 py-3.5 text-[17px] font-bold ${toneClass}`}
+            className={`inline-flex rounded-full px-6 py-3 text-[16px] font-bold ${toneClass}`}
           >
             {button.label}
           </a>
@@ -210,14 +210,14 @@ function ComposerPreview({ draft }: { draft: EmailComposerDraft }) {
 
   return (
     <div className="rounded-[32px] border border-slate-200 bg-slate-100 p-4 shadow-sm">
-      <div className="mx-auto max-w-[680px] overflow-hidden rounded-[24px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
-        <div className="bg-bears-navy px-6 py-5 text-center">
+      <div className="mx-auto max-w-[620px] overflow-hidden rounded-[24px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+        <div className="bg-bears-navy px-5 py-5 text-center">
           <div className="text-[20px] font-extrabold tracking-[0.01em] text-white">Bears Prediction Tracker</div>
         </div>
 
-        <div className="px-6 py-8">
+        <div className="px-5 py-8">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-bears-orange">2025 Season Recap</p>
-          <h1 className="mt-3 text-[40px] font-black leading-[1.04] tracking-tight text-bears-navy">
+          <h1 className="mt-3 text-[36px] font-black leading-[1.05] tracking-tight text-bears-navy">
             How Bears Fans Predicted the Season
           </h1>
           <p className="mt-4 text-[13px] font-bold uppercase tracking-[0.18em] text-slate-500">IRFAN | MAR 31</p>
@@ -229,7 +229,7 @@ function ComposerPreview({ draft }: { draft: EmailComposerDraft }) {
           </div>
         </div>
 
-        <div className="border-t border-slate-200 px-6 py-8 text-center text-[15px] leading-7 text-slate-500">
+        <div className="border-t border-slate-200 px-5 py-10 text-center text-[15px] leading-7 text-slate-500">
           <a href={EMAIL_LINKS.recap} onClick={(event) => event.preventDefault()} className="underline">
             View the recap on the site
           </a>
