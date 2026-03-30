@@ -242,11 +242,11 @@ export function buildSeasonRecapEmail({
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>2025 Season Recap</title>
   </head>
-  <body style="margin:0; padding:0; background-color:#eef2ff; font-family:Arial, Helvetica, sans-serif; color:#1e293b;">
+  <body style="margin:0; padding:0; background-color:#f8fafc; font-family:Arial, Helvetica, sans-serif; color:#1e293b;">
     <div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">
       ${safePreviewText}
     </div>
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#eef2ff; margin:0; padding:24px 0;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f8fafc; margin:0; padding:24px 0;">
       <tr>
         <td align="center">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%; max-width:680px; background-color:#ffffff; border-radius:24px; overflow:hidden;">
@@ -263,8 +263,8 @@ export function buildSeasonRecapEmail({
                 <h1 style="margin:14px 0 0 0; font-size:40px; line-height:44px; font-weight:900; color:#0b162a;">
                   How Bears Fans Predicted the Season
                 </h1>
-                <div style="margin-top:14px; font-size:14px; line-height:20px; color:#64748b;">
-                  By Irfan | Published March 22, 2026
+                <div style="margin-top:14px; font-size:13px; line-height:18px; letter-spacing:0.18em; text-transform:uppercase; font-weight:700; color:#64748b;">
+                  Irfan | Mar 31
                 </div>
               </td>
             </tr>
@@ -302,11 +302,11 @@ export function buildSeasonRecapEmail({
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
     <title>2025 Season Recap</title>
   </head>
-  <body style="margin:0; padding:0; background-color:#eef2ff; font-family:Arial, Helvetica, sans-serif; color:#1e293b;">
+  <body style="margin:0; padding:0; background-color:#f8fafc; font-family:Arial, Helvetica, sans-serif; color:#1e293b;">
     <div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">
       ${safePreviewText}
     </div>
-    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#eef2ff; margin:0; padding:24px 0;">
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f8fafc; margin:0; padding:24px 0;">
       <tr>
         <td align="center">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%; max-width:680px; background-color:#ffffff; border-radius:24px; overflow:hidden;">
@@ -324,8 +324,8 @@ export function buildSeasonRecapEmail({
                 <h1 style="margin:14px 0 0 0; font-size:40px; line-height:44px; font-weight:900; color:#0b162a;">
                   How Bears Fans Predicted the Season
                 </h1>
-                <div style="margin-top:14px; font-size:14px; line-height:20px; color:#64748b;">
-                  By Irfan | Published March 22, 2026
+                <div style="margin-top:14px; font-size:13px; line-height:18px; letter-spacing:0.18em; text-transform:uppercase; font-weight:700; color:#64748b;">
+                  Irfan | Mar 31
                 </div>
               </td>
             </tr>
