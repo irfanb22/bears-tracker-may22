@@ -219,6 +219,64 @@ function renderComposerBlock(block: EmailBlock) {
   `;
 }
 
+function renderButtonRow(buttons: EmailButtonBlock[]) {
+  const cells = buttons
+    .map((button) => {
+      const buttonStyles =
+        button.tone === "secondary"
+          ? "border:1px solid #cbd5e1; background-color:#ffffff; color:#1e293b;"
+          : "background-color:#c83803; color:#ffffff;";
+
+      return `
+        <td align="center" style="padding:0 8px;">
+          <a
+            href="${escapeHtml(button.href)}"
+            style="display:inline-block; border-radius:999px; padding:14px 28px; font-size:16px; line-height:20px; font-weight:700; text-decoration:none; white-space:nowrap; ${buttonStyles}"
+          >
+            ${escapeHtml(button.label)}
+          </a>
+        </td>
+      `;
+    })
+    .join("");
+
+  return `
+    <tr>
+      <td align="center" style="padding:24px 32px 0 32px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center">
+          <tr>
+            ${cells}
+          </tr>
+        </table>
+      </td>
+    </tr>
+  `;
+}
+
+function renderComposerBlocks(blocks: EmailBlock[]) {
+  let html = "";
+
+  for (let index = 0; index < blocks.length; index += 1) {
+    const block = blocks[index];
+
+    if (block.type === "button") {
+      const buttons: EmailButtonBlock[] = [block];
+
+      while (index + 1 < blocks.length && blocks[index + 1].type === "button") {
+        buttons.push(blocks[index + 1] as EmailButtonBlock);
+        index += 1;
+      }
+
+      html += renderButtonRow(buttons);
+      continue;
+    }
+
+    html += renderComposerBlock(block);
+  }
+
+  return html;
+}
+
 export function buildSeasonRecapEmail({
   previewText,
   imageUrls,
@@ -231,7 +289,7 @@ export function buildSeasonRecapEmail({
   const safeRecapUrl = escapeHtml(links.recap);
   const safeLeaderboardUrl = escapeHtml(links.leaderboard);
   const safeDraftQuestionUrl = escapeHtml(links.draftQuestion);
-  const renderedBlocks = blocks?.map(renderComposerBlock).join("");
+  const renderedBlocks = blocks ? renderComposerBlocks(blocks) : "";
 
   if (blocks && blocks.length > 0) {
     return `<!doctype html>

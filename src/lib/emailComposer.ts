@@ -67,14 +67,16 @@ export const EMAIL_CTA_LINKS = {
     'https://bearsprediction.com/?auth=login&redirect=%2F%3Fseason%3D2026%26category%3Ddraft_predictions%26question%3Df6a8dc28-c6d7-4ba2-9492-437292ec0d2f',
 } as const;
 
+const EMAIL_ASSET_VERSION = '2026-03-30-2';
+
 export const EMAIL_IMAGE_URLS = {
   hero: 'https://bearsprediction.com/email/recap-2025/hero.jpg',
-  communityAccuracy: 'https://bearsprediction.com/email/recap-2025/community-accuracy.png',
-  calebRecord: 'https://bearsprediction.com/email/recap-2025/caleb-record.png',
-  playoff: 'https://bearsprediction.com/email/recap-2025/playoff-split.png',
-  romeOdunze: 'https://bearsprediction.com/email/recap-2025/rome-odunze.png',
-  offenseSurprise: 'https://bearsprediction.com/email/recap-2025/offense-surprise.png',
-  draft: 'https://bearsprediction.com/email/recap-2025/draft-pick.png',
+  communityAccuracy: `https://bearsprediction.com/email/recap-2025/community-accuracy.png?v=${EMAIL_ASSET_VERSION}`,
+  calebRecord: `https://bearsprediction.com/email/recap-2025/caleb-record.png?v=${EMAIL_ASSET_VERSION}`,
+  playoff: `https://bearsprediction.com/email/recap-2025/playoff-split.png?v=${EMAIL_ASSET_VERSION}`,
+  romeOdunze: `https://bearsprediction.com/email/recap-2025/rome-odunze.png?v=${EMAIL_ASSET_VERSION}`,
+  offenseSurprise: `https://bearsprediction.com/email/recap-2025/offense-surprise.png?v=${EMAIL_ASSET_VERSION}`,
+  draft: `https://bearsprediction.com/email/recap-2025/draft-pick.png?v=${EMAIL_ASSET_VERSION}`,
 } as const;
 
 let emailBlockCounter = 0;
