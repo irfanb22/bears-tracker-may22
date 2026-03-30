@@ -67,7 +67,7 @@ export const EMAIL_CTA_LINKS = {
     'https://bearsprediction.com/?auth=login&redirect=%2F%3Fseason%3D2026%26category%3Ddraft_predictions%26question%3Df6a8dc28-c6d7-4ba2-9492-437292ec0d2f',
 } as const;
 
-const EMAIL_ASSET_VERSION = '2026-03-30-2';
+const EMAIL_ASSET_VERSION = '2026-03-30-3';
 
 export const EMAIL_IMAGE_URLS = {
   hero: 'https://bearsprediction.com/email/recap-2025/hero.jpg',
@@ -274,7 +274,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         type: 'image',
         src: EMAIL_IMAGE_URLS.offenseSurprise,
         alt: 'Offense surprise stat card',
-        width: 'medium',
+        width: 'wide',
         framed: true,
       },
       {
