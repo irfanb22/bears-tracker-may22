@@ -157,7 +157,57 @@ function EmailPreviewBlock({ block }: { block: EmailBlock }) {
   return <div style={{ height: getSpacerHeight(block.size) }} />;
 }
 
+function EmailPreviewButtonRow({ buttons }: { buttons: EmailButtonBlock[] }) {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-4">
+      {buttons.map((button) => {
+        const toneClass =
+          button.tone === 'primary'
+            ? 'bg-bears-orange text-white'
+            : 'border border-slate-300 bg-white text-slate-800';
+
+        return (
+          <a
+            key={button.id}
+            href={button.href}
+            onClick={(event) => event.preventDefault()}
+            className={`inline-flex rounded-full px-6 py-3 text-base font-bold ${toneClass}`}
+          >
+            {button.label}
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
 function ComposerPreview({ draft }: { draft: EmailComposerDraft }) {
+  const previewBlocks: Array<{ key: string; content: JSX.Element }> = [];
+
+  for (let index = 0; index < draft.blocks.length; index += 1) {
+    const block = draft.blocks[index];
+
+    if (block.type === 'button') {
+      const buttons: EmailButtonBlock[] = [block];
+
+      while (index + 1 < draft.blocks.length && draft.blocks[index + 1].type === 'button') {
+        buttons.push(draft.blocks[index + 1] as EmailButtonBlock);
+        index += 1;
+      }
+
+      previewBlocks.push({
+        key: buttons.map((button) => button.id).join('-'),
+        content: <EmailPreviewButtonRow buttons={buttons} />,
+      });
+      continue;
+    }
+
+    previewBlocks.push({
+      key: block.id,
+      content: <EmailPreviewBlock block={block} />,
+    });
+  }
+
   return (
     <div className="rounded-[32px] border border-slate-200 bg-slate-100 p-4 shadow-sm">
       <div className="mx-auto max-w-[680px] overflow-hidden rounded-[24px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
@@ -173,8 +223,8 @@ function ComposerPreview({ draft }: { draft: EmailComposerDraft }) {
           <p className="mt-3 text-[13px] font-bold uppercase tracking-[0.18em] text-slate-500">IRFAN | MAR 31</p>
 
           <div className="mt-8 space-y-8">
-            {draft.blocks.map((block) => (
-              <EmailPreviewBlock key={block.id} block={block} />
+            {previewBlocks.map((block) => (
+              <div key={block.key}>{block.content}</div>
             ))}
           </div>
         </div>
