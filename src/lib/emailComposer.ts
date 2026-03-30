@@ -67,7 +67,7 @@ export const EMAIL_CTA_LINKS = {
     'https://bearsprediction.com/?auth=login&redirect=%2F%3Fseason%3D2026%26category%3Ddraft_predictions%26question%3Df6a8dc28-c6d7-4ba2-9492-437292ec0d2f',
 } as const;
 
-const EMAIL_ASSET_VERSION = '2026-03-30-4';
+const EMAIL_ASSET_VERSION = '2026-03-30-5';
 
 export const EMAIL_IMAGE_URLS = {
   hero: 'https://bearsprediction.com/email/recap-2025/hero.jpg',
@@ -309,7 +309,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
       {
         id: createBlockId('paragraph'),
         type: 'paragraph',
-        text: 'We’re already working on 2026. More questions, more categories, and game-by-game picks. The first question is already live: Who will the Chicago Bears select with the 25th pick? You can make your prediction now, and you’ll have until draft day to lock it in.',
+        text: 'We’re already working on 2026. More questions, more categories, and game-by-game picks. The first question is already live.',
       },
       {
         id: createBlockId('image'),
