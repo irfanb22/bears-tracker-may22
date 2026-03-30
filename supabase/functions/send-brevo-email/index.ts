@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
   buildSeasonRecapEmail,
+  type EmailBlock,
   type SeasonRecapImageUrls,
   type SeasonRecapLinks,
 } from "../_shared/seasonRecapEmail.ts";
@@ -23,6 +24,7 @@ interface SendBrevoEmailRequest {
   previewText?: string;
   imageUrls?: SeasonRecapImageUrls;
   links?: Partial<SeasonRecapLinks>;
+  blocks?: EmailBlock[];
 }
 
 interface Contact {
@@ -297,6 +299,7 @@ async function createEmailSendLog({
     previewText: request.previewText ?? null,
     imageUrls: request.imageUrls ?? {},
     links: request.links ?? {},
+    blocks: request.blocks ?? [],
   };
 
   const { data, error } = await supabase
@@ -439,6 +442,7 @@ Deno.serve(async (req) => {
           imageUrls,
           links,
           unsubscribeUrl,
+          blocks: request.blocks,
         });
 
         const result = await sendBrevoEmail({

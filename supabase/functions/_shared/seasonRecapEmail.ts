@@ -15,11 +15,60 @@ export interface SeasonRecapLinks {
   draftQuestion: string;
 }
 
+export type EmailImageWidth = "full" | "wide" | "medium";
+export type EmailButtonTone = "primary" | "secondary";
+export type EmailSpacerSize = "s" | "m" | "l";
+
+export interface EmailHeadingBlock {
+  id: string;
+  type: "heading";
+  text: string;
+}
+
+export interface EmailParagraphBlock {
+  id: string;
+  type: "paragraph";
+  text: string;
+}
+
+export interface EmailImageBlock {
+  id: string;
+  type: "image";
+  src: string;
+  alt: string;
+  width: EmailImageWidth;
+  caption?: string;
+  href?: string;
+  framed?: boolean;
+}
+
+export interface EmailButtonBlock {
+  id: string;
+  type: "button";
+  label: string;
+  href: string;
+  tone: EmailButtonTone;
+}
+
+export interface EmailSpacerBlock {
+  id: string;
+  type: "spacer";
+  size: EmailSpacerSize;
+}
+
+export type EmailBlock =
+  | EmailHeadingBlock
+  | EmailParagraphBlock
+  | EmailImageBlock
+  | EmailButtonBlock
+  | EmailSpacerBlock;
+
 interface SeasonRecapTemplateOptions {
   previewText: string;
-  imageUrls: SeasonRecapImageUrls;
+  imageUrls?: SeasonRecapImageUrls;
   links: SeasonRecapLinks;
   unsubscribeUrl?: string;
+  blocks?: EmailBlock[];
 }
 
 function escapeHtml(value: string) {
@@ -75,17 +124,175 @@ function renderImageSection({
   `;
 }
 
+function getImageWidthPercent(width: EmailImageWidth) {
+  if (width === "medium") return "68%";
+  if (width === "wide") return "86%";
+  return "100%";
+}
+
+function getSpacerHeight(size: EmailSpacerSize) {
+  if (size === "s") return "24px";
+  if (size === "l") return "56px";
+  return "40px";
+}
+
+function renderComposerBlock(block: EmailBlock) {
+  if (block.type === "heading") {
+    return `
+      <tr>
+        <td style="padding:32px 32px 0 32px;">
+          <h2 style="margin:0; font-size:32px; line-height:38px; font-weight:900; color:#0b162a;">${escapeHtml(block.text)}</h2>
+        </td>
+      </tr>
+    `;
+  }
+
+  if (block.type === "paragraph") {
+    return `
+      <tr>
+        <td style="padding:24px 32px 0 32px; font-size:17px; line-height:30px; color:#334155;">
+          <p style="margin:0; white-space:pre-line;">${escapeHtml(block.text)}</p>
+        </td>
+      </tr>
+    `;
+  }
+
+  if (block.type === "image") {
+    const frameStyles = block.framed === false ? "" : " border:1px solid #cbd5e1; border-radius:24px;";
+    const image = `
+      <img
+        src="${escapeHtml(block.src)}"
+        alt="${escapeHtml(block.alt)}"
+        width="616"
+        style="display:block; width:100%; max-width:616px; height:auto;${frameStyles}"
+      />
+    `;
+
+    return `
+      <tr>
+        <td style="padding:24px 32px 0 32px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="${getImageWidthPercent(block.width)}" align="center" style="width:${getImageWidthPercent(block.width)}; margin:0 auto;">
+            <tr>
+              <td>
+                ${
+                  block.href
+                    ? `<a href="${escapeHtml(block.href)}" style="display:block; text-decoration:none;">${image}</a>`
+                    : image
+                }
+                ${
+                  block.caption
+                    ? `<div style="padding-top:10px; font-size:13px; line-height:20px; color:#64748b;">${escapeHtml(block.caption)}</div>`
+                    : ""
+                }
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `;
+  }
+
+  if (block.type === "button") {
+    const buttonStyles =
+      block.tone === "secondary"
+        ? "border:1px solid #cbd5e1; background-color:#ffffff; color:#1e293b;"
+        : "background-color:#c83803; color:#ffffff;";
+
+    return `
+      <tr>
+        <td align="center" style="padding:24px 32px 0 32px;">
+          <a
+            href="${escapeHtml(block.href)}"
+            style="display:inline-block; border-radius:999px; padding:14px 28px; font-size:16px; line-height:20px; font-weight:700; text-decoration:none; ${buttonStyles}"
+          >
+            ${escapeHtml(block.label)}
+          </a>
+        </td>
+      </tr>
+    `;
+  }
+
+  return `
+    <tr>
+      <td style="height:${getSpacerHeight(block.size)}; line-height:${getSpacerHeight(block.size)}; font-size:0;">&nbsp;</td>
+    </tr>
+  `;
+}
+
 export function buildSeasonRecapEmail({
   previewText,
   imageUrls,
   links,
   unsubscribeUrl,
+  blocks,
 }: SeasonRecapTemplateOptions) {
   const safePreviewText = escapeHtml(previewText);
   const safeDashboardUrl = escapeHtml(links.dashboard);
   const safeRecapUrl = escapeHtml(links.recap);
   const safeLeaderboardUrl = escapeHtml(links.leaderboard);
   const safeDraftQuestionUrl = escapeHtml(links.draftQuestion);
+  const renderedBlocks = blocks?.map(renderComposerBlock).join("");
+
+  if (blocks && blocks.length > 0) {
+    return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>2025 Season Recap</title>
+  </head>
+  <body style="margin:0; padding:0; background-color:#eef2ff; font-family:Arial, Helvetica, sans-serif; color:#1e293b;">
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">
+      ${safePreviewText}
+    </div>
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#eef2ff; margin:0; padding:24px 0;">
+      <tr>
+        <td align="center">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%; max-width:680px; background-color:#ffffff; border-radius:24px; overflow:hidden;">
+            <tr>
+              <td style="background-color:#0b162a; padding:18px 32px; text-align:center;">
+                <div style="font-size:20px; line-height:28px; font-weight:800; color:#ffffff;">Bears Prediction Tracker</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:32px 32px 8px 32px;">
+                <div style="font-size:12px; line-height:18px; letter-spacing:0.2em; text-transform:uppercase; font-weight:700; color:#c83803;">
+                  2025 Season Recap
+                </div>
+                <h1 style="margin:14px 0 0 0; font-size:40px; line-height:44px; font-weight:900; color:#0b162a;">
+                  How Bears Fans Predicted the Season
+                </h1>
+                <div style="margin-top:14px; font-size:14px; line-height:20px; color:#64748b;">
+                  By Irfan | Published March 22, 2026
+                </div>
+              </td>
+            </tr>
+            ${renderedBlocks}
+            <tr>
+              <td style="padding:16px 32px 32px 32px; text-align:center; border-top:1px solid #e2e8f0;">
+                <div style="font-size:14px; line-height:24px;">
+                  <a href="${safeRecapUrl}" style="color:#64748b; text-decoration:underline;">
+                    View the recap on the site
+                  </a>
+                  ${
+                    unsubscribeUrl
+                      ? `<span style="color:#94a3b8;">&nbsp;|&nbsp;</span>
+                  <a href="${escapeHtml(unsubscribeUrl)}" style="color:#64748b; text-decoration:underline;">
+                    Unsubscribe
+                  </a>`
+                      : ""
+                  }
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+  }
 
   return `<!doctype html>
 <html lang="en">
@@ -124,7 +331,7 @@ export function buildSeasonRecapEmail({
             </tr>
 
             ${renderImageSection({
-              imageUrl: imageUrls.hero,
+              imageUrl: imageUrls?.hero,
               alt: "Caleb Williams smiling with Ben Johnson on the sideline",
               href: safeRecapUrl,
               caption: "Photo: Jacob Funk/Chicago Bears.",
@@ -142,7 +349,7 @@ export function buildSeasonRecapEmail({
             </tr>
 
             ${renderImageSection({
-              imageUrl: imageUrls.communityAccuracy,
+              imageUrl: imageUrls?.communityAccuracy,
               alt: "Community accuracy chart for 2025 Bears predictions",
               href: safeRecapUrl,
               framed: false,
@@ -196,7 +403,7 @@ export function buildSeasonRecapEmail({
             </tr>
 
             ${renderImageSection({
-              imageUrl: imageUrls.calebRecord,
+              imageUrl: imageUrls?.calebRecord,
               alt: "Caleb versus the Bears passing record graphic",
             })}
 
@@ -247,7 +454,7 @@ export function buildSeasonRecapEmail({
             </tr>
 
             ${renderImageSection({
-              imageUrl: imageUrls.playoff,
+              imageUrl: imageUrls?.playoff,
               alt: "Playoff prediction split chart",
             })}
 
@@ -266,7 +473,7 @@ export function buildSeasonRecapEmail({
             </tr>
 
             ${renderImageSection({
-              imageUrl: imageUrls.romeOdunze,
+              imageUrl: imageUrls?.romeOdunze,
               alt: "Rome Odunze 2025 stat card",
             })}
 
@@ -286,7 +493,7 @@ export function buildSeasonRecapEmail({
             </tr>
 
             ${renderImageSection({
-              imageUrl: imageUrls.offenseSurprise,
+              imageUrl: imageUrls?.offenseSurprise,
               alt: "Offense surprise stat card",
             })}
 
@@ -304,7 +511,7 @@ export function buildSeasonRecapEmail({
             </tr>
 
             ${renderImageSection({
-              imageUrl: imageUrls.draft,
+              imageUrl: imageUrls?.draft,
               alt: "Draft prediction graphic",
             })}
 
