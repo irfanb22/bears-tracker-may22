@@ -60,6 +60,13 @@ export const EMAIL_LINKS = {
     'https://bearsprediction.com/?season=2026&category=draft_predictions&question=f6a8dc28-c6d7-4ba2-9492-437292ec0d2f',
 } as const;
 
+export const EMAIL_CTA_LINKS = {
+  dashboard: 'https://bearsprediction.com/?auth=login&redirect=%2Fdashboard',
+  leaderboard: 'https://bearsprediction.com/?auth=login&redirect=%2Fleaderboard',
+  draftQuestion:
+    'https://bearsprediction.com/?auth=login&redirect=%2F%3Fseason%3D2026%26category%3Ddraft_predictions%26question%3Df6a8dc28-c6d7-4ba2-9492-437292ec0d2f',
+} as const;
+
 export const EMAIL_IMAGE_URLS = {
   hero: 'https://bearsprediction.com/email/recap-2025/hero.jpg',
   communityAccuracy: 'https://bearsprediction.com/email/recap-2025/community-accuracy.png',
@@ -83,13 +90,6 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
     previewText:
       "The dust has settled. See how Bears fans did across all 13 predictions and check your results.",
     blocks: [
-      {
-        id: createBlockId('button'),
-        type: 'button',
-        label: 'Read on site',
-        href: EMAIL_LINKS.recap,
-        tone: 'secondary',
-      },
       {
         id: createBlockId('image'),
         type: 'image',
@@ -122,7 +122,21 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
       {
         id: createBlockId('paragraph'),
         type: 'paragraph',
-        text: 'Want to see how you did? Check your results in My Predictions or see where you stand on the Leaderboard.',
+        text: 'Want to see how you did? Jump back in below.',
+      },
+      {
+        id: createBlockId('button'),
+        type: 'button',
+        label: 'My Predictions',
+        href: EMAIL_CTA_LINKS.dashboard,
+        tone: 'primary',
+      },
+      {
+        id: createBlockId('button'),
+        type: 'button',
+        label: 'Leaderboard',
+        href: EMAIL_CTA_LINKS.leaderboard,
+        tone: 'secondary',
       },
       {
         id: createBlockId('heading'),
@@ -298,14 +312,14 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         id: createBlockId('button'),
         type: 'button',
         label: 'Go to the draft question',
-        href: EMAIL_LINKS.draftQuestion,
+        href: EMAIL_CTA_LINKS.draftQuestion,
         tone: 'primary',
       },
       {
         id: createBlockId('button'),
         type: 'button',
         label: 'Check your results',
-        href: EMAIL_LINKS.dashboard,
+        href: EMAIL_CTA_LINKS.dashboard,
         tone: 'secondary',
       },
     ],

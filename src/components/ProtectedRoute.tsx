@@ -19,8 +19,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (!user) {
-    // Redirect to home and save the attempted URL
-    return <Navigate to="/" state={{ from: location.pathname }} replace />;
+    const redirectPath = `${location.pathname}${location.search}`;
+    const target = `/?auth=login&redirect=${encodeURIComponent(redirectPath)}`;
+    return <Navigate to={target} state={{ from: redirectPath }} replace />;
   }
 
   return <>{children}</>;
