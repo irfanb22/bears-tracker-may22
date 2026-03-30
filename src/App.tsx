@@ -41,6 +41,7 @@ function HomePage() {
   const { questions } = usePredictions();
   const navigate = useNavigate();
   const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
   const initialSearchParams = new URLSearchParams(location.search);
   const initialSeasonParam = initialSearchParams.get('season');
   const initialCategoryParam = initialSearchParams.get('category');
@@ -76,6 +77,36 @@ function HomePage() {
       setSelectedCategory('all');
     }
   }, [selectedCategory, visibleCategories]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const authAction = params.get('auth');
+    const redirectPath = params.get('redirect');
+
+    if (user && authAction === 'login' && redirectPath) {
+      navigate(redirectPath, { replace: true });
+      return;
+    }
+
+    if (user || authAction !== 'login') return;
+
+    setIsRegisterModalOpen(false);
+    setIsLoginModalOpen(true);
+  }, [location.search, navigate, user]);
+
+  const clearAuthSearchParams = () => {
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.delete('auth');
+    nextParams.delete('redirect');
+    const nextSearch = nextParams.toString();
+    navigate(
+      {
+        pathname: '/',
+        search: nextSearch ? `?${nextSearch}` : '',
+      },
+      { replace: true }
+    );
+  };
 
   const renderTopicsControls = () => (
     <div className="flex flex-col gap-3">
@@ -237,7 +268,12 @@ function HomePage() {
       <LoginModal 
         isOpen={isLoginModalOpen}
         source="home_login"
-        onClose={() => setIsLoginModalOpen(false)}
+        onClose={() => {
+          setIsLoginModalOpen(false);
+          if (searchParams.get('auth') === 'login') {
+            clearAuthSearchParams();
+          }
+        }}
         onSwitchToRegister={() => {
           setIsLoginModalOpen(false);
           setIsRegisterModalOpen(true);

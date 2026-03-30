@@ -47,6 +47,7 @@ export function AuthForm({ mode, isModal, source = 'unknown', onClose, onSwitchM
   // Get state from location
   const state = location.state as LocationState;
   const returnPath = state?.from;
+  const redirectPathParam = searchParams.get('redirect');
 
   useEffect(() => {
     // Check for verification success in URL params
@@ -89,7 +90,7 @@ export function AuthForm({ mode, isModal, source = 'unknown', onClose, onSwitchM
         }
 
         // Navigate to the return path or dashboard
-        const redirectPath = returnPath || '/dashboard';
+        const redirectPath = returnPath || redirectPathParam || '/dashboard';
         captureEvent(ANALYTICS_EVENTS.loginSucceeded, {
           source,
           redirect_path: redirectPath,

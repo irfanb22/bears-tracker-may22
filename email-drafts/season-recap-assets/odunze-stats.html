@@ -4,23 +4,22 @@
     <meta charset="utf-8" />
     <title>Odunze Stats</title>
     <style>
-      html, body { margin: 0; width: 616px; height: 250px; overflow: hidden; background: #fff; font-family: Arial, Helvetica, sans-serif; }
+      html, body { margin: 0; width: 616px; background: #fff; font-family: Arial, Helvetica, sans-serif; }
       .wrap {
+        display: flex;
         width: 616px;
-        height: 250px;
+        min-height: 250px;
         box-sizing: border-box;
         border: 1px solid #e2e8f0;
         border-radius: 24px;
         background: #ffffff;
         overflow: hidden;
-        font-size: 0;
       }
       .photo {
-        display: inline-block;
         width: 150px;
-        height: 250px;
+        min-height: 250px;
+        flex: 0 0 150px;
         background: #e2e8f0;
-        vertical-align: top;
       }
       .photo img {
         width: 100%;
@@ -30,13 +29,14 @@
         display: block;
       }
       .content {
-        display: inline-block;
-        width: 466px;
+        flex: 1 1 auto;
         padding: 22px;
         box-sizing: border-box;
-        vertical-align: top;
+        display: flex;
+        align-items: center;
       }
       .card {
+        width: 100%;
         border: 1px solid #e2e8f0;
         border-radius: 18px;
         overflow: hidden;
