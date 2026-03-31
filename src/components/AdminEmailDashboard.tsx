@@ -85,14 +85,14 @@ const buttonToneOptions: Array<{ value: EmailButtonTone; label: string }> = [
 ];
 
 function getImageBlockWidthClass(width: EmailImageWidth) {
-  if (width === 'medium') return 'max-w-[72%]';
-  if (width === 'wide') return 'max-w-[92%]';
+  if (width === 'medium') return 'max-w-[78%]';
+  if (width === 'wide') return 'max-w-[96%]';
   return 'max-w-full';
 }
 
 function getImageBlockWidthPercent(width: EmailImageWidth) {
-  if (width === 'medium') return '72%';
-  if (width === 'wide') return '92%';
+  if (width === 'medium') return '78%';
+  if (width === 'wide') return '96%';
   return '100%';
 }
 

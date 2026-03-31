@@ -1,16 +1,16 @@
 const predictions = [
   { label: 'Caleb breaks passing record', pct: 90 },
-  { label: 'Top-10 defense (no)', pct: 87 },
+  { label: 'Top-10 defense', pct: 87 },
   { label: 'Ben Johnson COY finalist', pct: 79 },
   { label: 'Bears win 8+ games', pct: 72 },
   { label: 'Joe Thuney Pro Bowl', pct: 68 },
   { label: 'Caleb starts all 17', pct: 58 },
   { label: 'Bears make playoffs', pct: 54 },
-  { label: 'Caleb throws 30 TDs (no)', pct: 41 },
+  { label: 'Caleb throws 30 TDs', pct: 41 },
   { label: 'Top-10 offense', pct: 40 },
   { label: 'Brisker starts 15 games', pct: 35 },
-  { label: 'Sweat 10+ sacks (no)', pct: 27 },
-  { label: 'Odunze 1,000 yards (no)', pct: 22 },
+  { label: 'Sweat 10+ sacks', pct: 27 },
+  { label: 'Odunze 1,000 yards', pct: 22 },
   { label: '1st round pick', pct: 21 }
 ];
 
