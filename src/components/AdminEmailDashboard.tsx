@@ -85,14 +85,14 @@ const buttonToneOptions: Array<{ value: EmailButtonTone; label: string }> = [
 ];
 
 function getImageBlockWidthClass(width: EmailImageWidth) {
-  if (width === 'medium') return 'max-w-[78%]';
-  if (width === 'wide') return 'max-w-[96%]';
+  if (width === 'medium') return 'max-w-[92%]';
+  if (width === 'wide') return 'max-w-full';
   return 'max-w-full';
 }
 
 function getImageBlockWidthPercent(width: EmailImageWidth) {
-  if (width === 'medium') return '78%';
-  if (width === 'wide') return '96%';
+  if (width === 'medium') return '92%';
+  if (width === 'wide') return '100%';
   return '100%';
 }
 
@@ -210,7 +210,7 @@ function ComposerPreview({ draft }: { draft: EmailComposerDraft }) {
 
   return (
     <div className="rounded-[32px] border border-slate-200 bg-slate-100 p-4 shadow-sm">
-      <div className="mx-auto max-w-[620px] overflow-hidden rounded-[24px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
+      <div className="mx-auto max-w-[720px] overflow-hidden rounded-[24px] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]">
         <div className="bg-bears-navy px-5 py-5 text-center">
           <div className="text-[20px] font-extrabold tracking-[0.01em] text-white">Bears Prediction Tracker</div>
         </div>

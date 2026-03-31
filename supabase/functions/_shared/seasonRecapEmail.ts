@@ -101,8 +101,8 @@ function renderImageSection({
     <img
       src="${escapeHtml(imageUrl)}"
       alt="${escapeHtml(alt)}"
-      width="616"
-      style="display:block; width:100%; max-width:616px; height:auto;${framed ? ' border:1px solid #cbd5e1; border-radius:24px;' : ''}"
+      width="720"
+      style="display:block; width:100%; max-width:720px; height:auto;${framed ? ' border:1px solid #cbd5e1; border-radius:24px;' : ''}"
     />
   `;
 
@@ -125,8 +125,8 @@ function renderImageSection({
 }
 
 function getImageWidthPercent(width: EmailImageWidth) {
-  if (width === "medium") return "72%";
-  if (width === "wide") return "92%";
+  if (width === "medium") return "92%";
+  if (width === "wide") return "100%";
   return "100%";
 }
 
@@ -163,8 +163,8 @@ function renderComposerBlock(block: EmailBlock) {
       <img
         src="${escapeHtml(block.src)}"
         alt="${escapeHtml(block.alt)}"
-        width="616"
-        style="display:block; width:100%; max-width:616px; height:auto;${frameStyles}"
+        width="720"
+        style="display:block; width:100%; max-width:720px; height:auto;${frameStyles}"
       />
     `;
 
@@ -307,7 +307,7 @@ export function buildSeasonRecapEmail({
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f8fafc; margin:0; padding:24px 0;">
       <tr>
         <td align="center">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%; max-width:620px; background-color:#ffffff; border-radius:24px; overflow:hidden;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%; max-width:720px; background-color:#ffffff; border-radius:24px; overflow:hidden;">
             <tr>
               <td style="background-color:#0b162a; padding:18px 20px; text-align:center;">
                 <div style="font-size:20px; line-height:28px; font-weight:800; letter-spacing:0.01em; color:#ffffff;">Bears Prediction Tracker</div>
@@ -367,7 +367,7 @@ export function buildSeasonRecapEmail({
     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f8fafc; margin:0; padding:24px 0;">
       <tr>
         <td align="center">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%; max-width:680px; background-color:#ffffff; border-radius:24px; overflow:hidden;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%; max-width:720px; background-color:#ffffff; border-radius:24px; overflow:hidden;">
             <tr>
               <td style="background-color:#0b162a; padding:18px 32px; text-align:center;">
                 <div style="font-size:20px; line-height:28px; font-weight:800; color:#ffffff;">Bears Prediction Tracker</div>
