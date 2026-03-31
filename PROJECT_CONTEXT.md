@@ -1,6 +1,6 @@
 # Bears Prediction Tracker - Project Context
 
-Last updated: 2026-03-26
+Last updated: 2026-03-30
 Repository path: `/Users/irfan/Projects/bears-tracker-may22-main`
 
 ## 1. What This Site Is
@@ -211,7 +211,7 @@ Current label thresholds in database function:
 Current implementation status:
 - Database aggregation function exists in production:
   - `public.get_question_confidence_sentiment(target_season integer default 2025)`
-- Home card meter UI is still on dummy placeholder logic and needs wiring to this function.
+- Home card meter UI is wired to this function, with client-side fallback logic if needed.
 
 ## 5.3 Taxonomy Baseline (Locked for 2026 Foundation)
 
@@ -334,11 +334,11 @@ Local machine status (as of 2026-02-22):
 Pending repo wiring:
 - Push initial commit from this local git repo only when approved.
 
-## 10. Current Priority Order (Updated 2026-03-09)
+## 10. Current Priority Order (Updated 2026-03-30)
 
-Current phase status (as of 2026-03-09):
+Current phase status (as of 2026-03-30):
 - Active roadmap phase: **Phase 1 (Consolidated): View Recap + User Email Campaign**.
-- Phase 1 completion state: **partially complete**.
+- Phase 1 completion state: **nearly complete**.
 - Phase 3 completion state: **complete**.
 - Phase 4 completion state: **complete**.
 - 2026 game-by-game expansion moved to **Phase 7 (final phase, not scheduled yet)**.
@@ -348,19 +348,68 @@ Current phase status (as of 2026-03-09):
   - basic scoring/dashboard updates shipped
   - UI redesign pass is complete for Home/Navbar/My Predictions/Leaderboard
   - fan confidence sentiment phase is complete
+  - on-site `View Recap` experience is live
+  - recap homepage banner CTA is live
+  - first 2026 draft question exists and is linked from recap flows
+  - admin email console is live at `/admin/email`
+  - Brevo-coded recap send flow + unsubscribe flow are live
+
+### 2026-03-30 Session Update: Recap Email System
+- Built a lightweight block-based email composer into `/admin/email`.
+- Composer supports editable:
+  - subject
+  - preview text
+  - headings
+  - paragraphs
+  - images
+  - buttons
+  - spacers
+  - signature block
+- Added live admin preview so draft edits can be reviewed before test send.
+- Updated `send-brevo-email` to render the current composed draft instead of relying only on a fixed hardcoded recap template.
+- Refreshed recap email copy so it matches the live on-site recap language.
+- Added public hosted recap email assets under `public/email/recap-2025/`.
+- Rebuilt/iterated recap graphics for email readability:
+  - fixed clipped exports
+  - removed confusing extra framing
+  - increased in-image typography
+  - tuned widths for mobile readability
+  - added cache-busting versioning to image URLs during testing
+- Added real CTA links in the email for:
+  - `My Predictions`
+  - `Leaderboard`
+- Added login-aware CTA routing so signed-out users can be pushed toward auth before continuing to protected pages.
+- Added clickable 2026 draft-question card to the email `What's Next` section.
+- Updated the draft-question email card to:
+  - match the live product direction more closely
+  - use `What position will the Bears select with the 25th pick?`
+  - include expanded option list plus `Other`
+- Cleaned up recap chart wording by removing confusing `(no)` suffixes in:
+  - email assets
+  - website recap visuals
+- Added email ending/signoff:
+  - `Thanks for joining the community.`
+  - signature-style `Irfan`
+- Current status:
+  - recap email system is functionally live
+  - production test-email workflow is live
+  - final polish is focused on remaining readability/image-size tuning before campaign send
 
 ### Priority 1: Build `View Recap` End-of-Season Experience
-- Implement the currently empty `View Recap` flow.
-- Make this the on-site end-of-season report experience.
-- Include meaningful recap content and outcomes from 2025 season predictions.
+- `View Recap` is implemented and live as the on-site end-of-season report experience.
+- Remaining work in this phase is now tied mainly to final recap email polish and send readiness.
 
 ### Priority 2: Active User List + Brevo Marketing Email
-- Build/export list of active registered users.
-- Send campaign using **Brevo**.
-- Email content must include:
-  - summary details of the new `View Recap`
-  - CTA to leaderboard/scoreboard so fans can see how they did
-  - note that first new question (the draft question) is planned for early April 2026
+- Admin-driven recap email workflow is built and live.
+- Brevo send path is wired through Supabase Edge Function `send-brevo-email`.
+- Remaining work:
+  - final visual/content polish in test emails
+  - final QA on mobile + inbox rendering
+  - production send to the intended active-user segment
+- Current email content now includes:
+  - recap summary details
+  - CTA links to user results / leaderboard flows
+  - live 2026 draft-question CTA
 
 ### Priority 3: Roadmap Sequencing Cleanup
 - Keep Phase 3 and Phase 4 marked complete in planning docs.
@@ -395,13 +444,11 @@ Current phase status (as of 2026-03-09):
   - include these picks in 2026 prediction tracking/scoring views.
 
 ### Resume Here (Next Session Starting Point)
-1. Build out the `View Recap` button destination and end-of-season report experience.
-2. After recap is complete, export active users and prepare Brevo send.
-3. Send recap marketing email:
-   - recap summary
-   - leaderboard CTA
-   - early-April draft question note
-4. Keep 2026 game-by-game scope deferred:
+1. Finalize recap email readability/image sizing based on latest test-email feedback.
+2. Send one more full test email and confirm mobile + desktop inbox rendering.
+3. Once approved, send recap marketing email to the production segment.
+4. After send approval, update this project context again to mark Phase 1 complete.
+5. Keep 2026 game-by-game scope deferred:
    - Phase 7 (final phase), not scheduled yet
 
 Reference mockup artifacts created in this session:
@@ -412,12 +459,13 @@ Reference mockup artifacts created in this session:
 ## 12. Upcoming Roadmap (Phased)
 
 ### Phase 1 (Consolidated Former Phase 1 + Phase 2): View Recap + User Communication
-- Build and launch the `View Recap` experience as the end-of-season report.
-- After recap launch, export active users and send marketing email via Brevo.
-- Email content requirements:
-  - include recap summary details
-  - include leaderboard CTA so users can see how they performed
-  - include future note: first draft question targeted for early April 2026
+- `View Recap` experience is built and live.
+- Admin email composer + test-send workflow are built and live.
+- Brevo recap email system is built and live.
+- Remaining phase work:
+  - final email rendering polish
+  - campaign QA
+  - production recap send
 
 ### Phase 3: Full UX/UI Redesign (Completed)
 - Redesign the full site for a cleaner, easier experience:
