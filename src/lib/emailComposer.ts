@@ -119,7 +119,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         src: EMAIL_IMAGE_URLS.communityAccuracy,
         alt: 'Community accuracy chart for 2025 Bears predictions',
         href: EMAIL_LINKS.recap,
-        width: 'wide',
+        width: 'full',
         framed: false,
       },
       {
@@ -181,7 +181,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         type: 'image',
         src: EMAIL_IMAGE_URLS.calebRecord,
         alt: 'Caleb versus the Bears passing record graphic',
-        width: 'medium',
+        width: 'full',
         framed: true,
       },
       {
@@ -234,7 +234,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         type: 'image',
         src: EMAIL_IMAGE_URLS.playoff,
         alt: 'Playoff prediction split chart',
-        width: 'medium',
+        width: 'full',
         framed: true,
       },
       {
@@ -257,7 +257,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         type: 'image',
         src: EMAIL_IMAGE_URLS.romeOdunze,
         alt: 'Rome Odunze 2025 stat card',
-        width: 'medium',
+        width: 'full',
         framed: true,
       },
       {
@@ -275,7 +275,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         type: 'image',
         src: EMAIL_IMAGE_URLS.offenseSurprise,
         alt: 'Offense surprise stat card',
-        width: 'medium',
+        width: 'full',
         framed: true,
       },
       {
@@ -293,7 +293,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         type: 'image',
         src: EMAIL_IMAGE_URLS.draft,
         alt: 'Draft prediction graphic',
-        width: 'medium',
+        width: 'full',
         framed: true,
       },
       {
@@ -317,7 +317,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         src: EMAIL_IMAGE_URLS.draftLive,
         alt: 'Live 2026 draft question card with answer options',
         href: EMAIL_CTA_LINKS.draftQuestion,
-        width: 'wide',
+        width: 'full',
         framed: false,
       },
       {
