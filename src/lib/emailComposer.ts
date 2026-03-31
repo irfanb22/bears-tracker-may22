@@ -39,12 +39,19 @@ export interface EmailSpacerBlock {
   size: EmailSpacerSize;
 }
 
+export interface EmailSignatureBlock {
+  id: string;
+  type: 'signature';
+  text: string;
+}
+
 export type EmailBlock =
   | EmailHeadingBlock
   | EmailParagraphBlock
   | EmailImageBlock
   | EmailButtonBlock
-  | EmailSpacerBlock;
+  | EmailSpacerBlock
+  | EmailSignatureBlock;
 
 export interface EmailComposerDraft {
   subject: string;
@@ -67,7 +74,7 @@ export const EMAIL_CTA_LINKS = {
     'https://bearsprediction.com/?auth=login&redirect=%2F%3Fseason%3D2026%26category%3Ddraft_predictions%26question%3Df6a8dc28-c6d7-4ba2-9492-437292ec0d2f',
 } as const;
 
-const EMAIL_ASSET_VERSION = '2026-03-30-6';
+const EMAIL_ASSET_VERSION = '2026-03-30-7';
 
 export const EMAIL_IMAGE_URLS = {
   hero: 'https://bearsprediction.com/email/recap-2025/hero.jpg',
@@ -326,11 +333,14 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         text: 'You can make your prediction now, and you’ll have until draft day to lock it in.',
       },
       {
-        id: createBlockId('button'),
-        type: 'button',
-        label: 'Check your results',
-        href: EMAIL_CTA_LINKS.dashboard,
-        tone: 'secondary',
+        id: createBlockId('paragraph'),
+        type: 'paragraph',
+        text: 'Thanks for joining the community.',
+      },
+      {
+        id: createBlockId('signature'),
+        type: 'signature',
+        text: 'Irfan',
       },
     ],
   };

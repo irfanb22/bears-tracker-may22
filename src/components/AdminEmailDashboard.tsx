@@ -32,6 +32,7 @@ import {
   type EmailImageBlock,
   type EmailImageWidth,
   type EmailParagraphBlock,
+  type EmailSignatureBlock,
   type EmailSpacerBlock,
   type EmailSpacerSize,
   createBlockId,
@@ -151,6 +152,17 @@ function EmailPreviewBlock({ block }: { block: EmailBlock }) {
           {block.label}
         </a>
       </div>
+    );
+  }
+
+  if (block.type === 'signature') {
+    return (
+      <p
+        className="text-[46px] leading-none text-bears-navy"
+        style={{ fontFamily: '"Brush Script MT", "Snell Roundhand", cursive' }}
+      >
+        {block.text}
+      </p>
     );
   }
 
@@ -314,6 +326,18 @@ function BlockEditor({
               value={block.text}
               onChange={(event) => onChange({ ...block, text: event.target.value } satisfies EmailParagraphBlock)}
               rows={5}
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
+            />
+          </div>
+        )}
+
+        {block.type === 'signature' && (
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-700">Signature</label>
+            <input
+              type="text"
+              value={block.text}
+              onChange={(event) => onChange({ ...block, text: event.target.value } satisfies EmailSignatureBlock)}
               className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
             />
           </div>
@@ -601,6 +625,12 @@ export function AdminEmailDashboard() {
         label: 'New button',
         href: EMAIL_LINKS.recap,
         tone: 'primary',
+      };
+    } else if (type === 'signature') {
+      nextBlock = {
+        id: createBlockId('signature'),
+        type: 'signature',
+        text: 'Irfan',
       };
     } else {
       nextBlock = { id: createBlockId('spacer'), type: 'spacer', size: 'm' };
@@ -891,6 +921,14 @@ export function AdminEmailDashboard() {
                 >
                   <Plus className="h-4 w-4" />
                   Add button
+                </button>
+                <button
+                  type="button"
+                  onClick={() => addBlock('signature')}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
+                >
+                  <Type className="h-4 w-4" />
+                  Add signature
                 </button>
                 <button
                   type="button"

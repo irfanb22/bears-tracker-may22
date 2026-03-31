@@ -56,12 +56,19 @@ export interface EmailSpacerBlock {
   size: EmailSpacerSize;
 }
 
+export interface EmailSignatureBlock {
+  id: string;
+  type: "signature";
+  text: string;
+}
+
 export type EmailBlock =
   | EmailHeadingBlock
   | EmailParagraphBlock
   | EmailImageBlock
   | EmailButtonBlock
-  | EmailSpacerBlock;
+  | EmailSpacerBlock
+  | EmailSignatureBlock;
 
 interface SeasonRecapTemplateOptions {
   previewText: string;
@@ -207,6 +214,18 @@ function renderComposerBlock(block: EmailBlock) {
           >
             ${escapeHtml(block.label)}
           </a>
+        </td>
+      </tr>
+    `;
+  }
+
+  if (block.type === "signature") {
+    return `
+      <tr>
+        <td style="padding:6px 20px 0 20px;">
+          <div style="font-size:48px; line-height:1; color:#0b162a; font-family:'Brush Script MT', 'Snell Roundhand', cursive;">
+            ${escapeHtml(block.text)}
+          </div>
         </td>
       </tr>
     `;
