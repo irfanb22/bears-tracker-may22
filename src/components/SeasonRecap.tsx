@@ -233,7 +233,7 @@ function RevisedRecap({
           How Bears Fans Predicted the Season
         </h1>
         <p className="mt-4 text-sm font-medium text-slate-500">
-          By Irfan | Published March 22, 2026
+          By Irfan | Published April 1, 2026
         </p>
         <HeroFigure />
         <div className="max-w-3xl space-y-4 text-lg leading-8 text-slate-700">
