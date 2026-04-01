@@ -59,19 +59,37 @@ export interface EmailComposerDraft {
   blocks: EmailBlock[];
 }
 
+const EMAIL_ATTRIBUTION_QUERY =
+  'utm_source=brevo&utm_medium=email&utm_campaign=2025_recap_apr1';
+
+function withQuery(url: string, query: string) {
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}${query}`;
+}
+
 export const EMAIL_LINKS = {
-  dashboard: 'https://bearsprediction.com/dashboard',
-  recap: 'https://bearsprediction.com/season-recap',
-  leaderboard: 'https://bearsprediction.com/leaderboard',
-  draftQuestion:
+  dashboard: withQuery('https://bearsprediction.com/dashboard', EMAIL_ATTRIBUTION_QUERY),
+  recap: withQuery('https://bearsprediction.com/season-recap', EMAIL_ATTRIBUTION_QUERY),
+  leaderboard: withQuery('https://bearsprediction.com/leaderboard', EMAIL_ATTRIBUTION_QUERY),
+  draftQuestion: withQuery(
     'https://bearsprediction.com/?season=2026&category=draft_predictions&question=f6a8dc28-c6d7-4ba2-9492-437292ec0d2f',
+    EMAIL_ATTRIBUTION_QUERY
+  ),
 } as const;
 
 export const EMAIL_CTA_LINKS = {
-  dashboard: 'https://bearsprediction.com/?auth=login&redirect=%2Fdashboard',
-  leaderboard: 'https://bearsprediction.com/?auth=login&redirect=%2Fleaderboard',
-  draftQuestion:
+  dashboard: withQuery(
+    'https://bearsprediction.com/?auth=login&redirect=%2Fdashboard',
+    EMAIL_ATTRIBUTION_QUERY
+  ),
+  leaderboard: withQuery(
+    'https://bearsprediction.com/?auth=login&redirect=%2Fleaderboard',
+    EMAIL_ATTRIBUTION_QUERY
+  ),
+  draftQuestion: withQuery(
     'https://bearsprediction.com/?auth=login&redirect=%2F%3Fseason%3D2026%26category%3Ddraft_predictions%26question%3Df6a8dc28-c6d7-4ba2-9492-437292ec0d2f',
+    EMAIL_ATTRIBUTION_QUERY
+  ),
 } as const;
 
 const EMAIL_ASSET_VERSION = '2026-03-30-7';

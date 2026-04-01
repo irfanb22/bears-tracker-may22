@@ -8,6 +8,7 @@ let analyticsInitialized = false;
 
 export const ANALYTICS_EVENTS = {
   pageViewed: 'page_viewed',
+  emailAttributionDetected: 'email_attribution_detected',
   navClicked: 'nav_clicked',
   categoryFilterChanged: 'category_filter_changed',
   paginationChanged: 'pagination_changed',
@@ -43,6 +44,14 @@ export const ANALYTICS_EVENTS = {
 type EventName = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EVENTS];
 type EventProperties = Record<string, string | number | boolean | null | undefined>;
 
+type EmailAttribution = {
+  email_source?: string;
+  email_medium?: string;
+  email_campaign?: string;
+  email_content?: string;
+  email_term?: string;
+};
+
 function isBrowser() {
   return typeof window !== 'undefined';
 }
@@ -54,6 +63,25 @@ function analyticsEnabled() {
 function currentPath() {
   if (!isBrowser()) return undefined;
   return `${window.location.pathname}${window.location.search}`;
+}
+
+function readEmailAttributionFromUrl(): EmailAttribution | null {
+  if (!isBrowser()) return null;
+
+  const params = new URLSearchParams(window.location.search);
+  const attribution: EmailAttribution = {
+    email_source: params.get('utm_source') ?? params.get('source') ?? undefined,
+    email_medium: params.get('utm_medium') ?? undefined,
+    email_campaign: params.get('utm_campaign') ?? undefined,
+    email_content: params.get('utm_content') ?? undefined,
+    email_term: params.get('utm_term') ?? undefined,
+  };
+
+  if (!Object.values(attribution).some(Boolean)) {
+    return null;
+  }
+
+  return attribution;
 }
 
 export function initAnalytics() {
@@ -96,6 +124,20 @@ export function capturePageView(routeName: string, properties: EventProperties =
     route_name: routeName,
     ...properties,
   });
+}
+
+export function registerEmailAttributionFromUrl() {
+  if (!analyticsEnabled()) return null;
+
+  const attribution = readEmailAttributionFromUrl();
+  if (!attribution) return null;
+
+  posthog.register(attribution);
+  return attribution;
+}
+
+export function captureEmailAttributionDetected(properties: EventProperties = {}) {
+  captureEvent(ANALYTICS_EVENTS.emailAttributionDetected, properties);
 }
 
 export function identifyAnalyticsUser(user: User, properties: EventProperties = {}) {

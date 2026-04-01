@@ -22,7 +22,13 @@ import { SiteFooter } from './components/SiteFooter';
 import { ScrollToTop } from './components/ScrollToTop';
 import { SeasonRecap } from './components/SeasonRecap';
 import { UnsubscribeStatusPage } from './components/UnsubscribeStatusPage';
-import { ANALYTICS_EVENTS, captureEvent, capturePageView } from './lib/analytics';
+import {
+  ANALYTICS_EVENTS,
+  captureEmailAttributionDetected,
+  captureEvent,
+  capturePageView,
+  registerEmailAttributionFromUrl,
+} from './lib/analytics';
 import { usePredictions } from './lib/PredictionContext';
 
 const categories = [
@@ -302,11 +308,25 @@ function getRouteName(pathname: string) {
 function AnalyticsRouteTracker() {
   const location = useLocation();
   const { user } = useAuth();
+  const lastAttributionKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
+    const attribution = registerEmailAttributionFromUrl();
+    const attributionKey = attribution ? JSON.stringify(attribution) : null;
+
+    if (attribution && attributionKey !== lastAttributionKeyRef.current) {
+      captureEmailAttributionDetected({
+        ...attribution,
+        landing_path: `${location.pathname}${location.search}`,
+        is_authenticated: Boolean(user),
+      });
+      lastAttributionKeyRef.current = attributionKey;
+    }
+
     capturePageView(getRouteName(location.pathname), {
       is_authenticated: Boolean(user),
       referrer: typeof document !== 'undefined' ? document.referrer || undefined : undefined,
+      ...attribution,
     });
   }, [location.pathname, location.search, user]);
 
