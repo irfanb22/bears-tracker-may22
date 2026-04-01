@@ -15,6 +15,14 @@ const corsHeaders = {
 type SegmentName = "season_2025_participants";
 type SendMode = "test" | "send";
 
+const EMAIL_ATTRIBUTION_QUERY =
+  "utm_source=brevo&utm_medium=email&utm_campaign=2025_recap_apr1";
+
+function withQuery(url: string, query: string) {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}${query}`;
+}
+
 interface SendBrevoEmailRequest {
   mode?: SendMode;
   segment?: SegmentName;
@@ -372,12 +380,21 @@ Deno.serve(async (req) => {
       "The dust has settled. See how Bears fans did across all 13 predictions and check your results.";
 
     const links: SeasonRecapLinks = {
-      dashboard: request.links?.dashboard ?? "https://bearsprediction.com/dashboard",
-      recap: request.links?.recap ?? "https://bearsprediction.com/season-recap",
-      leaderboard: request.links?.leaderboard ?? "https://bearsprediction.com/leaderboard",
+      dashboard:
+        request.links?.dashboard ??
+        withQuery("https://bearsprediction.com/dashboard", EMAIL_ATTRIBUTION_QUERY),
+      recap:
+        request.links?.recap ??
+        withQuery("https://bearsprediction.com/season-recap", EMAIL_ATTRIBUTION_QUERY),
+      leaderboard:
+        request.links?.leaderboard ??
+        withQuery("https://bearsprediction.com/leaderboard", EMAIL_ATTRIBUTION_QUERY),
       draftQuestion:
         request.links?.draftQuestion ??
-        "https://bearsprediction.com/?season=2026&category=draft_predictions&question=f6a8dc28-c6d7-4ba2-9492-437292ec0d2f",
+        withQuery(
+          "https://bearsprediction.com/?season=2026&category=draft_predictions&question=f6a8dc28-c6d7-4ba2-9492-437292ec0d2f",
+          EMAIL_ATTRIBUTION_QUERY,
+        ),
     };
     const imageUrls: SeasonRecapImageUrls = {
       hero: request.imageUrls?.hero ?? "https://bearsprediction.com/email/recap-2025/hero.jpg",
