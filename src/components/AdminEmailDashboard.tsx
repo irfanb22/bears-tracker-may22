@@ -232,7 +232,7 @@ function ComposerPreview({ draft }: { draft: EmailComposerDraft }) {
           <h1 className="mt-3 text-[36px] font-black leading-[1.05] tracking-tight text-bears-navy">
             How Bears Fans Predicted the Season
           </h1>
-          <p className="mt-4 text-[13px] font-bold uppercase tracking-[0.18em] text-slate-500">IRFAN | MAR 31</p>
+          <p className="mt-4 text-[13px] font-bold uppercase tracking-[0.18em] text-slate-500">IRFAN | APR 1</p>
 
           <div className="mt-8 space-y-9">
             {previewBlocks.map((block) => (
