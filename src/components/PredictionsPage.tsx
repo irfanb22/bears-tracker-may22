@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Loader2, Trophy, AlertCircle } from 'lucide-react';
 import { Navbar } from './Navbar';
 import type { Prediction, Game, Question } from '../lib/types';
+import { useAuth } from '../lib/auth';
 
 interface PredictionWithDetails extends Prediction {
   game?: Game;
@@ -13,12 +14,19 @@ interface PredictionWithDetails extends Prediction {
 }
 
 export function PredictionsPage() {
+  const { user } = useAuth();
   const [predictions, setPredictions] = useState<PredictionWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchPredictions() {
+      if (!user) {
+        setPredictions([]);
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data: predictionsData, error: predictionsError } = await supabase
           .from('predictions')
@@ -30,6 +38,7 @@ export function PredictionsPage() {
               category
             )
           `)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
         if (predictionsError) throw predictionsError;
@@ -42,7 +51,7 @@ export function PredictionsPage() {
     }
 
     fetchPredictions();
-  }, []);
+  }, [user]);
 
   if (loading) {
     return (

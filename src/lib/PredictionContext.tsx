@@ -102,7 +102,13 @@ export const questionAssets: Record<string, { image?: string; icon?: React.Eleme
   '817c1398-53c5-49eb-aa93-6bc88bbe562b': { image: calebImage }, // Caleb Williams question
 };
 
-const calculateAggregates = (data: any[] | null, questions: Question[]): AggregatedPredictions => {
+interface PublicPredictionAggregateRow {
+  question_id: string;
+  prediction: string;
+  vote_count: number;
+}
+
+const calculateAggregates = (data: PublicPredictionAggregateRow[] | null, questions: Question[]): AggregatedPredictions => {
   const aggregates: AggregatedPredictions = {};
 
   // Initialize aggregates for all questions
@@ -120,22 +126,22 @@ const calculateAggregates = (data: any[] | null, questions: Question[]): Aggrega
 
   // Process prediction data
   if (data && Array.isArray(data)) {
-    data.forEach(prediction => {
-      const { question_id, prediction: vote } = prediction;
+    data.forEach((predictionRow) => {
+      const { question_id, prediction: vote, vote_count } = predictionRow;
       const question = questions.find(q => q.id === question_id);
       
       if (question && aggregates[question_id]) {
         if (question.question_type === 'yes_no') {
           const normalizedVote = vote.toLowerCase();
           if (aggregates[question_id][normalizedVote] !== undefined) {
-            aggregates[question_id][normalizedVote]++;
-            aggregates[question_id].total++;
+            aggregates[question_id][normalizedVote] += vote_count;
+            aggregates[question_id].total += vote_count;
           }
         } else if (question.choices) {
           // For multiple choice, use the exact prediction text
           if (aggregates[question_id][vote] !== undefined) {
-            aggregates[question_id][vote]++;
-            aggregates[question_id].total++;
+            aggregates[question_id][vote] += vote_count;
+            aggregates[question_id].total += vote_count;
           }
         }
       }
@@ -195,18 +201,14 @@ export function PredictionProvider({ children }: { children: React.ReactNode }) 
         return updated;
       });
 
-      // Fetch all predictions without any user filtering
-      const { data, error } = await supabase
-        .from('predictions')
-        .select('question_id, prediction');
+      const seasons = [...new Set(currentQuestions.map((question) => question.season))];
+      const targetSeason = seasons.length === 1 ? seasons[0] : null;
+      const { data, error } = await supabase.rpc('get_public_question_prediction_summary', {
+        target_season: targetSeason,
+      });
+      if (error) throw error;
 
-      // Don't throw JWT errors for anonymous users
-      if (error && !error.message.includes('JWT')) {
-        throw error;
-      }
-
-      // Calculate aggregates from raw prediction data
-      const aggregates = calculateAggregates(data || [], currentQuestions);
+      const aggregates = calculateAggregates((data as PublicPredictionAggregateRow[] | null) || [], currentQuestions);
       setAggregatedPredictions(aggregates);
     } catch (err) {
       console.error('Error fetching aggregated predictions:', err);

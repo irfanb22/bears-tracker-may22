@@ -40,7 +40,7 @@ supabase.auth.onAuthStateChange((event, session) => {
   }
 });
 
-// Test the connection
-supabase.from('predictions').select('count').limit(1).single()
+// Test the connection against a public table to avoid false auth errors for visitors.
+supabase.from('questions').select('id').limit(1)
   .then(() => console.log('Supabase connection successful'))
   .catch(error => console.error('Supabase connection error:', error.message));
