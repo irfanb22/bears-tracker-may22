@@ -26,7 +26,8 @@ export function AdminProtectedRoute({ children }: AdminProtectedRouteProps) {
       if (!isMounted) return;
 
       if (error) {
-        setIsAdmin(user.email === 'irfanbhanji@gmail.com');
+        console.error('Failed to verify admin state', error);
+        setIsAdmin(false);
         return;
       }
 

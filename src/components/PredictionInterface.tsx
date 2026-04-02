@@ -106,8 +106,6 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
     }
 
     setConfidenceSentimentLoading(true);
-    let loadedFromRpc = false;
-
     try {
       const { data, error: rpcError } = await supabase.rpc('get_question_confidence_sentiment', {
         target_season: selectedSeason,
@@ -132,57 +130,9 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
       }, {});
 
       setConfidenceSentiment(byQuestion);
-      loadedFromRpc = true;
     } catch (rpcErr) {
-      console.warn('Confidence sentiment RPC unavailable, falling back to client-side aggregation.', rpcErr);
-    }
-
-    if (!loadedFromRpc) {
-      try {
-        const { data, error: fallbackError } = await supabase
-          .from('predictions')
-          .select('question_id, confidence')
-          .not('question_id', 'is', null);
-
-        if (fallbackError) throw fallbackError;
-
-        const confidenceTotals = ((data as Array<{ question_id: string | null; confidence: string | null }>) || []).reduce<
-          Record<string, { sum: number; count: number }>
-        >((acc, row) => {
-          if (!row.question_id || !row.confidence) return acc;
-          if (!seasonQuestionIds.has(row.question_id)) return acc;
-
-          const confidenceValue = row.confidence === 'high' ? 3 : row.confidence === 'medium' ? 2 : row.confidence === 'low' ? 1 : null;
-          if (!confidenceValue) return acc;
-
-          if (!acc[row.question_id]) {
-            acc[row.question_id] = { sum: 0, count: 0 };
-          }
-
-          acc[row.question_id].sum += confidenceValue;
-          acc[row.question_id].count += 1;
-          return acc;
-        }, {});
-
-        const byQuestion = Object.entries(confidenceTotals).reduce<
-          Record<string, { score: number; label: 'Low' | 'Medium' | 'High' }>
-        >((acc, [questionId, values]) => {
-          const avgConfidence = values.sum / values.count;
-          const score = ((avgConfidence - 1) / 2) * 100;
-          const normalizedScore = Math.min(Math.max(score, 0), 100);
-
-          acc[questionId] = {
-            score: normalizedScore,
-            label: deriveConfidenceLabel(normalizedScore),
-          };
-          return acc;
-        }, {});
-
-        setConfidenceSentiment(byQuestion);
-      } catch (fallbackErr) {
-        console.error('Error fetching confidence sentiment:', fallbackErr);
-        setConfidenceSentiment({});
-      }
+      console.error('Error fetching confidence sentiment:', rpcErr);
+      setConfidenceSentiment({});
     }
 
     setConfidenceSentimentLoading(false);
