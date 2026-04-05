@@ -15,6 +15,11 @@ import { ANALYTICS_EVENTS, captureEvent } from '../lib/analytics';
 interface PredictionInterfaceProps {
   selectedCategory?: string;
   selectedSeason?: number;
+  highlightQuestionId?: string | null;
+  onPredictionSaved?: (questionId: string) => void;
+  autoOpenQuestionId?: string | null;
+  onboardingGuideActive?: boolean;
+  onOnboardingExit?: () => void;
 }
 
 const CARD_STYLE: {
@@ -39,7 +44,15 @@ const CARD_STYLE: {
   actionButtonClassName: 'rounded-xl shadow-[0_10px_20px_rgba(15,23,42,0.18)]',
 };
 
-export function PredictionInterface({ selectedCategory = 'all', selectedSeason = 2025 }: PredictionInterfaceProps) {
+export function PredictionInterface({
+  selectedCategory = 'all',
+  selectedSeason = 2025,
+  highlightQuestionId = null,
+  onPredictionSaved,
+  autoOpenQuestionId = null,
+  onboardingGuideActive = false,
+  onOnboardingExit,
+}: PredictionInterfaceProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -70,17 +83,18 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
   const viewedQuestionIdsRef = useRef<Set<string>>(new Set());
   const previousPageRef = useRef(currentPage);
   const handledQuestionParamRef = useRef<string | null>(null);
+  const autoOpenedQuestionRef = useRef<string | null>(null);
 
   const questionsById = useMemo(
     () => Object.fromEntries(questions.map((question) => [question.id, question])),
     [questions]
   );
 
-  const deriveConfidenceLabel = useCallback((score: number): 'Low' | 'Medium' | 'High' => {
+  const deriveConfidenceLabel = (score: number): 'Low' | 'Medium' | 'High' => {
     if (score >= 70) return 'High';
     if (score >= 40) return 'Medium';
     return 'Low';
-  }, []);
+  };
 
   const parseConfidenceLabel = useCallback(
     (value: unknown, score: number): 'Low' | 'Medium' | 'High' => {
@@ -92,12 +106,29 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
       }
       return deriveConfidenceLabel(score);
     },
-    [deriveConfidenceLabel]
+    []
   );
+
+  const openPredictionModal = useCallback((questionId: string) => {
+    const existingPrediction = userPredictions[questionId];
+    const question = questionsById[questionId];
+    captureEvent(ANALYTICS_EVENTS.predictionStarted, {
+      question_id: questionId,
+      category: question?.category,
+      question_type: question?.question_type,
+      source_surface: 'prediction_interface_button',
+      has_existing_prediction: Boolean(existingPrediction),
+    });
+
+    setSelectedPrediction(questionId);
+    setSelectedValue(existingPrediction?.prediction ?? null);
+    setSelectedConfidence(existingPrediction?.confidence ?? null);
+    setShowAuthPrompt(false);
+    setError(null);
+  }, [questionsById, userPredictions]);
 
   const fetchConfidenceSentiment = useCallback(async () => {
     const seasonQuestions = questions.filter((question) => question.season === selectedSeason);
-    const seasonQuestionIds = new Set(seasonQuestions.map((question) => question.id));
 
     if (seasonQuestions.length === 0) {
       setConfidenceSentiment({});
@@ -136,7 +167,7 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
     }
 
     setConfidenceSentimentLoading(false);
-  }, [deriveConfidenceLabel, parseConfidenceLabel, questions, selectedSeason]);
+  }, [parseConfidenceLabel, questions, selectedSeason]);
 
   const seasonQuestions = questions.filter((question) => question.season === selectedSeason);
   const filteredQuestions = selectedCategory === 'all'
@@ -216,6 +247,25 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [selectedPrediction, showAuthPrompt]);
+
+  useEffect(() => {
+    if (!autoOpenQuestionId || !onboardingGuideActive) {
+      autoOpenedQuestionRef.current = null;
+      return;
+    }
+
+    if (autoOpenedQuestionRef.current === autoOpenQuestionId) {
+      return;
+    }
+
+    const targetQuestion = filteredQuestions.find((question) => question.id === autoOpenQuestionId);
+    if (!targetQuestion) {
+      return;
+    }
+
+    autoOpenedQuestionRef.current = autoOpenQuestionId;
+    openPredictionModal(autoOpenQuestionId);
+  }, [autoOpenQuestionId, filteredQuestions, onboardingGuideActive, openPredictionModal]);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -347,6 +397,7 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
       setSelectedPrediction(null);
       setSelectedValue(null);
       setSelectedConfidence(null);
+      onPredictionSaved?.(questionId);
 
     } catch (err) {
       console.error('Error saving prediction:', err);
@@ -388,24 +439,6 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
     setSelectedPrediction(questionId);
     setSelectedValue(value);
     setSelectedConfidence(null);
-    setShowAuthPrompt(false);
-    setError(null);
-  };
-
-  const openPredictionModal = (questionId: string) => {
-    const existingPrediction = userPredictions[questionId];
-    const question = questionsById[questionId];
-    captureEvent(ANALYTICS_EVENTS.predictionStarted, {
-      question_id: questionId,
-      category: question?.category,
-      question_type: question?.question_type,
-      source_surface: 'prediction_interface_button',
-      has_existing_prediction: Boolean(existingPrediction),
-    });
-
-    setSelectedPrediction(questionId);
-    setSelectedValue(existingPrediction?.prediction ?? null);
-    setSelectedConfidence(existingPrediction?.confidence ?? null);
     setShowAuthPrompt(false);
     setError(null);
   };
@@ -533,6 +566,7 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">
         {pagedQuestions.map((question) => {
           const hasPredicted = userPredictions[question.id];
+          const isHighlightedQuestion = highlightQuestionId === question.id;
           const totalVotes = aggregatedPredictions[question.id]?.total || 0;
           const asset = questionAssets[question.id];
           const isExpired = isPast(new Date(question.deadline));
@@ -582,12 +616,27 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
               key={question.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
+              data-onboarding-question={isHighlightedQuestion ? 'true' : undefined}
               className={`${CARD_STYLE.cardClassName} ${
                 question.featured
                   ? CARD_STYLE.featuredClassName
                   : ''
-              }`}
+              } ${isHighlightedQuestion ? 'ring-2 ring-bears-orange ring-offset-2 ring-offset-white' : ''}`}
             >
+              {isHighlightedQuestion && (
+                <div className="mb-4 rounded-2xl border border-bears-orange/30 bg-gradient-to-r from-orange-50 via-amber-50 to-white p-3 shadow-[0_8px_20px_rgba(122,38,4,0.08)]">
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#9a3412]">
+                    Step 2
+                  </p>
+                  <h3 className="mt-1 text-sm font-extrabold text-bears-navy sm:text-base">
+                    Make your first Bears prediction
+                  </h3>
+                  <p className="mt-1 text-xs font-medium leading-5 text-slate-700 sm:text-sm">
+                    The real prediction modal will guide you through this one.
+                  </p>
+                </div>
+              )}
+
               {question.featured && (
                 <div className="mb-3 inline-flex items-center gap-1 rounded-full bg-bears-orange/10 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-[#7a2604]">
                   <Star className="h-3.5 w-3.5" />
@@ -894,6 +943,15 @@ export function PredictionInterface({ selectedCategory = 'all', selectedSeason =
           await handlePrediction(selectedPrediction, predictionValue, confidenceValue);
         }}
         submitLabel="Submit Prediction"
+        onboardingGuideActive={
+          onboardingGuideActive &&
+          selectedPrediction === autoOpenQuestionId &&
+          !showAuthPrompt
+        }
+        onOnboardingExit={() => {
+          handleClose();
+          onOnboardingExit?.();
+        }}
       />
 
       <LoginModal 

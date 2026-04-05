@@ -52,6 +52,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_ORDER = ['all', 'qb', 'rookies', 'player_stats', 'team_stats', 'awards', 'playoffs', 'draft_predictions'];
+const DASHBOARD_ONBOARDING_TIP_KEY = 'dashboard-onboarding-tip-pending';
 
 const getCategoryLabel = (category: string) => {
   return CATEGORY_LABELS[category] || category.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
@@ -91,6 +92,7 @@ export function Dashboard() {
   const [displayNameNotice, setDisplayNameNotice] = useState<string | null>(null);
   const [displayNameNoticeTone, setDisplayNameNoticeTone] = useState<'success' | 'error' | null>(null);
   const [showUsernameHelp, setShowUsernameHelp] = useState(false);
+  const [showDashboardTip, setShowDashboardTip] = useState(false);
   const hasTrackedDashboardViewRef = useRef(false);
   const previousFiltersRef = useRef({
     season: selectedSeason,
@@ -180,6 +182,18 @@ export function Dashboard() {
 
     loadDisplayName();
   }, [user]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setShowDashboardTip(localStorage.getItem(DASHBOARD_ONBOARDING_TIP_KEY) === 'true');
+  }, []);
+
+  const dismissDashboardTip = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(DASHBOARD_ONBOARDING_TIP_KEY);
+    }
+    setShowDashboardTip(false);
+  };
 
   const handlePredictionUpdate = async () => {
     await fetchDashboardData();
@@ -385,11 +399,28 @@ export function Dashboard() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <header className="rounded-xl border border-slate-200 bg-white px-5 py-5 sm:px-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
+            <div className="relative">
               <h1 className="text-3xl font-extrabold tracking-tight text-bears-navy sm:text-4xl">My Predictions</h1>
               <p className="mt-2 text-sm font-medium text-slate-600">
                 Filter by season, topic, and status. Update active picks from here or on home.
               </p>
+              {showDashboardTip && (
+                <div className="mt-4 max-w-sm rounded-2xl border border-bears-orange/35 bg-white p-4 shadow-[0_18px_40px_rgba(15,23,42,0.12)]">
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#c2410c]">
+                    My Predictions
+                  </p>
+                  <p className="mt-2 text-sm font-medium leading-6 text-slate-700">
+                    This page is where all your predictions live. Come back here anytime to review or update active picks.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={dismissDashboardTip}
+                    className="mt-4 rounded-full bg-bears-navy px-4 py-2 text-xs font-bold uppercase tracking-wide text-white"
+                  >
+                    Got it
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-slate-50 p-3">

@@ -1,6 +1,6 @@
 # Bears Prediction Tracker - Project Context
 
-Last updated: 2026-03-30
+Last updated: 2026-04-05
 Repository path: `/Users/irfan/Projects/bears-tracker-may22-main`
 
 ## 1. What This Site Is
@@ -30,6 +30,7 @@ Current primary business goal:
 
 ### Public
 - Home page with 2025 season prediction questions.
+- 2026 season draft question onboarding flow for signed-in users.
 - Category filters:
   - `all`
   - `qb`
@@ -51,6 +52,10 @@ Current primary business goal:
 - Create/update prediction per question (upsert behavior).
 - Select confidence: `low`, `medium`, `high`.
 - Deadline enforcement for predictions.
+- Guided onboarding:
+  - Step 1 asks for a user display name if none is saved.
+  - Step 2 walks the user through one live 2026 prediction with guided highlights.
+  - After first save, user is redirected to `My Predictions` and shown a one-time dashboard tip.
 - Dashboard with:
   - total predictions
   - active/upcoming predictions
@@ -80,11 +85,13 @@ Current primary business goal:
 ### Main user flow
 1. User signs up (email + password).
 2. User confirms email from inbox.
-3. User logs in and sees live questions.
-4. User picks an answer (`yes/no` or multiple choice) and sets confidence.
-5. User can update their prediction while the question is still live.
-6. User sees their picks and results in Dashboard.
-7. User checks community standings in Leaderboard.
+3. If the user has no saved display name, onboarding asks what they should be called.
+4. If the user has no `2026` predictions yet, onboarding opens one live 2026 question and guides them through answer choice, confidence, and deadline.
+5. User picks an answer (`yes/no` or multiple choice) and sets confidence.
+6. User can update their prediction while the question is still live.
+7. User is redirected to Dashboard (`My Predictions`) after onboarding save and sees a one-time orientation tip.
+8. User sees their picks and results in Dashboard.
+9. User checks community standings in Leaderboard.
 
 ### Admin flow
 1. Admin logs in.
@@ -100,6 +107,8 @@ Current primary business goal:
 - Scoring policy: `1` point correct, `0` incorrect/unresolved.
 - Accuracy only counts resolved questions.
 - Leaderboard is for authenticated users and uses masked display names.
+- Display names are now collected during onboarding for any signed-in user missing `users.display_name`.
+- 2026 onboarding prediction guidance only appears if the signed-in user has no `2026` predictions yet.
 
 ### Access and security rules (current)
 - Public can browse core prediction content.
@@ -140,6 +149,7 @@ Current primary business goal:
   - `src/components/Dashboard.tsx`
   - `src/components/AdminDashboard.tsx`
   - `src/components/HowItWorks.tsx`
+  - `src/components/PredictionEditorModal.tsx`
 - Supabase client:
   - `src/lib/supabase.ts`
 
