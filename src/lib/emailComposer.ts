@@ -348,7 +348,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
       {
         id: createBlockId('paragraph'),
         type: 'paragraph',
-        text: 'You can make your prediction now, and you’ll have until draft day to lock it in.',
+        text: 'Which position will the Bears pick with the 25th pick? You can make your prediction now, and you’ll have until draft day to lock it in.',
       },
       {
         id: createBlockId('paragraph'),

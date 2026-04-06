@@ -601,7 +601,7 @@ export function buildSeasonRecapEmail({
                     We're already working on 2026. More questions, more categories, and game-by-game
                     picks. The first question is already live:
                     <a href="${safeDraftQuestionUrl}" style="color:#c83803; font-weight:600; text-decoration:underline;">
-                      Who will the Chicago Bears select with the 25th pick?
+                      Which position will the Bears pick with the 25th pick?
                     </a>
                     You can make your prediction now, and you'll have until draft day to lock it in.
                   </p>

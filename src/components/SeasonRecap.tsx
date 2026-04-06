@@ -391,7 +391,7 @@ function RevisedRecap({
                 onClick={onDraftQuestionClick}
                 className="font-semibold text-bears-orange underline decoration-bears-orange/60 underline-offset-4 hover:text-[#9a3005]"
               >
-                Who will the Chicago Bears select with the 25th pick?
+                Which position will the Bears pick with the 25th pick?
               </button>{' '}
               You can make your prediction now, and you&apos;ll have until draft day to lock it in.
             </p>
