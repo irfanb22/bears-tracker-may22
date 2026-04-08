@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Clock, Loader2, X } from 'lucide-react';
 import { isPast } from 'date-fns';
+import { formatCentralDeadline } from '../lib/utils';
 
 type ConfidenceLevel = 'low' | 'medium' | 'high';
 type OnboardingStepId = 'choices' | 'confidence' | 'deadline';
@@ -338,13 +339,7 @@ export function PredictionEditorModal({
                       Deadline
                     </p>
                     <p className="mt-1 text-sm font-semibold text-slate-800">
-                      {new Date(question.deadline).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      })}
+                      {formatCentralDeadline(question.deadline)}
                     </p>
                   </div>
 

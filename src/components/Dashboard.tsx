@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { questionAssets } from '../lib/PredictionContext';
 import { ANALYTICS_EVENTS, captureEvent } from '../lib/analytics';
+import { formatCentralDeadline } from '../lib/utils';
 
 interface Question {
   id: string;
@@ -655,7 +656,7 @@ export function Dashboard() {
                               <p className="font-semibold text-slate-900">{question.text}</p>
                               <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500">
                                 <Clock className="h-3.5 w-3.5" />
-                                Deadline {new Date(question.deadline).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                                Deadline {formatCentralDeadline(question.deadline, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', year: undefined })}
                               </p>
                             </td>
                             <td className="border border-r-0 border-l-0 border-slate-200 bg-slate-50/40 py-3 pr-3 text-slate-700">{getCategoryLabel(question.category)}</td>
@@ -743,7 +744,7 @@ export function Dashboard() {
                           </p>
                         </div>
                         <p className="mt-1 text-xs text-slate-500">
-                          Deadline {new Date(question.deadline).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                          Deadline {formatCentralDeadline(question.deadline, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', year: undefined })}
                         </p>
 
                         <div className="mt-2 flex items-start justify-between gap-3">

@@ -29,7 +29,12 @@ interface PredictionModalProps {
   } | null;
 }
 
-export function PredictionModal({ isOpen, onClose, onPredictionUpdate, prediction }: PredictionModalProps) {
+export function PredictionModal({
+  isOpen,
+  onClose,
+  onPredictionUpdate,
+  prediction,
+}: PredictionModalProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

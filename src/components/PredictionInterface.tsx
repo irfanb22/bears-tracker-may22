@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Loader2, AlertCircle, LogIn, Clock, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, AlertCircle, LogIn, Clock, Star, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
@@ -11,6 +11,7 @@ import { RegisterModal } from './RegisterModal';
 import type { Question } from '../lib/PredictionContext';
 import { PredictionEditorModal } from './PredictionEditorModal';
 import { ANALYTICS_EVENTS, captureEvent } from '../lib/analytics';
+import { formatCentralDeadline } from '../lib/utils';
 
 interface PredictionInterfaceProps {
   selectedCategory?: string;
@@ -76,6 +77,7 @@ export function PredictionInterface({
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [expandedChoiceRows, setExpandedChoiceRows] = useState<Record<string, boolean>>({});
   const [confidenceSentiment, setConfidenceSentiment] = useState<
     Record<string, { score: number; label: 'Low' | 'Medium' | 'High' }>
   >({});
@@ -582,11 +584,12 @@ export function PredictionInterface({
             : question.status === 'pending'
             ? 'COMING SOON'
             : 'CLOSED';
-          const deadlineLabel = new Date(question.deadline).toLocaleString('en-US', {
+          const deadlineLabel = formatCentralDeadline(question.deadline, {
             month: 'short',
             day: 'numeric',
             hour: 'numeric',
-            minute: '2-digit'
+            minute: '2-digit',
+            year: undefined,
           });
           const topChoices = question.question_type === 'multiple_choice'
             ? (question.choices || [])
@@ -595,10 +598,14 @@ export function PredictionInterface({
                   percentage: percentages[choice.text] || 0
                 }))
                 .sort((a, b) => b.percentage - a.percentage)
-                .slice(0, 3)
+                
+            : [];
+          const isExpanded = Boolean(expandedChoiceRows[question.id]);
+          const visibleChoices = question.question_type === 'multiple_choice'
+            ? topChoices.slice(0, isExpanded ? topChoices.length : 3)
             : [];
           const hiddenChoiceCount = question.question_type === 'multiple_choice'
-            ? Math.max((question.choices?.length || 0) - topChoices.length, 0)
+            ? Math.max(topChoices.length - 3, 0)
             : 0;
           const confidence = confidenceSentiment[question.id];
           const meterPosition = confidence ? Math.min(Math.max(confidence.score, 2), 98) : 50;
@@ -744,7 +751,7 @@ export function PredictionInterface({
                   </div>
                 ) : (
                   <div className="mt-2 space-y-3">
-                    {topChoices.map((choice) => (
+                    {visibleChoices.map((choice) => (
                       <div key={choice.text} className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
                           <button
@@ -772,13 +779,23 @@ export function PredictionInterface({
                       </div>
                     ))}
                     {hiddenChoiceCount > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => openPredictionModal(question.id)}
-                        className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-800"
-                      >
-                        View all
-                      </button>
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedChoiceRows((prev) => ({
+                              ...prev,
+                              [question.id]: !prev[question.id],
+                            }))
+                          }
+                          className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-bears-orange/12 px-3 py-1.5 text-[11px] font-bold text-[#9a3412] transition hover:bg-bears-orange/20"
+                        >
+                          {isExpanded ? 'Show fewer' : 'Show all'}
+                          <ChevronDown
+                            className={`h-3.5 w-3.5 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          />
+                        </button>
+                      </div>
                     )}
                     {topChoices.length === 0 && renderPredictionStats(question)}
                   </div>
@@ -841,7 +858,13 @@ export function PredictionInterface({
                       : 'bg-bears-navy text-white hover:bg-bears-navy/90'
                   }`}
                 >
-                  {!canAnswer ? 'View Details' : hasPredicted ? 'View / Edit Prediction' : 'Make Prediction'}
+                  {question.status === 'pending'
+                    ? 'View Details'
+                    : !canAnswer
+                    ? 'View Results'
+                    : hasPredicted
+                    ? 'Edit Prediction'
+                    : 'Make Prediction'}
                 </button>
               </div>
 
