@@ -63,7 +63,7 @@ function HomePage() {
   const [selectedSeason, setSelectedSeason] = useState(
     initialSeasonParam === '2025' || initialSeasonParam === '2026'
       ? Number(initialSeasonParam)
-      : 2025
+      : 2026
   );
   const [selectedCategory, setSelectedCategory] = useState(initialCategoryParam || 'all');
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>('loading');
@@ -378,8 +378,11 @@ function HomePage() {
               </button>
             ))}
             {selectedSeason === 2026 && (
-              <span className="pb-3 text-base font-bold whitespace-nowrap text-slate-400">
-                2026 Game-by-Game Picks
+              <span className="flex items-center gap-2 pb-3 whitespace-nowrap text-slate-400">
+                <span className="text-base font-bold">2026 Game Picks</span>
+                <span className="rounded-full bg-yellow-200 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-yellow-900">
+                  Coming Soon
+                </span>
               </span>
             )}
           </div>
