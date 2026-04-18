@@ -240,6 +240,8 @@ function HomePage() {
     const redirectPath = params.get('redirect');
 
     if (user && authAction === 'login' && redirectPath) {
+      setIsRegisterModalOpen(false);
+      setIsLoginModalOpen(false);
       navigate(redirectPath, { replace: true });
       return;
     }
