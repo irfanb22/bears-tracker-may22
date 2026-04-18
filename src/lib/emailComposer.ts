@@ -160,7 +160,7 @@ export function createDraftReminderDraft(): EmailComposerDraft {
         src: EMAIL_IMAGE_URLS.draftLive,
         alt: 'Live 2026 draft question card with answer options',
         href: EMAIL_CARD_LINKS.draftQuestion,
-        width: 'full',
+        width: 'medium',
         framed: false,
       },
       {
@@ -172,6 +172,11 @@ export function createDraftReminderDraft(): EmailComposerDraft {
         id: createBlockId('paragraph'),
         type: 'paragraph',
         text: 'If you know another Bears fan who would have fun making predictions and comparing results, feel free to forward this email to them.',
+      },
+      {
+        id: createBlockId('paragraph'),
+        type: 'paragraph',
+        text: 'Thanks for joining the community.',
       },
       {
         id: createBlockId('paragraph'),
