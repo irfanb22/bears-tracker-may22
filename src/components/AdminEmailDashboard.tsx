@@ -530,7 +530,7 @@ export function AdminEmailDashboard() {
           })}
         </section>
 
-        <section className="mt-8 grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
+        <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(360px,0.9fr)_minmax(560px,1.1fr)] xl:items-start">
           <div className="space-y-6">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
@@ -582,7 +582,7 @@ export function AdminEmailDashboard() {
                   <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Composer Settings</p>
                   <h2 className="mt-2 text-xl font-bold text-bears-navy">Subject and preview text</h2>
                   <p className="mt-2 text-sm text-slate-600">
-                    These fields are sent along with the draft blocks below.
+                    These are the main fields you’ll tweak before sending.
                   </p>
                 </div>
                 <Eye className="h-6 w-6 flex-shrink-0 text-bears-orange" />
@@ -662,28 +662,6 @@ export function AdminEmailDashboard() {
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Image Library</p>
-                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Current hosted email assets</h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    These are the hosted images available in the built-in templates.
-                  </p>
-                </div>
-                <ImageIcon className="h-6 w-6 flex-shrink-0 text-bears-orange" />
-              </div>
-
-              <div className="mt-6 grid gap-3">
-                {imageLibrary.map((image) => (
-                  <div key={image.label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                    <div className="text-sm font-semibold text-slate-900">{image.label}</div>
-                    <div className="mt-1 break-all text-xs text-slate-500">{image.url}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
                   <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Send Test</p>
                   <h2 className="mt-2 text-xl font-bold text-bears-navy">Send the current draft to yourself</h2>
                   <p className="mt-2 text-sm text-slate-600">
@@ -752,25 +730,6 @@ export function AdminEmailDashboard() {
                 Send To Production Segment
               </button>
             </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Live Preview</p>
-                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Email-style layout preview</h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    This is not a perfect Gmail clone, but it gives you a much faster layout loop before every test send.
-                  </p>
-                </div>
-                <Eye className="h-6 w-6 flex-shrink-0 text-bears-orange" />
-              </div>
-
-              <div className="mt-6">
-                <ComposerPreview draft={draft} />
-              </div>
-            </div>
 
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
@@ -828,6 +787,47 @@ export function AdminEmailDashboard() {
                     </div>
                   ))
                 )}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Image Library</p>
+                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Current hosted email assets</h2>
+                  <p className="mt-2 text-sm text-slate-600">
+                    These are the hosted images available in the built-in templates.
+                  </p>
+                </div>
+                <ImageIcon className="h-6 w-6 flex-shrink-0 text-bears-orange" />
+              </div>
+
+              <div className="mt-6 grid gap-3">
+                {imageLibrary.map((image) => (
+                  <div key={image.label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div className="text-sm font-semibold text-slate-900">{image.label}</div>
+                    <div className="mt-1 break-all text-xs text-slate-500">{image.url}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="xl:sticky xl:top-6">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Live Preview</p>
+                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Email-style layout preview</h2>
+                  <p className="mt-2 text-sm text-slate-600">
+                    This is not a perfect Gmail clone, but it gives you a much faster layout loop before every test send.
+                  </p>
+                </div>
+                <Eye className="h-6 w-6 flex-shrink-0 text-bears-orange" />
+              </div>
+
+              <div className="mt-6">
+                <ComposerPreview draft={draft} />
               </div>
             </div>
           </div>
