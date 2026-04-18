@@ -75,6 +75,11 @@ interface SeasonRecapTemplateOptions {
   imageUrls?: SeasonRecapImageUrls;
   links: SeasonRecapLinks;
   unsubscribeUrl?: string;
+  headerEyebrow?: string;
+  headerTitle?: string;
+  headerMeta?: string;
+  footerLinkLabel?: string;
+  footerLinkHref?: string;
   blocks?: EmailBlock[];
 }
 
@@ -85,6 +90,19 @@ function escapeHtml(value: string) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function renderInlineStrongText(value: string) {
+  return value
+    .split(/(\*\*[^*]+\*\*)/g)
+    .map((part) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return `<strong style="font-weight:800; color:#0b162a;">${escapeHtml(part.slice(2, -2))}</strong>`;
+      }
+
+      return escapeHtml(part);
+    })
+    .join("");
 }
 
 function renderImageSection({
@@ -158,7 +176,7 @@ function renderComposerBlock(block: EmailBlock) {
     return `
       <tr>
         <td style="padding:22px 20px 0 20px; font-size:18px; line-height:31px; color:#334155;">
-          <p style="margin:0; white-space:pre-line;">${escapeHtml(block.text)}</p>
+          <p style="margin:0; white-space:pre-line;">${renderInlineStrongText(block.text)}</p>
         </td>
       </tr>
     `;
@@ -301,6 +319,11 @@ export function buildSeasonRecapEmail({
   imageUrls,
   links,
   unsubscribeUrl,
+  headerEyebrow,
+  headerTitle,
+  headerMeta,
+  footerLinkLabel,
+  footerLinkHref,
   blocks,
 }: SeasonRecapTemplateOptions) {
   const safePreviewText = escapeHtml(previewText);
@@ -308,6 +331,11 @@ export function buildSeasonRecapEmail({
   const safeRecapUrl = escapeHtml(links.recap);
   const safeLeaderboardUrl = escapeHtml(links.leaderboard);
   const safeDraftQuestionUrl = escapeHtml(links.draftQuestion);
+  const safeHeaderEyebrow = escapeHtml(headerEyebrow ?? "2025 Season Recap");
+  const safeHeaderTitle = escapeHtml(headerTitle ?? "How Bears Fans Predicted the Season");
+  const safeHeaderMeta = escapeHtml(headerMeta ?? "Irfan | Mar 31");
+  const safeFooterLinkLabel = escapeHtml(footerLinkLabel ?? "View the recap on the site");
+  const safeFooterLinkHref = escapeHtml(footerLinkHref ?? links.recap);
   const renderedBlocks = blocks ? renderComposerBlocks(blocks) : "";
 
   if (blocks && blocks.length > 0) {
@@ -317,7 +345,7 @@ export function buildSeasonRecapEmail({
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <title>2025 Season Recap</title>
+    <title>${safeHeaderTitle}</title>
   </head>
   <body style="margin:0; padding:0; background-color:#f8fafc; font-family:Arial, Helvetica, sans-serif; color:#1e293b;">
     <div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">
@@ -335,13 +363,13 @@ export function buildSeasonRecapEmail({
             <tr>
               <td style="padding:30px 20px 10px 20px;">
                 <div style="font-size:12px; line-height:18px; letter-spacing:0.2em; text-transform:uppercase; font-weight:700; color:#c83803;">
-                  2025 Season Recap
+                  ${safeHeaderEyebrow}
                 </div>
                 <h1 style="margin:14px 0 0 0; font-size:38px; line-height:40px; font-weight:900; color:#0b162a;">
-                  How Bears Fans Predicted the Season
+                  ${safeHeaderTitle}
                 </h1>
                 <div style="margin-top:16px; font-size:13px; line-height:18px; letter-spacing:0.18em; text-transform:uppercase; font-weight:700; color:#64748b;">
-                  Irfan | Mar 31
+                  ${safeHeaderMeta}
                 </div>
               </td>
             </tr>
@@ -349,8 +377,8 @@ export function buildSeasonRecapEmail({
             <tr>
               <td style="padding:28px 20px 38px 20px; text-align:center; border-top:1px solid #e2e8f0;">
                 <div style="font-size:15px; line-height:28px;">
-                  <a href="${safeRecapUrl}" style="color:#64748b; text-decoration:underline;">
-                    View the recap on the site
+                  <a href="${safeFooterLinkHref}" style="color:#64748b; text-decoration:underline;">
+                    ${safeFooterLinkLabel}
                   </a>
                   ${
                     unsubscribeUrl
@@ -377,7 +405,7 @@ export function buildSeasonRecapEmail({
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="x-ua-compatible" content="ie=edge" />
-    <title>2025 Season Recap</title>
+    <title>${safeHeaderTitle}</title>
   </head>
   <body style="margin:0; padding:0; background-color:#f8fafc; font-family:Arial, Helvetica, sans-serif; color:#1e293b;">
     <div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">

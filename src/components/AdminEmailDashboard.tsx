@@ -2,20 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle,
-  ArrowDown,
-  ArrowUp,
   CheckCircle2,
   Eye,
-  Heading1,
   Image as ImageIcon,
   Loader2,
   Mail,
-  Plus,
   RefreshCcw,
   Send,
   ShieldCheck,
-  Trash2,
-  Type,
   Users,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -23,19 +17,13 @@ import { Navbar } from './Navbar';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import {
-  EMAIL_LINKS,
+  EMAIL_TEMPLATES,
   type EmailBlock,
   type EmailButtonBlock,
-  type EmailButtonTone,
   type EmailComposerDraft,
-  type EmailHeadingBlock,
-  type EmailImageBlock,
   type EmailImageWidth,
-  type EmailParagraphBlock,
-  type EmailSignatureBlock,
-  type EmailSpacerBlock,
   type EmailSpacerSize,
-  createBlockId,
+  createDraftFromTemplate,
   createDefaultRecapDraft,
 } from '../lib/emailComposer';
 
@@ -64,37 +52,14 @@ interface SendBrevoEmailResponse {
   recipientCount?: number;
 }
 
-const FIXED_SEGMENT = 'season_2025_participants';
+const FIXED_SEGMENT = 'all_subscribed_users';
 
 type Notice = { tone: 'success' | 'error'; message: string } | null;
-
-const imageWidthOptions: Array<{ value: EmailImageWidth; label: string }> = [
-  { value: 'full', label: 'Full' },
-  { value: 'wide', label: 'Wide' },
-  { value: 'medium', label: 'Medium' },
-];
-
-const spacerOptions: Array<{ value: EmailSpacerSize; label: string }> = [
-  { value: 's', label: 'Small' },
-  { value: 'm', label: 'Medium' },
-  { value: 'l', label: 'Large' },
-];
-
-const buttonToneOptions: Array<{ value: EmailButtonTone; label: string }> = [
-  { value: 'primary', label: 'Primary' },
-  { value: 'secondary', label: 'Secondary' },
-];
 
 function getImageBlockWidthClass(width: EmailImageWidth) {
   if (width === 'medium') return 'max-w-[92%]';
   if (width === 'wide') return 'max-w-full';
   return 'max-w-full';
-}
-
-function getImageBlockWidthPercent(width: EmailImageWidth) {
-  if (width === 'medium') return '92%';
-  if (width === 'wide') return '100%';
-  return '100%';
 }
 
 function getSpacerHeight(size: EmailSpacerSize) {
@@ -103,10 +68,20 @@ function getSpacerHeight(size: EmailSpacerSize) {
   return '40px';
 }
 
-function clampMoveIndex(index: number, direction: -1 | 1, length: number) {
-  const nextIndex = index + direction;
-  if (nextIndex < 0 || nextIndex >= length) return index;
-  return nextIndex;
+function renderInlineStrongText(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <strong key={`${part}-${index}`} className="font-extrabold text-bears-navy">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+
+    return <span key={`${part}-${index}`}>{part}</span>;
+  });
 }
 
 function EmailPreviewBlock({ block }: { block: EmailBlock }) {
@@ -117,7 +92,7 @@ function EmailPreviewBlock({ block }: { block: EmailBlock }) {
   if (block.type === 'paragraph') {
     return (
       <p className="text-[18px] leading-[1.68] text-slate-700 whitespace-pre-wrap">
-        {block.text}
+        {renderInlineStrongText(block.text)}
       </p>
     );
   }
@@ -228,11 +203,11 @@ function ComposerPreview({ draft }: { draft: EmailComposerDraft }) {
         </div>
 
         <div className="px-5 py-8">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-bears-orange">2025 Season Recap</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-bears-orange">{draft.headerEyebrow}</p>
           <h1 className="mt-3 text-[36px] font-black leading-[1.05] tracking-tight text-bears-navy">
-            How Bears Fans Predicted the Season
+            {draft.headerTitle}
           </h1>
-          <p className="mt-4 text-[13px] font-bold uppercase tracking-[0.18em] text-slate-500">IRFAN | APR 1</p>
+          <p className="mt-4 text-[13px] font-bold uppercase tracking-[0.18em] text-slate-500">{draft.headerMeta}</p>
 
           <div className="mt-8 space-y-9">
             {previewBlocks.map((block) => (
@@ -242,245 +217,12 @@ function ComposerPreview({ draft }: { draft: EmailComposerDraft }) {
         </div>
 
         <div className="border-t border-slate-200 px-5 py-10 text-center text-[15px] leading-7 text-slate-500">
-          <a href={EMAIL_LINKS.recap} onClick={(event) => event.preventDefault()} className="underline">
-            View the recap on the site
+          <a href={draft.footerLinkHref} onClick={(event) => event.preventDefault()} className="underline">
+            {draft.footerLinkLabel}
           </a>
           <span className="px-2 text-slate-300">|</span>
           <span className="underline">Unsubscribe</span>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function BlockEditor({
-  block,
-  index,
-  total,
-  onChange,
-  onRemove,
-  onMove,
-}: {
-  block: EmailBlock;
-  index: number;
-  total: number;
-  onChange: (block: EmailBlock) => void;
-  onRemove: () => void;
-  onMove: (direction: -1 | 1) => void;
-}) {
-  const frame = 'rounded-3xl border border-slate-200 bg-white p-5 shadow-sm';
-
-  return (
-    <div className={frame}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-slate-600">
-            {block.type}
-          </span>
-          <span className="text-sm font-semibold text-slate-500">Block {index + 1}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onMove(-1)}
-            disabled={index === 0}
-            className="rounded-xl border border-slate-200 p-2 text-slate-600 disabled:opacity-40"
-          >
-            <ArrowUp className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => onMove(1)}
-            disabled={index === total - 1}
-            className="rounded-xl border border-slate-200 p-2 text-slate-600 disabled:opacity-40"
-          >
-            <ArrowDown className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={onRemove}
-            className="rounded-xl border border-red-200 p-2 text-red-600"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-4 space-y-4">
-        {block.type === 'heading' && (
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-700">Heading</label>
-            <textarea
-              value={block.text}
-              onChange={(event) => onChange({ ...block, text: event.target.value } satisfies EmailHeadingBlock)}
-              rows={2}
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-            />
-          </div>
-        )}
-
-        {block.type === 'paragraph' && (
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-700">Paragraph</label>
-            <textarea
-              value={block.text}
-              onChange={(event) => onChange({ ...block, text: event.target.value } satisfies EmailParagraphBlock)}
-              rows={5}
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-            />
-          </div>
-        )}
-
-        {block.type === 'signature' && (
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-700">Signature</label>
-            <input
-              type="text"
-              value={block.text}
-              onChange={(event) => onChange({ ...block, text: event.target.value } satisfies EmailSignatureBlock)}
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-            />
-          </div>
-        )}
-
-        {block.type === 'image' && (
-          <>
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">Image URL</label>
-              <input
-                type="url"
-                value={block.src}
-                onChange={(event) => onChange({ ...block, src: event.target.value } satisfies EmailImageBlock)}
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Alt text</label>
-                <input
-                  type="text"
-                  value={block.alt}
-                  onChange={(event) => onChange({ ...block, alt: event.target.value } satisfies EmailImageBlock)}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Click URL</label>
-                <input
-                  type="url"
-                  value={block.href ?? ''}
-                  onChange={(event) =>
-                    onChange({ ...block, href: event.target.value || undefined } satisfies EmailImageBlock)
-                  }
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-                />
-              </div>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Width</label>
-                <select
-                  value={block.width}
-                  onChange={(event) =>
-                    onChange({ ...block, width: event.target.value as EmailImageWidth } satisfies EmailImageBlock)
-                  }
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-                >
-                  {imageWidthOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <label className="mt-8 inline-flex items-center gap-3 text-sm font-semibold text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={block.framed !== false}
-                  onChange={(event) =>
-                    onChange({ ...block, framed: event.target.checked } satisfies EmailImageBlock)
-                  }
-                  className="h-4 w-4 rounded border-slate-300 text-bears-orange focus:ring-bears-orange"
-                />
-                Show frame around image
-              </label>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">Caption</label>
-              <input
-                type="text"
-                value={block.caption ?? ''}
-                onChange={(event) =>
-                  onChange({ ...block, caption: event.target.value || undefined } satisfies EmailImageBlock)
-                }
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-              />
-            </div>
-            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-500">
-              Current display width: {getImageBlockWidthPercent(block.width)}
-            </div>
-          </>
-        )}
-
-        {block.type === 'button' && (
-          <>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Label</label>
-                <input
-                  type="text"
-                  value={block.label}
-                  onChange={(event) => onChange({ ...block, label: event.target.value } satisfies EmailButtonBlock)}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700">Tone</label>
-                <select
-                  value={block.tone}
-                  onChange={(event) =>
-                    onChange({ ...block, tone: event.target.value as EmailButtonTone } satisfies EmailButtonBlock)
-                  }
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-                >
-                  {buttonToneOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-slate-700">Link</label>
-              <input
-                type="url"
-                value={block.href}
-                onChange={(event) => onChange({ ...block, href: event.target.value } satisfies EmailButtonBlock)}
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-              />
-            </div>
-          </>
-        )}
-
-        {block.type === 'spacer' && (
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-slate-700">Spacer size</label>
-            <select
-              value={block.size}
-              onChange={(event) =>
-                onChange({ ...block, size: event.target.value as EmailSpacerSize } satisfies EmailSpacerBlock)
-              }
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-            >
-              {spacerOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -493,6 +235,7 @@ export function AdminEmailDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [testEmail, setTestEmail] = useState(user?.email ?? '');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>(EMAIL_TEMPLATES[0]?.id ?? 'draft-reminder-2026-pick-25');
   const [draft, setDraft] = useState<EmailComposerDraft>(() => createDefaultRecapDraft());
   const [sendingTest, setSendingTest] = useState(false);
   const [sendingProduction, setSendingProduction] = useState(false);
@@ -510,6 +253,8 @@ export function AdminEmailDashboard() {
   }, []);
 
   const productionCount = counts?.production_segment_count ?? 0;
+  const selectedTemplate =
+    EMAIL_TEMPLATES.find((template) => template.id === selectedTemplateId) ?? EMAIL_TEMPLATES[0];
 
   const statCards = useMemo(() => {
     if (!counts) return [];
@@ -524,6 +269,7 @@ export function AdminEmailDashboard() {
 
   const imageLibrary = useMemo(
     () => [
+      { label: 'Live Draft Question Card', url: 'https://bearsprediction.com/email/recap-2025/draft-question-live.png' },
       { label: 'Hero', url: 'https://bearsprediction.com/email/recap-2025/hero.jpg' },
       { label: 'Accuracy Chart', url: 'https://bearsprediction.com/email/recap-2025/community-accuracy.png' },
       { label: 'Caleb Record', url: 'https://bearsprediction.com/email/recap-2025/caleb-record.png' },
@@ -575,78 +321,23 @@ export function AdminEmailDashboard() {
     }
   }
 
-  function updateBlock(blockId: string, updatedBlock: EmailBlock) {
-    setDraft((current) => ({
-      ...current,
-      blocks: current.blocks.map((block) => (block.id === blockId ? updatedBlock : block)),
-    }));
-  }
-
-  function removeBlock(blockId: string) {
-    setDraft((current) => ({
-      ...current,
-      blocks: current.blocks.filter((block) => block.id !== blockId),
-    }));
-  }
-
-  function moveBlock(blockId: string, direction: -1 | 1) {
-    setDraft((current) => {
-      const currentIndex = current.blocks.findIndex((block) => block.id === blockId);
-      if (currentIndex === -1) return current;
-      const nextIndex = clampMoveIndex(currentIndex, direction, current.blocks.length);
-      if (nextIndex === currentIndex) return current;
-      const blocks = [...current.blocks];
-      const [moved] = blocks.splice(currentIndex, 1);
-      blocks.splice(nextIndex, 0, moved);
-      return { ...current, blocks };
+  function resetDraft() {
+    setDraft(createDraftFromTemplate(selectedTemplateId));
+    setNotice({
+      tone: 'success',
+      message: `Email draft reset to the "${selectedTemplate?.label ?? 'selected'}" template.`,
     });
   }
 
-  function addBlock(type: EmailBlock['type']) {
-    let nextBlock: EmailBlock;
+  function loadTemplate(templateId: string) {
+    const template = EMAIL_TEMPLATES.find((entry) => entry.id === templateId);
+    if (!template) return;
 
-    if (type === 'heading') {
-      nextBlock = { id: createBlockId('heading'), type: 'heading', text: 'New heading' };
-    } else if (type === 'paragraph') {
-      nextBlock = { id: createBlockId('paragraph'), type: 'paragraph', text: 'New paragraph' };
-    } else if (type === 'image') {
-      nextBlock = {
-        id: createBlockId('image'),
-        type: 'image',
-        src: imageLibrary[0]?.url ?? '',
-        alt: 'Email image',
-        width: 'full',
-        framed: false,
-      };
-    } else if (type === 'button') {
-      nextBlock = {
-        id: createBlockId('button'),
-        type: 'button',
-        label: 'New button',
-        href: EMAIL_LINKS.recap,
-        tone: 'primary',
-      };
-    } else if (type === 'signature') {
-      nextBlock = {
-        id: createBlockId('signature'),
-        type: 'signature',
-        text: 'Irfan',
-      };
-    } else {
-      nextBlock = { id: createBlockId('spacer'), type: 'spacer', size: 'm' };
-    }
-
-    setDraft((current) => ({
-      ...current,
-      blocks: [...current.blocks, nextBlock],
-    }));
-  }
-
-  function resetDraft() {
-    setDraft(createDefaultRecapDraft());
+    setSelectedTemplateId(templateId);
+    setDraft(template.createDraft());
     setNotice({
       tone: 'success',
-      message: 'Email draft reset to the seeded recap version.',
+      message: `Loaded the "${template.label}" template into the composer.`,
     });
   }
 
@@ -667,6 +358,11 @@ export function AdminEmailDashboard() {
           testEmail: normalizedEmail,
           subject: draft.subject,
           previewText: draft.previewText,
+          headerEyebrow: draft.headerEyebrow,
+          headerTitle: draft.headerTitle,
+          headerMeta: draft.headerMeta,
+          footerLinkLabel: draft.footerLinkLabel,
+          footerLinkHref: draft.footerLinkHref,
           blocks: draft.blocks,
         },
       });
@@ -704,6 +400,11 @@ export function AdminEmailDashboard() {
           segment: FIXED_SEGMENT,
           subject: draft.subject,
           previewText: draft.previewText,
+          headerEyebrow: draft.headerEyebrow,
+          headerTitle: draft.headerTitle,
+          headerMeta: draft.headerMeta,
+          footerLinkLabel: draft.footerLinkLabel,
+          footerLinkHref: draft.footerLinkHref,
           blocks: draft.blocks,
         },
       });
@@ -715,7 +416,7 @@ export function AdminEmailDashboard() {
 
       setNotice({
         tone: 'success',
-        message: `Production email sent to ${data.recipientCount ?? productionCount} subscribers with predictions.`,
+        message: `Production email sent to ${data.recipientCount ?? productionCount} subscribed users.`,
       });
       await loadPageData(true);
     } catch (error) {
@@ -824,6 +525,50 @@ export function AdminEmailDashboard() {
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
+                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Templates</p>
+                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Start from a reusable draft</h2>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Pick a template, load it into the composer, and then tweak the copy before sending.
+                  </p>
+                </div>
+                <Mail className="h-6 w-6 flex-shrink-0 text-bears-orange" />
+              </div>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">Template</label>
+                  <select
+                    value={selectedTemplateId}
+                    onChange={(event) => setSelectedTemplateId(event.target.value)}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
+                  >
+                    {EMAIL_TEMPLATES.map((template) => (
+                      <option key={template.id} value={template.id}>
+                        {template.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => loadTemplate(selectedTemplateId)}
+                  className="inline-flex items-center justify-center rounded-2xl bg-bears-navy px-4 py-3 text-sm font-bold text-white transition hover:bg-bears-navy/95"
+                >
+                  Load Template
+                </button>
+              </div>
+
+              {selectedTemplate && (
+                <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  <div className="font-semibold text-slate-900">{selectedTemplate.label}</div>
+                  <div className="mt-1">{selectedTemplate.description}</div>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
                   <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Composer Settings</p>
                   <h2 className="mt-2 text-xl font-bold text-bears-navy">Subject and preview text</h2>
                   <p className="mt-2 text-sm text-slate-600">
@@ -852,6 +597,55 @@ export function AdminEmailDashboard() {
                     className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
                   />
                 </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">Header label</label>
+                    <input
+                      type="text"
+                      value={draft.headerEyebrow}
+                      onChange={(event) => setDraft((current) => ({ ...current, headerEyebrow: event.target.value }))}
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">Header meta</label>
+                    <input
+                      type="text"
+                      value={draft.headerMeta}
+                      onChange={(event) => setDraft((current) => ({ ...current, headerMeta: event.target.value }))}
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">Header title</label>
+                  <input
+                    type="text"
+                    value={draft.headerTitle}
+                    onChange={(event) => setDraft((current) => ({ ...current, headerTitle: event.target.value }))}
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
+                  />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">Footer link label</label>
+                    <input
+                      type="text"
+                      value={draft.footerLinkLabel}
+                      onChange={(event) => setDraft((current) => ({ ...current, footerLinkLabel: event.target.value }))}
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">Footer link URL</label>
+                    <input
+                      type="url"
+                      value={draft.footerLinkHref}
+                      onChange={(event) => setDraft((current) => ({ ...current, footerLinkHref: event.target.value }))}
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -859,9 +653,9 @@ export function AdminEmailDashboard() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Image Library</p>
-                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Current hosted recap assets</h2>
+                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Current hosted email assets</h2>
                   <p className="mt-2 text-sm text-slate-600">
-                    Paste these into image blocks, or replace them with any public image URL.
+                    These are the hosted images available in the built-in templates.
                   </p>
                 </div>
                 <ImageIcon className="h-6 w-6 flex-shrink-0 text-bears-orange" />
@@ -873,84 +667,6 @@ export function AdminEmailDashboard() {
                     <div className="text-sm font-semibold text-slate-900">{image.label}</div>
                     <div className="mt-1 break-all text-xs text-slate-500">{image.url}</div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Blocks</p>
-                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Edit the draft body</h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Rearrange blocks, tweak copy, and control image framing and width without touching raw HTML.
-                  </p>
-                </div>
-                <Type className="h-6 w-6 flex-shrink-0 text-bears-orange" />
-              </div>
-
-              <div className="mt-6 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => addBlock('heading')}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-                >
-                  <Heading1 className="h-4 w-4" />
-                  Add heading
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addBlock('paragraph')}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-                >
-                  <Type className="h-4 w-4" />
-                  Add paragraph
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addBlock('image')}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-                >
-                  <ImageIcon className="h-4 w-4" />
-                  Add image
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addBlock('button')}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add button
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addBlock('signature')}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-                >
-                  <Type className="h-4 w-4" />
-                  Add signature
-                </button>
-                <button
-                  type="button"
-                  onClick={() => addBlock('spacer')}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add spacer
-                </button>
-              </div>
-
-              <div className="mt-6 space-y-4">
-                {draft.blocks.map((block, index) => (
-                  <BlockEditor
-                    key={block.id}
-                    block={block}
-                    index={index}
-                    total={draft.blocks.length}
-                    onChange={(updatedBlock) => updateBlock(block.id, updatedBlock)}
-                    onRemove={() => removeBlock(block.id)}
-                    onMove={(direction) => moveBlock(block.id, direction)}
-                  />
                 ))}
               </div>
             </div>
@@ -1003,7 +719,7 @@ export function AdminEmailDashboard() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Production Send</p>
-                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Send this draft to subscribers with predictions</h2>
+                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Send this draft to all subscribed users</h2>
                   <p className="mt-2 text-sm text-slate-600">
                     Production uses the exact draft state from this composer, so send yourself a test first.
                   </p>
@@ -1013,7 +729,7 @@ export function AdminEmailDashboard() {
 
               <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
                 <div className="font-semibold">Ready segment</div>
-                <div className="mt-1">{productionCount} subscribers with at least one prediction</div>
+                <div className="mt-1">{productionCount} subscribed users</div>
               </div>
 
               <button
@@ -1071,7 +787,7 @@ export function AdminEmailDashboard() {
                           <div className="text-sm font-semibold text-slate-900">
                             {log.mode === 'test'
                               ? `Test send to ${log.test_email ?? 'unknown'}`
-                              : 'Production send to subscribers with predictions'}
+                              : 'Production send to all subscribed users'}
                           </div>
                           <div className="mt-1 text-sm text-slate-600">{log.subject}</div>
                         </div>
@@ -1125,7 +841,7 @@ export function AdminEmailDashboard() {
               <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Confirm Send</p>
               <h3 className="mt-2 text-2xl font-bold text-bears-navy">Send this draft to {productionCount} users?</h3>
               <p className="mt-3 text-sm leading-6 text-slate-600">
-                This will send the exact composer draft to subscribed users who have made at least one prediction.
+                This will send the exact composer draft to all subscribed users.
               </p>
 
               <div className="mt-5 rounded-2xl bg-slate-50 px-4 py-4 text-sm text-slate-700">

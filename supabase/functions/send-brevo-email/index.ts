@@ -12,7 +12,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type SegmentName = "season_2025_participants";
+type SegmentName = "all_subscribed_users";
 type SendMode = "test" | "send";
 
 const EMAIL_ATTRIBUTION_QUERY =
@@ -30,6 +30,11 @@ interface SendBrevoEmailRequest {
   testEmail?: string;
   subject?: string;
   previewText?: string;
+  headerEyebrow?: string;
+  headerTitle?: string;
+  headerMeta?: string;
+  footerLinkLabel?: string;
+  footerLinkHref?: string;
   imageUrls?: SeasonRecapImageUrls;
   links?: Partial<SeasonRecapLinks>;
   blocks?: EmailBlock[];
@@ -131,27 +136,11 @@ async function listAllAuthUsers() {
   return users;
 }
 
-async function fetchSeason2025Participants() {
+async function fetchAllSubscribedUsers() {
   const supabase = getAdminClient();
 
-  const { data: predictions, error: predictionError } = await supabase
-    .from("predictions")
-    .select("user_id, question_id, questions!inner(season)")
-    .eq("questions.season", 2025);
-
-  if (predictionError) {
-    throw new Error(`Failed to fetch prediction users: ${predictionError.message}`);
-  }
-
-  const userIds = [...new Set((predictions ?? []).map((row) => row.user_id).filter(Boolean))];
-
-  if (userIds.length === 0) return [];
-
   const users = await listAllAuthUsers();
-
-  const emails = users
-    .filter((user) => userIds.includes(user.id) && user.email)
-    .map((user) => ({ user_id: user.id, email: user.email! }));
+  const emails = users.filter((user) => user.email).map((user) => ({ user_id: user.id, email: user.email! }));
 
   const { data: preferences, error: preferencesError } = await supabase
     .from("email_preferences")
@@ -211,13 +200,13 @@ async function resolveRecipients(request: SendBrevoEmailRequest) {
     return dedupeEmails(request.recipients).map((email) => ({ email }));
   }
 
-  const segment = request.segment ?? "season_2025_participants";
+  const segment = request.segment ?? "all_subscribed_users";
 
-  if (segment !== "season_2025_participants") {
+  if (segment !== "all_subscribed_users") {
     throw new Error(`Unsupported segment: ${segment}`);
   }
 
-  const contacts = await fetchSeason2025Participants();
+  const contacts = await fetchAllSubscribedUsers();
   const deduped = new Map<string, Contact>();
   for (const contact of contacts) {
     const normalizedEmail = contact.email.trim().toLowerCase();
@@ -305,6 +294,11 @@ async function createEmailSendLog({
     testEmail: request.testEmail?.trim().toLowerCase() ?? null,
     subject,
     previewText: request.previewText ?? null,
+    headerEyebrow: request.headerEyebrow ?? null,
+    headerTitle: request.headerTitle ?? null,
+    headerMeta: request.headerMeta ?? null,
+    footerLinkLabel: request.footerLinkLabel ?? null,
+    footerLinkHref: request.footerLinkHref ?? null,
     imageUrls: request.imageUrls ?? {},
     links: request.links ?? {},
     blocks: request.blocks ?? [],
@@ -419,7 +413,7 @@ Deno.serve(async (req) => {
       Deno.env.get("EMAIL_UNSUBSCRIBE_URL") ??
       `https://${Deno.env.get("SUPABASE_PROJECT_ID") ?? "mvyvfvwguwqowytnkvvs"}.supabase.co/functions/v1/unsubscribe-email`;
     const unsubscribeSecret = Deno.env.get("UNSUBSCRIBE_SIGNING_SECRET");
-    const segment = request.segment ?? "season_2025_participants";
+    const segment = request.segment ?? "all_subscribed_users";
     const logId = await createEmailSendLog({
       adminUserId: admin.id,
       request,
@@ -459,6 +453,11 @@ Deno.serve(async (req) => {
           imageUrls,
           links,
           unsubscribeUrl,
+          headerEyebrow: request.headerEyebrow,
+          headerTitle: request.headerTitle,
+          headerMeta: request.headerMeta,
+          footerLinkLabel: request.footerLinkLabel,
+          footerLinkHref: request.footerLinkHref,
           blocks: request.blocks,
         });
 

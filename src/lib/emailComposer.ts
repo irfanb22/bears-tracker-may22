@@ -56,7 +56,19 @@ export type EmailBlock =
 export interface EmailComposerDraft {
   subject: string;
   previewText: string;
+  headerEyebrow: string;
+  headerTitle: string;
+  headerMeta: string;
+  footerLinkLabel: string;
+  footerLinkHref: string;
   blocks: EmailBlock[];
+}
+
+export interface EmailTemplateDefinition {
+  id: string;
+  label: string;
+  description: string;
+  createDraft: () => EmailComposerDraft;
 }
 
 const EMAIL_ATTRIBUTION_QUERY =
@@ -92,6 +104,10 @@ export const EMAIL_CTA_LINKS = {
   ),
 } as const;
 
+export const EMAIL_CARD_LINKS = {
+  draftQuestion: EMAIL_CTA_LINKS.draftQuestion,
+} as const;
+
 const EMAIL_ASSET_VERSION = '2026-03-30-7';
 
 export const EMAIL_IMAGE_URLS = {
@@ -112,11 +128,70 @@ export function createBlockId(prefix: string) {
   return `${prefix}-${emailBlockCounter}`;
 }
 
-export function createDefaultRecapDraft(): EmailComposerDraft {
+export function createDraftReminderDraft(): EmailComposerDraft {
+  return {
+    subject: 'The Bears are on the clock tomorrow',
+    previewText:
+      'The NFL Draft is tomorrow. Make your prediction or change it before Thursday, April 23 at 5:00 p.m. Central Time.',
+    headerEyebrow: 'Draft Reminder',
+    headerTitle: 'The Bears are on the clock tomorrow',
+    headerMeta: 'IRFAN | APR 22',
+    footerLinkLabel: 'View the draft question on the site',
+    footerLinkHref: EMAIL_LINKS.draftQuestion,
+    blocks: [
+      {
+        id: createBlockId('paragraph'),
+        type: 'paragraph',
+        text: 'Hi,',
+      },
+      {
+        id: createBlockId('paragraph'),
+        type: 'paragraph',
+        text: 'The NFL Draft is tomorrow. The Bears are on the clock with the 25th pick, and they’ll be picking around 9:30 p.m.',
+      },
+      {
+        id: createBlockId('paragraph'),
+        type: 'paragraph',
+        text: 'A quick reminder that the Bears draft question closes on **Thursday, April 23 at 5:00 p.m. Central Time**, so you still have time to make your prediction or change it before the deadline.',
+      },
+      {
+        id: createBlockId('image'),
+        type: 'image',
+        src: EMAIL_IMAGE_URLS.draftLive,
+        alt: 'Live 2026 draft question card with answer options',
+        href: EMAIL_CARD_LINKS.draftQuestion,
+        width: 'full',
+        framed: false,
+      },
+      {
+        id: createBlockId('paragraph'),
+        type: 'paragraph',
+        text: 'We’ll have **20+ questions** before the season starts, along with **game-by-game predictions**, so there’s a lot more coming soon!',
+      },
+      {
+        id: createBlockId('paragraph'),
+        type: 'paragraph',
+        text: 'If you know another Bears fan who would have fun making predictions and comparing results, feel free to forward this email to them.',
+      },
+      {
+        id: createBlockId('paragraph'),
+        type: 'paragraph',
+        text: 'Bear Down!',
+      },
+    ],
+  };
+}
+
+export function createSeasonRecapDraft(): EmailComposerDraft {
   return {
     subject: 'How Bears fans predicted the 2025 season',
     previewText:
-      "The dust has settled. See how Bears fans did across all 13 predictions and check your results.",
+      'The dust has settled. See how Bears fans did across all 13 predictions and check your results.',
+    headerEyebrow: '2025 Season Recap',
+    headerTitle: 'How Bears Fans Predicted the Season',
+    headerMeta: 'IRFAN | APR 1',
+    footerLinkLabel: 'View the recap on the site',
+    footerLinkHref: EMAIL_LINKS.recap,
     blocks: [
       {
         id: createBlockId('image'),
@@ -136,7 +211,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
       {
         id: createBlockId('paragraph'),
         type: 'paragraph',
-        text: "The dust has settled. Here's how you did.",
+        text: 'The dust has settled. Here\'s how you did.',
       },
       {
         id: createBlockId('image'),
@@ -341,7 +416,7 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
         type: 'image',
         src: EMAIL_IMAGE_URLS.draftLive,
         alt: 'Live 2026 draft question card with answer options',
-        href: EMAIL_CTA_LINKS.draftQuestion,
+        href: EMAIL_CARD_LINKS.draftQuestion,
         width: 'full',
         framed: false,
       },
@@ -362,4 +437,27 @@ export function createDefaultRecapDraft(): EmailComposerDraft {
       },
     ],
   };
+}
+
+export const EMAIL_TEMPLATES: EmailTemplateDefinition[] = [
+  {
+    id: 'draft-reminder-2026-pick-25',
+    label: '2026 Draft Reminder',
+    description: 'Bears 25th-pick reminder with the live draft card embedded.',
+    createDraft: createDraftReminderDraft,
+  },
+  {
+    id: 'season-recap-2025',
+    label: '2025 Season Recap',
+    description: 'The full 2025 season recap email with recap images and buttons.',
+    createDraft: createSeasonRecapDraft,
+  },
+];
+
+export function createDraftFromTemplate(templateId: string) {
+  return EMAIL_TEMPLATES.find((template) => template.id === templateId)?.createDraft() ?? createDraftReminderDraft();
+}
+
+export function createDefaultRecapDraft(): EmailComposerDraft {
+  return createDraftReminderDraft();
 }
