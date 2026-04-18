@@ -336,6 +336,10 @@ export function buildSeasonRecapEmail({
   const safeHeaderMeta = escapeHtml(headerMeta ?? "Irfan | Mar 31");
   const safeFooterLinkLabel = escapeHtml(footerLinkLabel ?? "View the recap on the site");
   const safeFooterLinkHref = escapeHtml(footerLinkHref ?? links.recap);
+  const hasHeaderEyebrow = Boolean(headerEyebrow && headerEyebrow.trim());
+  const hasHeaderTitle = Boolean(headerTitle && headerTitle.trim());
+  const hasHeaderMeta = Boolean(headerMeta && headerMeta.trim());
+  const hasFooterLink = Boolean(footerLinkLabel && footerLinkLabel.trim() && footerLinkHref && footerLinkHref.trim());
   const renderedBlocks = blocks ? renderComposerBlocks(blocks) : "";
 
   if (blocks && blocks.length > 0) {
@@ -362,27 +366,43 @@ export function buildSeasonRecapEmail({
             </tr>
             <tr>
               <td style="padding:30px 20px 10px 20px;">
-                <div style="font-size:12px; line-height:18px; letter-spacing:0.2em; text-transform:uppercase; font-weight:700; color:#c83803;">
+                ${
+                  hasHeaderEyebrow
+                    ? `<div style="font-size:12px; line-height:18px; letter-spacing:0.2em; text-transform:uppercase; font-weight:700; color:#c83803;">
                   ${safeHeaderEyebrow}
-                </div>
-                <h1 style="margin:14px 0 0 0; font-size:38px; line-height:40px; font-weight:900; color:#0b162a;">
+                </div>`
+                    : ""
+                }
+                ${
+                  hasHeaderTitle
+                    ? `<h1 style="margin:${hasHeaderEyebrow ? "14px" : "0"} 0 0 0; font-size:38px; line-height:40px; font-weight:900; color:#0b162a;">
                   ${safeHeaderTitle}
-                </h1>
-                <div style="margin-top:16px; font-size:13px; line-height:18px; letter-spacing:0.18em; text-transform:uppercase; font-weight:700; color:#64748b;">
+                </h1>`
+                    : ""
+                }
+                ${
+                  hasHeaderMeta
+                    ? `<div style="margin-top:16px; font-size:13px; line-height:18px; letter-spacing:0.18em; text-transform:uppercase; font-weight:700; color:#64748b;">
                   ${safeHeaderMeta}
-                </div>
+                </div>`
+                    : ""
+                }
               </td>
             </tr>
             ${renderedBlocks}
             <tr>
               <td style="padding:28px 20px 38px 20px; text-align:center; border-top:1px solid #e2e8f0;">
                 <div style="font-size:15px; line-height:28px;">
-                  <a href="${safeFooterLinkHref}" style="color:#64748b; text-decoration:underline;">
+                  ${
+                    hasFooterLink
+                      ? `<a href="${safeFooterLinkHref}" style="color:#64748b; text-decoration:underline;">
                     ${safeFooterLinkLabel}
-                  </a>
+                  </a>`
+                      : ""
+                  }
                   ${
                     unsubscribeUrl
-                      ? `<span style="color:#94a3b8;">&nbsp;|&nbsp;</span>
+                      ? `${hasFooterLink ? '<span style="color:#94a3b8;">&nbsp;|&nbsp;</span>' : ""}
                   <a href="${escapeHtml(unsubscribeUrl)}" style="color:#64748b; text-decoration:underline;">
                     Unsubscribe
                   </a>`

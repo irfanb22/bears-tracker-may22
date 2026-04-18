@@ -133,11 +133,11 @@ export function createDraftReminderDraft(): EmailComposerDraft {
     subject: 'The Bears are on the clock tomorrow',
     previewText:
       'The NFL Draft is tomorrow. Make your prediction or change it before Thursday, April 23 at 5:00 p.m. Central Time.',
-    headerEyebrow: 'Draft Reminder',
-    headerTitle: 'The Bears are on the clock tomorrow',
-    headerMeta: 'IRFAN | APR 22',
-    footerLinkLabel: 'View the draft question on the site',
-    footerLinkHref: EMAIL_LINKS.draftQuestion,
+    headerEyebrow: '',
+    headerTitle: '',
+    headerMeta: '',
+    footerLinkLabel: '',
+    footerLinkHref: '',
     blocks: [
       {
         id: createBlockId('paragraph'),

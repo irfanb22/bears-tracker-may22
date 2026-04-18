@@ -203,13 +203,19 @@ function ComposerPreview({ draft }: { draft: EmailComposerDraft }) {
         </div>
 
         <div className="px-5 py-8">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-bears-orange">{draft.headerEyebrow}</p>
-          <h1 className="mt-3 text-[36px] font-black leading-[1.05] tracking-tight text-bears-navy">
-            {draft.headerTitle}
-          </h1>
-          <p className="mt-4 text-[13px] font-bold uppercase tracking-[0.18em] text-slate-500">{draft.headerMeta}</p>
+          {draft.headerEyebrow ? (
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-bears-orange">{draft.headerEyebrow}</p>
+          ) : null}
+          {draft.headerTitle ? (
+            <h1 className="mt-3 text-[36px] font-black leading-[1.05] tracking-tight text-bears-navy">
+              {draft.headerTitle}
+            </h1>
+          ) : null}
+          {draft.headerMeta ? (
+            <p className="mt-4 text-[13px] font-bold uppercase tracking-[0.18em] text-slate-500">{draft.headerMeta}</p>
+          ) : null}
 
-          <div className="mt-8 space-y-9">
+          <div className={`${draft.headerEyebrow || draft.headerTitle || draft.headerMeta ? 'mt-8' : 'mt-2'} space-y-9`}>
             {previewBlocks.map((block) => (
               <div key={block.key}>{block.content}</div>
             ))}
@@ -217,10 +223,14 @@ function ComposerPreview({ draft }: { draft: EmailComposerDraft }) {
         </div>
 
         <div className="border-t border-slate-200 px-5 py-10 text-center text-[15px] leading-7 text-slate-500">
-          <a href={draft.footerLinkHref} onClick={(event) => event.preventDefault()} className="underline">
-            {draft.footerLinkLabel}
-          </a>
-          <span className="px-2 text-slate-300">|</span>
+          {draft.footerLinkLabel && draft.footerLinkHref ? (
+            <>
+              <a href={draft.footerLinkHref} onClick={(event) => event.preventDefault()} className="underline">
+                {draft.footerLinkLabel}
+              </a>
+              <span className="px-2 text-slate-300">|</span>
+            </>
+          ) : null}
           <span className="underline">Unsubscribe</span>
         </div>
       </div>
