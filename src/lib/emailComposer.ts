@@ -1,4 +1,4 @@
-export type EmailImageWidth = 'full' | 'wide' | 'medium';
+export type EmailImageWidth = 'full' | 'wide' | 'medium' | 'compact';
 export type EmailButtonTone = 'primary' | 'secondary';
 export type EmailSpacerSize = 's' | 'm' | 'l';
 
@@ -160,7 +160,7 @@ export function createDraftReminderDraft(): EmailComposerDraft {
         src: EMAIL_IMAGE_URLS.draftLive,
         alt: 'Live 2026 draft question card with answer options',
         href: EMAIL_CARD_LINKS.draftQuestion,
-        width: 'medium',
+        width: 'compact',
         framed: false,
       },
       {

@@ -150,6 +150,7 @@ function renderImageSection({
 }
 
 function getImageWidthPercent(width: EmailImageWidth) {
+  if (width === "compact") return "72%";
   if (width === "medium") return "92%";
   if (width === "wide") return "100%";
   return "100%";

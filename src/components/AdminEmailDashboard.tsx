@@ -4,7 +4,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Eye,
-  Image as ImageIcon,
   Loader2,
   Mail,
   RefreshCcw,
@@ -57,6 +56,7 @@ const FIXED_SEGMENT = 'all_subscribed_users';
 type Notice = { tone: 'success' | 'error'; message: string } | null;
 
 function getImageBlockWidthClass(width: EmailImageWidth) {
+  if (width === 'compact') return 'max-w-[72%]';
   if (width === 'medium') return 'max-w-[92%]';
   if (width === 'wide') return 'max-w-full';
   return 'max-w-full';
@@ -276,20 +276,6 @@ export function AdminEmailDashboard() {
       { label: 'Send Segment Count', value: counts.production_segment_count, icon: Send },
     ];
   }, [counts]);
-
-  const imageLibrary = useMemo(
-    () => [
-      { label: 'Live Draft Question Card', url: 'https://bearsprediction.com/email/recap-2025/draft-question-live.png' },
-      { label: 'Hero', url: 'https://bearsprediction.com/email/recap-2025/hero.jpg' },
-      { label: 'Accuracy Chart', url: 'https://bearsprediction.com/email/recap-2025/community-accuracy.png' },
-      { label: 'Caleb Record', url: 'https://bearsprediction.com/email/recap-2025/caleb-record.png' },
-      { label: 'Playoff Split', url: 'https://bearsprediction.com/email/recap-2025/playoff-split.png' },
-      { label: 'Odunze Stats', url: 'https://bearsprediction.com/email/recap-2025/rome-odunze.png' },
-      { label: 'Offense Surprise', url: 'https://bearsprediction.com/email/recap-2025/offense-surprise.png' },
-      { label: 'Draft Chart', url: 'https://bearsprediction.com/email/recap-2025/draft-pick.png' },
-    ],
-    []
-  );
 
   async function loadPageData(showRefreshState = false) {
     if (showRefreshState) {
@@ -530,7 +516,7 @@ export function AdminEmailDashboard() {
           })}
         </section>
 
-        <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(360px,0.9fr)_minmax(560px,1.1fr)] xl:items-start">
+        <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(280px,0.9fr)_minmax(320px,1fr)_minmax(560px,1.35fr)] xl:items-start">
           <div className="space-y-6">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
@@ -576,6 +562,52 @@ export function AdminEmailDashboard() {
               )}
             </div>
 
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Send Test</p>
+                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Send the current draft to yourself</h2>
+                  <p className="mt-2 text-sm text-slate-600">
+                    This sends the exact subject, preview text, images, and layout from the current template.
+                  </p>
+                </div>
+                <Mail className="h-6 w-6 flex-shrink-0 text-bears-orange" />
+              </div>
+
+              <div className="mt-6 space-y-4">
+                <div>
+                  <label htmlFor="test-email" className="mb-2 block text-sm font-semibold text-slate-700">
+                    Test email
+                  </label>
+                  <input
+                    id="test-email"
+                    type="email"
+                    value={testEmail}
+                    onChange={(event) => setTestEmail(event.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
+                  />
+                </div>
+
+                <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  <div className="font-semibold text-slate-900">Current subject</div>
+                  <div className="mt-1">{draft.subject}</div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => void handleTestSend()}
+                  disabled={sendingTest}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-bears-orange px-4 py-3 text-sm font-bold text-white transition hover:bg-bears-orange/90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {sendingTest ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  Send Test Email
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -656,50 +688,6 @@ export function AdminEmailDashboard() {
                     />
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Send Test</p>
-                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Send the current draft to yourself</h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    This sends the exact subject, preview text, images, and block order from the composer above.
-                  </p>
-                </div>
-                <Mail className="h-6 w-6 flex-shrink-0 text-bears-orange" />
-              </div>
-
-              <div className="mt-6 space-y-4">
-                <div>
-                  <label htmlFor="test-email" className="mb-2 block text-sm font-semibold text-slate-700">
-                    Test email
-                  </label>
-                  <input
-                    id="test-email"
-                    type="email"
-                    value={testEmail}
-                    onChange={(event) => setTestEmail(event.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-                  />
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                  <div className="font-semibold text-slate-900">Current subject</div>
-                  <div className="mt-1">{draft.subject}</div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => void handleTestSend()}
-                  disabled={sendingTest}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-bears-orange px-4 py-3 text-sm font-bold text-white transition hover:bg-bears-orange/90 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {sendingTest ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  Send Test Email
-                </button>
               </div>
             </div>
 
@@ -790,30 +778,9 @@ export function AdminEmailDashboard() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Image Library</p>
-                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Current hosted email assets</h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    These are the hosted images available in the built-in templates.
-                  </p>
-                </div>
-                <ImageIcon className="h-6 w-6 flex-shrink-0 text-bears-orange" />
-              </div>
-
-              <div className="mt-6 grid gap-3">
-                {imageLibrary.map((image) => (
-                  <div key={image.label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                    <div className="text-sm font-semibold text-slate-900">{image.label}</div>
-                    <div className="mt-1 break-all text-xs text-slate-500">{image.url}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
-          <div className="xl:sticky xl:top-6">
+          <div className="xl:sticky xl:top-6 self-start">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
