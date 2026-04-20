@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle,
   CheckCircle2,
+  Edit2,
   Eye,
   Loader2,
   Mail,
@@ -168,7 +169,45 @@ function EmailPreviewButtonRow({ buttons }: { buttons: EmailButtonBlock[] }) {
   );
 }
 
-function ComposerPreview({ draft }: { draft: EmailComposerDraft }) {
+function AutoResizeTextarea({
+  value,
+  onChange,
+  className,
+}: {
+  value: string;
+  onChange: (text: string) => void;
+  className: string;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.style.height = 'auto';
+      ref.current.style.height = `${ref.current.scrollHeight}px`;
+    }
+  }, [value]);
+
+  return (
+    <textarea
+      ref={ref}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className={className}
+      rows={1}
+      style={{ overflow: 'hidden' }}
+    />
+  );
+}
+
+function EditableEmailShell({
+  draft,
+  isEditing,
+  onBlockChange,
+}: {
+  draft: EmailComposerDraft;
+  isEditing: boolean;
+  onBlockChange: (blockId: string, text: string) => void;
+}) {
   const previewBlocks: Array<{ key: string; content: JSX.Element }> = [];
 
   for (let index = 0; index < draft.blocks.length; index += 1) {
@@ -185,6 +224,34 @@ function ComposerPreview({ draft }: { draft: EmailComposerDraft }) {
       previewBlocks.push({
         key: buttons.map((button) => button.id).join('-'),
         content: <EmailPreviewButtonRow buttons={buttons} />,
+      });
+      continue;
+    }
+
+    if (isEditing && block.type === 'heading') {
+      previewBlocks.push({
+        key: block.id,
+        content: (
+          <AutoResizeTextarea
+            value={block.text}
+            onChange={(text) => onBlockChange(block.id, text)}
+            className="w-full resize-none bg-transparent text-[30px] font-black leading-tight tracking-tight text-bears-navy outline-none rounded-lg px-1 -mx-1 transition focus:ring-2 focus:ring-bears-orange/30 focus:bg-bears-orange/[0.03]"
+          />
+        ),
+      });
+      continue;
+    }
+
+    if (isEditing && block.type === 'paragraph') {
+      previewBlocks.push({
+        key: block.id,
+        content: (
+          <AutoResizeTextarea
+            value={block.text}
+            onChange={(text) => onBlockChange(block.id, text)}
+            className="w-full resize-none bg-transparent text-[18px] leading-[1.68] text-slate-700 outline-none rounded-lg px-1 -mx-1 transition focus:ring-2 focus:ring-bears-orange/30 focus:bg-bears-orange/[0.03]"
+          />
+        ),
       });
       continue;
     }
@@ -247,6 +314,7 @@ export function AdminEmailDashboard() {
   const [testEmail, setTestEmail] = useState(user?.email ?? '');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(EMAIL_TEMPLATES[0]?.id ?? 'draft-reminder-2026-pick-25');
   const [draft, setDraft] = useState<EmailComposerDraft>(() => createDefaultRecapDraft());
+  const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
   const [sendingTest, setSendingTest] = useState(false);
   const [sendingProduction, setSendingProduction] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
@@ -335,6 +403,15 @@ export function AdminEmailDashboard() {
       tone: 'success',
       message: `Loaded the "${template.label}" template into the composer.`,
     });
+  }
+
+  function updateBlockText(blockId: string, text: string) {
+    setDraft((current) => ({
+      ...current,
+      blocks: current.blocks.map((block) =>
+        block.id === blockId ? ({ ...block, text } as EmailBlock) : block
+      ),
+    }));
   }
 
   async function handleTestSend() {
@@ -447,7 +524,7 @@ export function AdminEmailDashboard() {
             <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Admin Email</p>
             <h1 className="mt-2 text-3xl font-bold text-bears-navy">Email Composer</h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-600">
-              Start from the seeded recap draft, tweak copy and image sizing, preview the layout, and then send the exact draft you see here.
+              Start from a template, edit the draft directly in the preview, then send when it looks right.
             </p>
           </div>
 
@@ -516,286 +593,266 @@ export function AdminEmailDashboard() {
           })}
         </section>
 
-        <section className="mt-8 grid gap-6 xl:grid-cols-[minmax(280px,0.9fr)_minmax(320px,1fr)_minmax(560px,1.35fr)] xl:items-start">
-          <div className="space-y-6">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Templates</p>
-                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Start from a reusable draft</h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Pick a template, load it into the composer, and then tweak the copy before sending.
-                  </p>
-                </div>
-                <Mail className="h-6 w-6 flex-shrink-0 text-bears-orange" />
+        {/* Unified edit / preview panel */}
+        <section className="mt-8">
+          <div className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            {/* Panel header */}
+            <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-4">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">
+                  {viewMode === 'edit' ? 'Editing' : 'Preview'}
+                </p>
+                <h2 className="mt-1 text-xl font-bold text-bears-navy">
+                  {viewMode === 'edit' ? 'Click any text to edit it directly' : 'Email layout preview'}
+                </h2>
               </div>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">Template</label>
-                  <select
-                    value={selectedTemplateId}
-                    onChange={(event) => setSelectedTemplateId(event.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-                  >
-                    {EMAIL_TEMPLATES.map((template) => (
-                      <option key={template.id} value={template.id}>
-                        {template.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="flex rounded-2xl border border-slate-200 bg-slate-50 p-1">
                 <button
                   type="button"
-                  onClick={() => loadTemplate(selectedTemplateId)}
-                  className="inline-flex items-center justify-center rounded-2xl bg-bears-navy px-4 py-3 text-sm font-bold text-white transition hover:bg-bears-navy/95"
+                  onClick={() => setViewMode('edit')}
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                    viewMode === 'edit'
+                      ? 'bg-white text-bears-navy shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
                 >
-                  Load Template
+                  <Edit2 className="h-3.5 w-3.5" />
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('preview')}
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                    viewMode === 'preview'
+                      ? 'bg-white text-bears-navy shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                  Preview
                 </button>
               </div>
-
-              {selectedTemplate && (
-                <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                  <div className="font-semibold text-slate-900">{selectedTemplate.label}</div>
-                  <div className="mt-1">{selectedTemplate.description}</div>
-                </div>
-              )}
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
+            {/* Subject + preview text — visible in edit mode */}
+            {viewMode === 'edit' && (
+              <div className="grid gap-4 border-b border-slate-100 px-6 py-4 sm:grid-cols-2">
                 <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Send Test</p>
-                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Send the current draft to yourself</h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    This sends the exact subject, preview text, images, and layout from the current template.
-                  </p>
-                </div>
-                <Mail className="h-6 w-6 flex-shrink-0 text-bears-orange" />
-              </div>
-
-              <div className="mt-6 space-y-4">
-                <div>
-                  <label htmlFor="test-email" className="mb-2 block text-sm font-semibold text-slate-700">
-                    Test email
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Subject
                   </label>
-                  <input
-                    id="test-email"
-                    type="email"
-                    value={testEmail}
-                    onChange={(event) => setTestEmail(event.target.value)}
-                    placeholder="you@example.com"
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-                  />
-                </div>
-
-                <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                  <div className="font-semibold text-slate-900">Current subject</div>
-                  <div className="mt-1">{draft.subject}</div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => void handleTestSend()}
-                  disabled={sendingTest}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-bears-orange px-4 py-3 text-sm font-bold text-white transition hover:bg-bears-orange/90 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {sendingTest ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  Send Test Email
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Composer Settings</p>
-                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Subject and preview text</h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    These are the main fields you’ll tweak before sending.
-                  </p>
-                </div>
-                <Eye className="h-6 w-6 flex-shrink-0 text-bears-orange" />
-              </div>
-
-              <div className="mt-6 space-y-4">
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">Subject</label>
                   <input
                     type="text"
                     value={draft.subject}
                     onChange={(event) => setDraft((current) => ({ ...current, subject: event.target.value }))}
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">Preview text</label>
-                  <textarea
-                    value={draft.previewText}
-                    onChange={(event) => setDraft((current) => ({ ...current, previewText: event.target.value }))}
-                    rows={3}
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-                  />
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">Header label</label>
-                    <input
-                      type="text"
-                      value={draft.headerEyebrow}
-                      onChange={(event) => setDraft((current) => ({ ...current, headerEyebrow: event.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">Header meta</label>
-                    <input
-                      type="text"
-                      value={draft.headerMeta}
-                      onChange={(event) => setDraft((current) => ({ ...current, headerMeta: event.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-slate-700">Header title</label>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Preview text
+                  </label>
                   <input
                     type="text"
-                    value={draft.headerTitle}
-                    onChange={(event) => setDraft((current) => ({ ...current, headerTitle: event.target.value }))}
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
+                    value={draft.previewText}
+                    onChange={(event) => setDraft((current) => ({ ...current, previewText: event.target.value }))}
+                    className="w-full rounded-2xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
                   />
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">Footer link label</label>
-                    <input
-                      type="text"
-                      value={draft.footerLinkLabel}
-                      onChange={(event) => setDraft((current) => ({ ...current, footerLinkLabel: event.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">Footer link URL</label>
-                    <input
-                      type="url"
-                      value={draft.footerLinkHref}
-                      onChange={(event) => setDraft((current) => ({ ...current, footerLinkHref: event.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
-                    />
-                  </div>
-                </div>
               </div>
+            )}
+
+            {/* Email body */}
+            <div className="p-6">
+              <EditableEmailShell
+                draft={draft}
+                isEditing={viewMode === 'edit'}
+                onBlockChange={updateBlockText}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Send sections — 3 columns */}
+        <section className="mt-6 grid gap-6 lg:grid-cols-3">
+          {/* Templates */}
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Templates</p>
+                <h2 className="mt-2 text-xl font-bold text-bears-navy">Start from a reusable draft</h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Pick a template and load it into the composer.
+                </p>
+              </div>
+              <Mail className="h-6 w-6 flex-shrink-0 text-bears-orange" />
             </div>
 
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Production Send</p>
-                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Send this draft to all subscribed users</h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Production uses the exact draft state from this composer, so send yourself a test first.
-                  </p>
-                </div>
-                <ShieldCheck className="h-6 w-6 flex-shrink-0 text-bears-orange" />
+            <div className="mt-6 space-y-3">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Template</label>
+                <select
+                  value={selectedTemplateId}
+                  onChange={(event) => setSelectedTemplateId(event.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
+                >
+                  {EMAIL_TEMPLATES.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
-                <div className="font-semibold">Ready segment</div>
-                <div className="mt-1">{productionCount} subscribed users</div>
+              {selectedTemplate && (
+                <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                  <div className="font-semibold text-slate-900">{selectedTemplate.label}</div>
+                  <div className="mt-1">{selectedTemplate.description}</div>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => loadTemplate(selectedTemplateId)}
+                className="inline-flex w-full items-center justify-center rounded-2xl bg-bears-navy px-4 py-3 text-sm font-bold text-white transition hover:bg-bears-navy/95"
+              >
+                Load Template
+              </button>
+            </div>
+          </div>
+
+          {/* Send Test */}
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Send Test</p>
+                <h2 className="mt-2 text-xl font-bold text-bears-navy">Send the current draft to yourself</h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Sends the exact subject, preview text, and layout from the current draft.
+                </p>
+              </div>
+              <Mail className="h-6 w-6 flex-shrink-0 text-bears-orange" />
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div>
+                <label htmlFor="test-email" className="mb-2 block text-sm font-semibold text-slate-700">
+                  Test email
+                </label>
+                <input
+                  id="test-email"
+                  type="email"
+                  value={testEmail}
+                  onChange={(event) => setTestEmail(event.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-bears-orange focus:ring-2 focus:ring-bears-orange/20"
+                />
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <div className="font-semibold text-slate-900">Current subject</div>
+                <div className="mt-1">{draft.subject}</div>
               </div>
 
               <button
                 type="button"
-                onClick={() => setShowConfirmModal(true)}
-                disabled={sendingProduction || productionCount === 0}
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-bears-navy px-4 py-3 text-sm font-bold text-white transition hover:bg-bears-navy/95 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => void handleTestSend()}
+                disabled={sendingTest}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-bears-orange px-4 py-3 text-sm font-bold text-white transition hover:bg-bears-orange/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {sendingProduction ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                Send To Production Segment
+                {sendingTest ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Send Test Email
               </button>
             </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Recent Sends</p>
-                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Latest email activity</h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Every test and production send is logged so you can confirm what went out and when.
-                  </p>
-                </div>
-                <Mail className="h-6 w-6 flex-shrink-0 text-bears-orange" />
-              </div>
-
-              <div className="mt-6 space-y-3">
-                {sendLogs.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-                    No email sends logged yet.
-                  </div>
-                ) : (
-                  sendLogs.map((log) => (
-                    <div key={log.id} className="rounded-2xl border border-slate-200 px-4 py-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <div className="text-sm font-semibold text-slate-900">
-                            {log.mode === 'test'
-                              ? `Test send to ${log.test_email ?? 'unknown'}`
-                              : 'Production send to all subscribed users'}
-                          </div>
-                          <div className="mt-1 text-sm text-slate-600">{log.subject}</div>
-                        </div>
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
-                            log.status === 'succeeded'
-                              ? 'bg-emerald-100 text-emerald-700'
-                              : log.status === 'failed'
-                                ? 'bg-red-100 text-red-700'
-                                : 'bg-amber-100 text-amber-700'
-                          }`}
-                        >
-                          {log.status}
-                        </span>
-                      </div>
-
-                      <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium text-slate-500">
-                        <span>{new Date(log.created_at).toLocaleString()}</span>
-                        <span>{log.recipient_count} recipients</span>
-                        {log.segment && <span>segment: {log.segment}</span>}
-                      </div>
-
-                      {log.error_message && (
-                        <div className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">
-                          {log.error_message}
-                        </div>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
           </div>
 
-          <div className="xl:sticky xl:top-6 self-start">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Live Preview</p>
-                  <h2 className="mt-2 text-xl font-bold text-bears-navy">Email-style layout preview</h2>
-                  <p className="mt-2 text-sm text-slate-600">
-                    This is not a perfect Gmail clone, but it gives you a much faster layout loop before every test send.
-                  </p>
-                </div>
-                <Eye className="h-6 w-6 flex-shrink-0 text-bears-orange" />
+          {/* Production Send */}
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Production Send</p>
+                <h2 className="mt-2 text-xl font-bold text-bears-navy">Send this draft to all subscribed users</h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Production uses the exact draft state from this composer — send yourself a test first.
+                </p>
               </div>
+              <ShieldCheck className="h-6 w-6 flex-shrink-0 text-bears-orange" />
+            </div>
 
-              <div className="mt-6">
-                <ComposerPreview draft={draft} />
+            <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+              <div className="font-semibold">Ready segment</div>
+              <div className="mt-1">{productionCount} subscribed users</div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowConfirmModal(true)}
+              disabled={sendingProduction || productionCount === 0}
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-bears-navy px-4 py-3 text-sm font-bold text-white transition hover:bg-bears-navy/95 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {sendingProduction ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              Send To Production Segment
+            </button>
+          </div>
+        </section>
+
+        {/* Recent Sends */}
+        <section className="mt-6">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold uppercase tracking-[0.24em] text-bears-orange">Recent Sends</p>
+                <h2 className="mt-2 text-xl font-bold text-bears-navy">Latest email activity</h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Every test and production send is logged so you can confirm what went out and when.
+                </p>
               </div>
+              <Mail className="h-6 w-6 flex-shrink-0 text-bears-orange" />
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {sendLogs.length === 0 ? (
+                <div className="col-span-full rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                  No email sends logged yet.
+                </div>
+              ) : (
+                sendLogs.map((log) => (
+                  <div key={log.id} className="rounded-2xl border border-slate-200 px-4 py-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-semibold text-slate-900">
+                          {log.mode === 'test'
+                            ? `Test → ${log.test_email ?? 'unknown'}`
+                            : 'Production send'}
+                        </div>
+                        <div className="mt-1 truncate text-sm text-slate-600">{log.subject}</div>
+                      </div>
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${
+                          log.status === 'succeeded'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : log.status === 'failed'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-amber-100 text-amber-700'
+                        }`}
+                      >
+                        {log.status}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium text-slate-500">
+                      <span>{new Date(log.created_at).toLocaleString()}</span>
+                      <span>{log.recipient_count} recipients</span>
+                    </div>
+
+                    {log.error_message && (
+                      <div className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">
+                        {log.error_message}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </section>
