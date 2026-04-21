@@ -8,6 +8,7 @@ import {
   Loader2,
   Mail,
   RefreshCcw,
+  Save,
   Send,
   ShieldCheck,
   Users,
@@ -53,6 +54,7 @@ interface SendBrevoEmailResponse {
 }
 
 const FIXED_SEGMENT = 'all_subscribed_users';
+const DRAFT_STORAGE_KEY = 'admin_email_draft_v1';
 
 type Notice = { tone: 'success' | 'error'; message: string } | null;
 
@@ -313,8 +315,15 @@ export function AdminEmailDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [testEmail, setTestEmail] = useState(user?.email ?? '');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>(EMAIL_TEMPLATES[0]?.id ?? 'draft-reminder-2026-pick-25');
-  const [draft, setDraft] = useState<EmailComposerDraft>(() => createDefaultRecapDraft());
+  const [draft, setDraft] = useState<EmailComposerDraft>(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved) return JSON.parse(saved) as EmailComposerDraft;
+    } catch {}
+    return createDefaultRecapDraft();
+  });
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
+  const [savedFlash, setSavedFlash] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
   const [sendingProduction, setSendingProduction] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
@@ -412,6 +421,12 @@ export function AdminEmailDashboard() {
         block.id === blockId ? ({ ...block, text } as EmailBlock) : block
       ),
     }));
+  }
+
+  function saveDraft() {
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 2000);
   }
 
   async function handleTestSend() {
@@ -537,6 +552,18 @@ export function AdminEmailDashboard() {
             >
               <RefreshCcw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
               Refresh
+            </button>
+            <button
+              type="button"
+              onClick={saveDraft}
+              className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold shadow-sm transition ${
+                savedFlash
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:text-slate-900'
+              }`}
+            >
+              <Save className="h-4 w-4" />
+              {savedFlash ? 'Saved!' : 'Save Draft'}
             </button>
             <button
               type="button"
