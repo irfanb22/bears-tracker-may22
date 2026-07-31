@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isPast } from 'date-fns';
-import { AlertCircle, Clock, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowRight, Check, Clock, Loader2, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { PredictionModal } from './PredictionModal';
@@ -40,6 +40,15 @@ interface PredictionWithQuestion {
 }
 
 type FilterStatus = 'all' | 'active' | 'resolved' | 'pending';
+
+interface GamePickSummary {
+  canAccess: boolean;
+  canEdit: boolean;
+  totalGames: number;
+  picked: number;
+  wins: number;
+  losses: number;
+}
 
 const CATEGORY_LABELS: Record<string, string> = {
   all: 'All',
@@ -82,6 +91,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPrediction, setSelectedPrediction] = useState<PredictionWithQuestion | null>(null);
+  const [gamePickSummary, setGamePickSummary] = useState<GamePickSummary | null>(null);
 
   const [selectedSeason, setSelectedSeason] = useState<2026 | 2025>(2026);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -153,6 +163,50 @@ export function Dashboard() {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+
+    const fetchGamePickSummary = async () => {
+      const { data: statusData, error: statusError } = await supabase.rpc('get_game_pick_season_status', {
+        target_season: 2026,
+      });
+      if (statusError || !active) return;
+
+      const status = (statusData || [])[0] as {
+        can_access?: boolean;
+        can_edit?: boolean;
+        total_games?: number;
+      } | undefined;
+      if (!status?.can_access) {
+        setGamePickSummary({ canAccess: false, canEdit: false, totalGames: status?.total_games || 17, picked: 0, wins: 0, losses: 0 });
+        return;
+      }
+
+      const [{ data: games }, { data: userPicks }] = await Promise.all([
+        supabase.from('game_pick_games').select('id').eq('season', 2026),
+        supabase.from('game_picks').select('game_id, pick').eq('user_id', user.id),
+      ]);
+      if (!active) return;
+
+      const gameIds = new Set((games || []).map((game) => game.id));
+      const picks = ((userPicks || []) as Array<{ game_id: string; pick: 'bears' | 'opponent' }>).filter((pick) => gameIds.has(pick.game_id));
+      setGamePickSummary({
+        canAccess: true,
+        canEdit: Boolean(status.can_edit),
+        totalGames: status.total_games || 17,
+        picked: picks.length,
+        wins: picks.filter((pick) => pick.pick === 'bears').length,
+        losses: picks.filter((pick) => pick.pick === 'opponent').length,
+      });
+    };
+
+    void fetchGamePickSummary();
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   useEffect(() => {
     if (loading || hasTrackedDashboardViewRef.current) return;
@@ -607,10 +661,35 @@ export function Dashboard() {
             </div>
 
             {selectedSeason === 2026 && selectedCategory === 'all' && (
-              <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3">
-                <p className="text-sm font-semibold text-slate-700">Game-by-Game Picks: Coming Soon</p>
-                <p className="mt-1 text-xs text-slate-500">This section will include all Bears win/loss weekly picks for 2026.</p>
-              </div>
+              gamePickSummary?.canAccess ? (
+                <button
+                  type="button"
+                  onClick={() => navigate('/game-picks')}
+                  className="mt-4 flex w-full items-center justify-between gap-4 rounded-xl border border-orange-200 bg-orange-50 px-4 py-4 text-left transition hover:border-bears-orange/40 hover:bg-orange-100/70"
+                >
+                  <span>
+                    <span className="flex items-center gap-2 text-sm font-extrabold text-bears-navy">
+                      {gamePickSummary.canEdit ? <Check className="h-4 w-4 text-bears-orange" /> : <Lock className="h-4 w-4 text-bears-orange" />}
+                      {gamePickSummary.picked === 0
+                        ? 'Make your 17 game picks'
+                        : gamePickSummary.picked < gamePickSummary.totalGames
+                          ? `Continue your game picks · ${gamePickSummary.picked}/${gamePickSummary.totalGames}`
+                          : gamePickSummary.canEdit
+                            ? `View or change your picks · Bears ${gamePickSummary.wins}–${gamePickSummary.losses}`
+                            : `View your locked picks · Bears ${gamePickSummary.wins}–${gamePickSummary.losses}`}
+                    </span>
+                    <span className="mt-1 block text-xs font-medium text-slate-600">
+                      {gamePickSummary.canEdit ? 'Every choice saves automatically until Week 1.' : 'Your season forecast is now read-only.'}
+                    </span>
+                  </span>
+                  <ArrowRight className="h-5 w-5 shrink-0 text-bears-orange" />
+                </button>
+              ) : (
+                <div className="mt-4 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3">
+                  <p className="text-sm font-semibold text-slate-700">Game-by-Game Picks: Coming Soon</p>
+                  <p className="mt-1 text-xs text-slate-500">This section will include all Bears win/loss weekly picks for 2026.</p>
+                </div>
+              )
             )}
 
             {filteredPredictions.length === 0 ? (

@@ -8,6 +8,7 @@ import {
 import { Navbar } from './Navbar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { DateTimePicker } from './DateTimePicker';
+import { GamePickAdminPanel } from './GamePickAdminPanel';
 
 interface Question {
   id: string;
@@ -415,6 +416,8 @@ export function AdminDashboard() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <GamePickAdminPanel />
 
         <div className="bg-white rounded-xl shadow-sm">
           <div className="p-6 border-b border-gray-100">

@@ -13,9 +13,8 @@ interface LeaderboardRow {
   accuracy: number | string;
 }
 
-const TARGET_SEASON = 2025;
-
 export function Leaderboard() {
+  const [targetSeason, setTargetSeason] = useState<2025 | 2026>(2025);
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +34,7 @@ export function Leaderboard() {
 
       try {
         const { data, error: rpcError } = await supabase.rpc('get_season_leaderboard', {
-          target_season: TARGET_SEASON
+          target_season: targetSeason
         });
 
         if (rpcError) {
@@ -71,16 +70,16 @@ export function Leaderboard() {
       window.removeEventListener('focus', handleVisibilityOrFocus);
       document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
     };
-  }, []);
+  }, [targetSeason]);
 
   useEffect(() => {
     if (loading || error) return;
 
     captureEvent(ANALYTICS_EVENTS.leaderboardViewed, {
-      season: TARGET_SEASON,
+      season: targetSeason,
       row_count: rows.length,
     });
-  }, [error, loading, rows.length]);
+  }, [error, loading, rows.length, targetSeason]);
 
   if (loading) {
     return (
@@ -98,11 +97,25 @@ export function Leaderboard() {
       <Navbar />
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="rounded-xl border border-slate-200 bg-white px-5 py-5 sm:px-6">
-          <h1 className="text-3xl font-extrabold tracking-tight text-bears-navy sm:text-4xl">
-            {TARGET_SEASON} Leaderboard
-          </h1>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <h1 className="text-3xl font-extrabold tracking-tight text-bears-navy sm:text-4xl">
+              {targetSeason} Leaderboard
+            </h1>
+            <div className="flex w-fit rounded-full border border-slate-200 bg-slate-50 p-1">
+              {([2025, 2026] as const).map((season) => (
+                <button
+                  key={season}
+                  type="button"
+                  onClick={() => setTargetSeason(season)}
+                  className={`rounded-full px-4 py-1.5 text-sm font-bold ${targetSeason === season ? 'bg-bears-navy text-white' : 'text-slate-600'}`}
+                >
+                  {season}
+                </button>
+              ))}
+            </div>
+          </div>
           <p className="mt-2 text-sm font-medium text-slate-600">
-            Ranked by total correct picks.
+            Ranked by total correct picks. {targetSeason === 2026 && 'Prediction questions and eligible game picks are each worth one point.'}
           </p>
           <div className="group relative mt-2 inline-block">
             <span
@@ -128,7 +141,7 @@ export function Leaderboard() {
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
             <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Season</p>
-            <p className="mt-1 text-2xl font-extrabold text-bears-navy">{TARGET_SEASON}</p>
+            <p className="mt-1 text-2xl font-extrabold text-bears-navy">{targetSeason}</p>
           </div>
         </div>
 

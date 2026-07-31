@@ -22,6 +22,7 @@ import { SiteFooter } from './components/SiteFooter';
 import { ScrollToTop } from './components/ScrollToTop';
 import { SeasonRecap } from './components/SeasonRecap';
 import { UnsubscribeStatusPage } from './components/UnsubscribeStatusPage';
+import { GamePicker, GamePickerDeployPreview, GamePickerMockups } from './components/GamePickerMockups';
 import { supabase } from './lib/supabase';
 import {
   ANALYTICS_EVENTS,
@@ -71,6 +72,8 @@ function HomePage() {
   const [savingDisplayName, setSavingDisplayName] = useState(false);
   const [displayNameNotice, setDisplayNameNotice] = useState<string | null>(null);
   const [namePlaceholder, setNamePlaceholder] = useState(ONBOARDING_NAME_PLACEHOLDERS[0]);
+  const [gamePicksAvailable, setGamePicksAvailable] = useState(false);
+  const [gamePicksDraft, setGamePicksDraft] = useState(false);
   const previousCategoryRef = useRef(selectedCategory);
 
   const onboardingQuestion = questions.find((question) => question.id === ONBOARDING_QUESTION_ID);
@@ -78,6 +81,26 @@ function HomePage() {
     (question) => question.season === 2026 && Boolean(userPredictions[question.id])
   );
   const hasTypedDisplayName = displayNameDraft.trim().length > 0;
+
+  useEffect(() => {
+    let active = true;
+
+    const loadGamePickStatus = async () => {
+      const { data, error } = await supabase.rpc('get_game_pick_season_status', {
+        target_season: 2026,
+      });
+      if (error || !active) return;
+
+      const status = (data || [])[0] as { can_access?: boolean; state?: string } | undefined;
+      setGamePicksAvailable(Boolean(status?.can_access));
+      setGamePicksDraft(status?.state === 'draft' && Boolean(status?.can_access));
+    };
+
+    void loadGamePickStatus();
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   const getOnboardingStorageKey = useCallback((suffix: 'dismissed' | 'progress') => {
     if (!user) return null;
@@ -380,12 +403,25 @@ function HomePage() {
               </button>
             ))}
             {selectedSeason === 2026 && (
-              <span className="flex items-center gap-2 pb-3 whitespace-nowrap text-slate-400">
-                <span className="text-base font-bold">2026 Game Picks</span>
-                <span className="rounded-full bg-yellow-200 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-yellow-900">
-                  Coming Soon
+              gamePicksAvailable ? (
+                <button
+                  type="button"
+                  onClick={() => navigate('/game-picks')}
+                  className="flex items-center gap-2 pb-3 whitespace-nowrap text-bears-navy transition-colors hover:text-bears-orange"
+                >
+                  <span className="text-base font-bold">2026 Game Picks</span>
+                  <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-bears-orange">
+                    {gamePicksDraft ? 'Admin Preview' : 'Open'}
+                  </span>
+                </button>
+              ) : (
+                <span className="flex items-center gap-2 pb-3 whitespace-nowrap text-slate-400">
+                  <span className="text-base font-bold">2026 Game Picks</span>
+                  <span className="rounded-full bg-yellow-200 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-yellow-900">
+                    Coming Soon
+                  </span>
                 </span>
-              </span>
+              )
             )}
           </div>
         </div>
@@ -647,6 +683,7 @@ function getRouteName(pathname: string) {
   if (pathname === '/email/unsubscribed') return 'email_unsubscribed';
   if (pathname === '/dashboard') return 'dashboard';
   if (pathname === '/leaderboard') return 'leaderboard';
+  if (pathname === '/game-picks') return 'game_picks';
   if (pathname === '/admin') return 'admin';
   if (pathname === '/admin/email') return 'admin_email';
   return 'unknown';
@@ -691,6 +728,16 @@ export function AppComponent() {
         <Route path="/email/unsubscribed" element={<UnsubscribeStatusPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/game-picker-mockups" element={<GamePickerMockups />} />
+        <Route path="/game-picks-preview" element={<GamePickerDeployPreview />} />
+        <Route
+          path="/game-picks"
+          element={
+            <ProtectedRoute>
+              <GamePicker />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/predictions"
           element={
